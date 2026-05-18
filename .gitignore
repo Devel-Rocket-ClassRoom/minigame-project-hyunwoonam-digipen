@@ -170,5 +170,3 @@ CLAUDE.md
 dotnet-tools.json
 # 코덱스 관련
 /.codex/
-# 그 외 문서
-Assets/Docs/
