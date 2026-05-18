@@ -166,3 +166,5 @@ Assets/Imported/
 /.claude/CLAUDE.local.md
 # 코덱스 관련
 /.codex/
+# 그 외 문서
+Assets/Docs/
