@@ -163,6 +163,7 @@ Assets/Imported/
 
 # 클로드 관련
 /.claude/
+/.claude/skills/
 .mcp.json
 CLAUDE.md
 dotnet-tools.json

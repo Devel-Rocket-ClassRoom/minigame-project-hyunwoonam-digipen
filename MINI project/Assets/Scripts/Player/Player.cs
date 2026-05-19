@@ -38,6 +38,26 @@ public class Player : EntityBase
         // - 목표: Player가 전투 시작 전에 기본 액티브 스킬 슬롯을 보유하도록 초기화한다.
         // - 의도: 안전지대 스킬 장착 시스템이 없더라도 CombatFlow가 Skill1/Skill2를 사용할 수 있게 한다.
         // - 구현해야 할 것: 슬롯 0/1에 기본 ActiveSkill을 보장하고 EntityBase.Awake() 초기화를 호출한다.
+        EnsureActiveSkill(
+            0,
+            new ActiveSkill
+            {
+                skillName = "강타",
+                mpCost = 5,
+                atkMultiplier = 1.5f,
+            }
+        );
+        EnsureActiveSkill(
+            1,
+            new ActiveSkill
+            {
+                skillName = "맹공",
+                mpCost = 10,
+                atkMultiplier = 2.0f,
+            }
+        );
+
+        base.Awake();
     }
 
     /// <summary>
@@ -59,6 +79,7 @@ public class Player : EntityBase
         // - 목표: 지정한 액티브 스킬 슬롯에 새 스킬을 장착한다.
         // - 의도: 안전지대 신전/스킬 UI에서 Player의 액티브 슬롯을 교체할 수 있게 한다.
         // - 구현해야 할 것: slotIndex 검증은 EntityBase의 슬롯 설정 함수에 위임하고 ActiveSkill 참조를 저장한다.
+        SetActiveSkill(slotIndex, skill);
     }
 
     public void EquipPassiveSkill(int slotIndex, PassiveSkill skill)
@@ -70,5 +91,6 @@ public class Player : EntityBase
         // - 목표: 지정한 패시브 스킬 슬롯에 새 스킬을 장착한다.
         // - 의도: 안전지대 신전/스킬 UI에서 Player의 패시브 슬롯을 교체할 수 있게 한다.
         // - 구현해야 할 것: slotIndex 검증은 EntityBase의 슬롯 설정 함수에 위임하고 PassiveSkill 참조를 저장한다.
+        SetPassiveSkill(slotIndex, skill);
     }
 }
