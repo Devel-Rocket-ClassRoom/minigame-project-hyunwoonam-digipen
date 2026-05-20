@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 #pragma warning disable CS0414
 
@@ -9,11 +10,47 @@ using UnityEngine;
 public enum CombatTurnState
 {
     Idle,
-    PreCombat,
-    PlayerTurn,
-    MonsterTurn,
+    RoundStart,
+    PlayerAction,
+    TargetSelect,
+    MonsterAction,
     Victory,
     Defeat,
+}
+
+public enum CombatActorType
+{
+    Player,
+    Monster,
+}
+
+public sealed class CombatActorTurn
+{
+    public CombatActorType ActorType { get; }
+    public EntityBase Actor { get; }
+    public int MonsterIndex { get; }
+    public int BaseInitiative { get; }
+    public int InitiativeBonus { get; }
+    public int Initiative { get; }
+    public int MonsterGrade { get; }
+
+    public CombatActorTurn(
+        CombatActorType actorType,
+        EntityBase actor,
+        int monsterIndex,
+        int baseInitiative,
+        int initiativeBonus,
+        int monsterGrade
+    )
+    {
+        ActorType = actorType;
+        Actor = actor;
+        MonsterIndex = monsterIndex;
+        BaseInitiative = baseInitiative;
+        InitiativeBonus = initiativeBonus;
+        Initiative = baseInitiative + initiativeBonus;
+        MonsterGrade = monsterGrade;
+    }
 }
 
 /// <summary>
@@ -21,8 +58,11 @@ public enum CombatTurnState
 /// </summary>
 /// <remarks>
 /// Week 1 범위:
-/// - 선공은 ATK 비교 (몬스터 그룹 중 하나라도 더 높으면 몬스터 선공)
+/// - 다키스트 던전식 라운드 기반 개별 유닛 턴 큐
+/// - 임시 initiative = ATK + 작은 랜덤 보정
+/// - 동률이면 Player 우선, Monster끼리는 MonsterGrade 우선
 /// - 플레이어 행동 4종: Attack / Skill1 / Skill2 / Defend
+/// - Attack / Skill은 Raycast 대상 선택 후 실행
 /// - 아이템: 턴 미소비, Week 1엔 로그만 출력
 /// - 몬스터 행동: Attack 70 / Skill 20 / Defend 10 가중치
 /// - 데미지 = max(1, ATK - DEF), 방어 시 절반
@@ -43,7 +83,19 @@ public class CombatFlow : MonoBehaviour
     [SerializeField]
     private float defendDamageMultiplier = 0.5f;
 
+    [Tooltip(
+        "다키스트 던전식 라운드 주도권 보정값 범위입니다. 현재 initiative = ATK + Random.Range(0, initiativeBonusMax + 1)."
+    )]
+    [SerializeField]
+    private int initiativeBonusMax = 2;
+
     private CombatTurnState turnState = CombatTurnState.Idle;
+    private CombatActionType pendingPlayerAction;
+    private ActiveSkill pendingPlayerSkill;
+    private bool hasPendingPlayerAction;
+    private readonly List<CombatActorTurn> turnQueue = new List<CombatActorTurn>();
+    private int currentTurnIndex;
+    private CombatActorTurn currentActorTurn;
 
     /// <summary>
     /// 현재 턴 상태입니다.
@@ -67,14 +119,17 @@ public class CombatFlow : MonoBehaviour
 
         switch (turnState)
         {
-            case CombatTurnState.PreCombat:
-                EnterPreCombat();
+            case CombatTurnState.RoundStart:
+                EnterRoundStart();
                 break;
-            case CombatTurnState.PlayerTurn:
-                EnterPlayerTurn();
+            case CombatTurnState.PlayerAction:
+                EnterPlayerAction();
                 break;
-            case CombatTurnState.MonsterTurn:
-                EnterMonsterTurn();
+            case CombatTurnState.TargetSelect:
+                EnterTargetSelect();
+                break;
+            case CombatTurnState.MonsterAction:
+                EnterMonsterAction();
                 break;
             case CombatTurnState.Victory:
                 EnterVictory();
@@ -117,7 +172,7 @@ public class CombatFlow : MonoBehaviour
         // TODO:
         // - 목표: Combat 씬 시작 시 참조, 런타임 상태, 선공자를 준비하고 첫 턴으로 진입한다.
         // - 의도: CombatFlow가 전투 전체의 단일 FSM 시작점이 되게 한다.
-        // - 구현해야 할 것: 씬 참조 자동 탐색, 필수 참조 검증, HP/MP 리셋, 선공 결정, PlayerTurn/MonsterTurn 진입을 수행한다.
+        // - 구현해야 할 것: 씬 참조 자동 탐색, 필수 참조 검증, HP/MP 준비, RoundStart 진입을 수행한다.
         ResolveSceneReferences();
         if (!HasRequiredReferences())
         {
@@ -125,22 +180,54 @@ public class CombatFlow : MonoBehaviour
         }
 
         InitializeRuntimeState();
-        ChangeState(CombatTurnState.PreCombat);
+        ChangeState(CombatTurnState.RoundStart);
     }
 
-    private void EnterPreCombat()
+    private void Update()
     {
         // TODO:
-        // - 목표: 전투 시작 전 선공자를 결정하고 첫 턴 상태로 전환한다.
-        // - 의도: Start()가 직접 PlayerTurn/MonsterTurn을 호출하지 않고 FSM 상태 전환만 요청하게 한다.
-        // - 구현해야 할 것: 선공 결정 로그 출력 후 ChangeState로 PlayerTurn 또는 MonsterTurn에 진입한다.
-        bool playerFirst = DecideFirstAttacker();
-        Debug.Log(
-            $"[CombatFlow] 선공 결정: {(playerFirst ? "Player" : "Monster")} "
-                + $"(Player.ATK={player.ATK}, MonsterMaxATK={GetMaxMonsterATK()})"
-        );
+        // - 목표: TargetSelect 상태에서 화면 클릭을 Raycast로 몬스터 선택 입력으로 변환한다.
+        // - 의도: Attack/Skill 버튼은 행동 종류만 정하고, 실제 대상은 플레이어가 몬스터 오브젝트를 클릭해 결정하게 한다.
+        // - 구현해야 할 것: TargetSelect 상태와 마우스 클릭을 확인하고, UI 클릭은 무시하며, Camera raycast 결과를 대상 선택으로 처리한다.
+        if (turnState != CombatTurnState.TargetSelect)
+        {
+            return;
+        }
 
-        ChangeState(playerFirst ? CombatTurnState.PlayerTurn : CombatTurnState.MonsterTurn);
+        if (Input.GetMouseButtonDown(1))
+        {
+            CancelTargetSelection();
+            return;
+        }
+
+        if (!Input.GetMouseButtonDown(0))
+        {
+            return;
+        }
+
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        {
+            return;
+        }
+
+        TrySelectTargetFromScreenPosition(Input.mousePosition);
+    }
+
+    private void EnterRoundStart()
+    {
+        // TODO:
+        // - 목표: 다키스트 던전식 라운드 시작 시 모든 생존 유닛의 행동 순서 큐를 만든다.
+        // - 의도: 진영 단위 PlayerTurn/MonsterTurn이 아니라 Player와 Monster가 initiative 순서대로 한 번씩 행동하게 한다.
+        // - 구현해야 할 것: 승패 선검사, ATK+랜덤 보정 기반 큐 생성/정렬, 첫 액터 진행을 수행한다.
+        if (TryEndCombatIfFinished())
+        {
+            return;
+        }
+
+        BuildTurnQueue();
+        LogTurnQueue();
+        currentTurnIndex = 0;
+        AdvanceToNextActor();
     }
 
     private void ResolveSceneReferences()
@@ -209,11 +296,11 @@ public class CombatFlow : MonoBehaviour
 
     private void InitializeRuntimeState()
     {
-
         // TODO:
         // - 목표: Player와 모든 Monster의 전투 런타임 상태를 새 전투 상태로 초기화한다.
-        // - 의도: 이전 전투의 HP/MP/방어 상태가 다음 전투에 남지 않게 한다.
-        // - 구현해야 할 것: player.ResetForNewCombat()과 각 monster.ResetForNewCombat()을 호출한다.
+        // - 의도: Player의 HP/MP는 현재 도전 상태로 유지하고, Monster는 새 전투마다 초기화한다.
+        // - 구현해야 할 것: 저장된 Player 런타임 상태가 있으면 복원하고, Player는 전투 상태만 준비하며, 각 Monster는 새 전투 상태로 리셋한다.
+        GameSystemManager.Instance.TryApplyPlayerCombatState(player);
         player.ResetForNewCombat();
 
         foreach (var monster in monsters)
@@ -222,41 +309,142 @@ public class CombatFlow : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 선공을 판별합니다. 현재는 ATK 비교 기반이며, 규칙 변경 시 이 함수만 수정하면 됩니다.
-    /// 몬스터 그룹 중 한 마리라도 ATK가 플레이어보다 크면 몬스터 그룹이 선공합니다.
-    /// </summary>
-    private bool DecideFirstAttacker()
-    {
-        // 기존 구현:
-        // return player.ATK >= GetMaxMonsterATK();
-
-        // TODO:
-        // - 목표: Player와 몬스터 그룹의 ATK를 비교해 선공자를 결정한다.
-        // - 의도: 선공 규칙을 한 함수에 격리해 추후 Strategy 패턴이나 데이터 규칙으로 교체하기 쉽게 한다.
-        // - 구현해야 할 것: player.ATK와 GetMaxMonsterATK()를 비교하고 동률은 Player 선공으로 처리한다.
-        return player.ATK >= GetMaxMonsterATK();
-    }
-
-    private int GetMaxMonsterATK()
+    private void BuildTurnQueue()
     {
         // TODO:
-        // - 목표: 현재 몬스터 그룹 중 가장 높은 ATK를 계산한다.
-        // - 의도: 선공 결정에서 몬스터 그룹 전체의 위협도를 단일 값으로 비교한다.
-        // - 구현해야 할 것: monsters를 순회하며 최대 ATK를 찾아 반환한다.
-        int max = 0;
-        foreach (var monster in monsters)
+        // - 목표: 이번 라운드에 한 번씩 행동할 Player와 살아있는 Monster 목록을 만든다.
+        // - 의도: 다키스트 던전처럼 라운드마다 모든 유닛이 initiative 순서에 따라 개별 턴을 갖게 한다.
+        // - 구현해야 할 것: Player와 살아있는 Monster를 CombatActorTurn으로 만들고 initiative 내림차순으로 정렬한다.
+        turnQueue.Clear();
+        int bonusMax = Mathf.Max(0, initiativeBonusMax);
+
+        if (!player.IsDead)
         {
-            if (monster.ATK > max)
-            {
-                max = monster.ATK;
-            }
+            int bonus = Random.Range(0, bonusMax + 1);
+            turnQueue.Add(
+                new CombatActorTurn(
+                    CombatActorType.Player,
+                    player,
+                    -1,
+                    player.ATK,
+                    bonus,
+                    int.MaxValue
+                )
+            );
         }
 
-        return max;
+        for (int i = 0; i < monsters.Count; i++)
+        {
+            MonsterBase monster = monsters[i];
+            if (monster == null || monster.IsDead)
+            {
+                continue;
+            }
+
+            int bonus = Random.Range(0, bonusMax + 1);
+            turnQueue.Add(
+                new CombatActorTurn(
+                    CombatActorType.Monster,
+                    monster,
+                    i,
+                    monster.ATK,
+                    bonus,
+                    monster.MonsterGrade
+                )
+            );
+        }
+
+        turnQueue.Sort(CompareActorTurns);
     }
 
-    private void EnterPlayerTurn()
+    private int CompareActorTurns(CombatActorTurn left, CombatActorTurn right)
+    {
+        // TODO:
+        // - 목표: ATK+보정 initiative, Player 우선, Monster 등급 순으로 행동 순서를 정렬한다.
+        // - 의도: 다키스트 던전식 라운드 순서에 사용자 지정 동률 규칙을 적용한다.
+        // - 구현해야 할 것: initiative 내림차순, Player-vs-Monster 동률 시 Player 우선, Monster 동률 시 grade 내림차순을 적용한다.
+        int initiativeCompare = right.Initiative.CompareTo(left.Initiative);
+        if (initiativeCompare != 0)
+        {
+            return initiativeCompare;
+        }
+
+        if (left.ActorType != right.ActorType)
+        {
+            return left.ActorType == CombatActorType.Player ? -1 : 1;
+        }
+
+        if (left.ActorType == CombatActorType.Monster)
+        {
+            int gradeCompare = right.MonsterGrade.CompareTo(left.MonsterGrade);
+            if (gradeCompare != 0)
+            {
+                return gradeCompare;
+            }
+
+            return left.MonsterIndex.CompareTo(right.MonsterIndex);
+        }
+
+        return 0;
+    }
+
+    private void LogTurnQueue()
+    {
+        // TODO:
+        // - 목표: 라운드 시작마다 행동 순서와 initiative 계산 근거를 로그로 남긴다.
+        // - 의도: 선공/순서 규칙이 디버깅 가능하도록 한다.
+        // - 구현해야 할 것: Player/Monster index, ATK, 보정, 최종 initiative를 순서대로 출력한다.
+        List<string> entries = new List<string>();
+        for (int i = 0; i < turnQueue.Count; i++)
+        {
+            CombatActorTurn actorTurn = turnQueue[i];
+            string actorName =
+                actorTurn.ActorType == CombatActorType.Player
+                    ? "Player"
+                    : $"Monster[{actorTurn.MonsterIndex}] grade={actorTurn.MonsterGrade}";
+            entries.Add(
+                $"{i + 1}:{actorName} initiative={actorTurn.Initiative}"
+                    + $"(ATK={actorTurn.BaseInitiative}+{actorTurn.InitiativeBonus})"
+            );
+        }
+
+        Debug.Log($"[CombatFlow] Round order: {string.Join(" | ", entries)}");
+    }
+
+    private void AdvanceToNextActor()
+    {
+        // TODO:
+        // - 목표: 현재 라운드 큐에서 다음 생존 유닛의 행동 상태로 전환한다.
+        // - 의도: 각 유닛이 라운드마다 한 번씩 행동하고, 큐가 끝나면 다음 라운드를 시작한다.
+        // - 구현해야 할 것: 승패 확인, 사망 유닛 skip, PlayerAction/MonsterAction 전환, 큐 종료 시 RoundStart 전환을 수행한다.
+        if (TryEndCombatIfFinished())
+        {
+            return;
+        }
+
+        while (currentTurnIndex < turnQueue.Count)
+        {
+            currentActorTurn = turnQueue[currentTurnIndex];
+            currentTurnIndex++;
+
+            if (currentActorTurn.Actor == null || currentActorTurn.Actor.IsDead)
+            {
+                continue;
+            }
+
+            ChangeState(
+                currentActorTurn.ActorType == CombatActorType.Player
+                    ? CombatTurnState.PlayerAction
+                    : CombatTurnState.MonsterAction
+            );
+            return;
+        }
+
+        currentActorTurn = null;
+        ChangeState(CombatTurnState.RoundStart);
+    }
+
+    private void EnterPlayerAction()
     {
         // 기존 구현:
         // turnState = CombatTurnState.PlayerTurn;
@@ -264,14 +452,30 @@ public class CombatFlow : MonoBehaviour
         // Debug.Log("[CombatFlow] === Player Turn ===");
 
         // TODO:
-        // - 목표: 전투 FSM을 PlayerTurn 상태로 전환한다.
-        // - 의도: 플레이어 입력을 받을 수 있는 상태를 명확히 표시하고 방어 상태를 턴 시작에 해제한다.
-        // - 구현해야 할 것: turnState 설정, player 방어 상태 초기화, 턴 진입 로그 출력을 수행한다.
+        // - 목표: 라운드 큐에서 Player 차례가 왔을 때 입력 대기 상태로 진입한다.
+        // - 의도: 다키스트 던전식 개별 유닛 턴에서 Player만 직접 입력을 기다리게 한다.
+        // - 구현해야 할 것: 방어 상태 초기화, 현재 액터 검증, 턴 진입 로그 출력을 수행한다.
         player.SetDefending(false);
-        Debug.Log("[CombatFlow] === Player Turn ===");
+        Debug.Log("[CombatFlow] === Player Action ===");
     }
 
-    private void EnterMonsterTurn()
+    private void EnterTargetSelect()
+    {
+        // TODO:
+        // - 목표: 플레이어가 공격/스킬 대상을 클릭할 수 있는 상태로 진입한다.
+        // - 의도: 여러 몬스터 중 어떤 몬스터를 공격할지 명시적으로 선택하게 한다.
+        // - 구현해야 할 것: 대기 중인 행동이 없으면 PlayerAction으로 되돌리고, 있으면 선택 안내 로그를 출력한다.
+        if (!hasPendingPlayerAction)
+        {
+            Debug.LogWarning("[CombatFlow] TargetSelect entered without a pending player action.");
+            ChangeState(CombatTurnState.PlayerAction);
+            return;
+        }
+
+        Debug.Log($"[CombatFlow] Target Select: {pendingPlayerAction}. Click a monster target.");
+    }
+
+    private void EnterMonsterAction()
     {
         // 기존 구현:
         // turnState = CombatTurnState.MonsterTurn;
@@ -287,19 +491,24 @@ public class CombatFlow : MonoBehaviour
         // EnterPlayerTurn();
 
         // TODO:
-        // - 목표: 전투 FSM을 MonsterTurn 상태로 전환하고 모든 살아있는 몬스터 행동을 처리한다.
-        // - 의도: 플레이어 메인 행동 이후 몬스터 턴을 자동으로 진행한다.
-        // - 구현해야 할 것: turnState 설정, 몬스터 행동 처리, Player 사망 판정, 생존 시 PlayerTurn 복귀를 수행한다.
-        Debug.Log("[CombatFlow] === Monster Turn ===");
-        ResolveAllMonsterActions();
-
-        if (IsPlayerDefeated())
+        // - 목표: 라운드 큐에서 지정된 몬스터 한 마리의 행동을 처리한다.
+        // - 의도: 몬스터 그룹 전체가 몰아서 행동하지 않고, 다키스트 던전처럼 큐 순서대로 개별 행동하게 한다.
+        // - 구현해야 할 것: 현재 몬스터 검증, 단일 몬스터 행동 실행, 다음 액터로 진행한다.
+        if (
+            currentActorTurn == null
+            || currentActorTurn.ActorType != CombatActorType.Monster
+            || currentActorTurn.MonsterIndex < 0
+            || currentActorTurn.MonsterIndex >= monsters.Count
+        )
         {
-            EndCombatWithResult(DemoCombatResult.Defeat);
+            Debug.LogWarning("[CombatFlow] MonsterAction entered without a valid monster actor.");
+            AdvanceToNextActor();
             return;
         }
 
-        ChangeState(CombatTurnState.PlayerTurn);
+        Debug.Log($"[CombatFlow] === Monster[{currentActorTurn.MonsterIndex}] Action ===");
+        ResolveSingleMonsterAction(currentActorTurn.MonsterIndex);
+        AdvanceToNextActor();
     }
 
     /// <summary>
@@ -326,25 +535,15 @@ public class CombatFlow : MonoBehaviour
         // AfterPlayerMainAction();
 
         // TODO:
-        // - 목표: 플레이어 기본 공격 버튼 입력을 처리한다.
-        // - 의도: UI 버튼은 CombatFlow 메서드만 호출하고 실제 턴 소비/피해 처리는 CombatFlow가 담당하게 한다.
-        // - 구현해야 할 것: PlayerTurn 검증, 첫 생존 몬스터 선택, 데미지 계산/적용, 플레이어 메인 행동 후처리를 수행한다.
+        // - 목표: 플레이어 기본 공격 버튼 입력을 대상 선택 대기 상태로 전환한다.
+        // - 의도: 여러 몬스터 중 어떤 몬스터를 공격할지 Raycast 클릭으로 결정하게 한다.
+        // - 구현해야 할 것: PlayerAction 검증 후 Attack 행동을 pending으로 저장하고 TargetSelect에 진입한다.
         if (!CanAcceptPlayerInput())
         {
             return;
         }
 
-        int target = GetFirstAliveMonster();
-        if (target < 0)
-        {
-            return;
-        }
-
-        int dmg = CalculateDamage(player.ATK, monsters[target].DEF, monsters[target].IsDefending);
-        Debug.Log($"[CombatFlow] Player Attack -> Monster[{target}], damage={dmg}");
-        ApplyDamageToMonster(target, dmg);
-
-        AfterPlayerMainAction();
+        BeginTargetSelection(CombatActionType.Attack, null);
     }
 
     /// <summary>
@@ -362,7 +561,7 @@ public class CombatFlow : MonoBehaviour
         // TODO:
         // - 목표: 플레이어 Skill1 버튼 입력을 처리한다.
         // - 의도: 슬롯 1 액티브 스킬 사용을 공통 스킬 처리 함수로 위임한다.
-        // - 구현해야 할 것: PlayerTurn 검증 후 player.Skill1을 UsePlayerSkill에 전달한다.
+        // - 구현해야 할 것: PlayerAction 검증 후 player.Skill1을 UsePlayerSkill에 전달한다.
         if (!CanAcceptPlayerInput())
         {
             return;
@@ -386,7 +585,7 @@ public class CombatFlow : MonoBehaviour
         // TODO:
         // - 목표: 플레이어 Skill2 버튼 입력을 처리한다.
         // - 의도: 슬롯 2 액티브 스킬 사용을 공통 스킬 처리 함수로 위임한다.
-        // - 구현해야 할 것: PlayerTurn 검증 후 player.Skill2를 UsePlayerSkill에 전달한다.
+        // - 구현해야 할 것: PlayerAction 검증 후 player.Skill2를 UsePlayerSkill에 전달한다.
         if (!CanAcceptPlayerInput())
         {
             return;
@@ -435,7 +634,7 @@ public class CombatFlow : MonoBehaviour
         // - 구현해야 할 것: 빈 슬롯/MP 부족/대상 없음 검증, MP 소비, 배율 기반 데미지 계산, 피해 적용, 메인 행동 후처리를 수행한다.
         if (skill == null)
         {
-            Debug.Log("[CombatFlow] 빈 스킬 슬롯입니다.");
+            Debug.Log("[CombatFlow] Skill slot empty. Button should be disabled by UI.");
             return;
         }
 
@@ -447,22 +646,7 @@ public class CombatFlow : MonoBehaviour
             return;
         }
 
-        int target = GetFirstAliveMonster();
-        if (target < 0)
-        {
-            return;
-        }
-
-        player.TrySpendMP(skill.mpCost);
-        int skillATK = Mathf.RoundToInt(player.ATK * skill.atkMultiplier);
-        int dmg = CalculateDamage(skillATK, monsters[target].DEF, monsters[target].IsDefending);
-        Debug.Log(
-            $"[CombatFlow] Player Skill [{skill.skillName}] -> Monster[{target}], "
-                + $"damage={dmg}, MP-{skill.mpCost} ({player.CurrentMP}/{player.MaxMP})"
-        );
-        ApplyDamageToMonster(target, dmg);
-
-        AfterPlayerMainAction();
+        BeginTargetSelection(CombatActionType.Skill, skill);
     }
 
     /// <summary>
@@ -484,7 +668,7 @@ public class CombatFlow : MonoBehaviour
         // TODO:
         // - 목표: 플레이어 방어 버튼 입력을 처리한다.
         // - 의도: 방어를 메인 행동으로 취급하고 다음 몬스터 턴 피해를 감소시킨다.
-        // - 구현해야 할 것: PlayerTurn 검증, player.SetDefending(true), 로그 출력, 메인 행동 후처리를 수행한다.
+        // - 구현해야 할 것: PlayerAction 검증, player.SetDefending(true), 로그 출력, 메인 행동 후처리를 수행한다.
         if (!CanAcceptPlayerInput())
         {
             return;
@@ -513,7 +697,7 @@ public class CombatFlow : MonoBehaviour
         // TODO:
         // - 목표: 플레이어 아이템 버튼 입력을 턴 미소비 보조 행동으로 처리한다.
         // - 의도: 메인 행동 전까지 아이템을 여러 번 사용할 수 있는 전투 규칙을 유지한다.
-        // - 구현해야 할 것: PlayerTurn 검증, 아이템 보유/효과 처리, 턴 상태 유지, Week 1에서는 최소 로그 출력을 수행한다.
+        // - 구현해야 할 것: PlayerAction 검증, 아이템 보유/효과 처리, 턴 상태 유지, Week 1에서는 최소 로그 출력을 수행한다.
         if (!CanAcceptPlayerInput())
         {
             return;
@@ -534,64 +718,181 @@ public class CombatFlow : MonoBehaviour
         // EnterMonsterTurn();
 
         // TODO:
-        // - 목표: 플레이어 메인 행동 후 승리 여부를 판단하고 다음 턴으로 넘긴다.
+        // - 목표: 플레이어 메인 행동 후 승리 여부를 판단하고 라운드 큐의 다음 유닛으로 넘긴다.
         // - 의도: Attack/Skill/Defend가 동일한 턴 소비 후처리를 공유하게 한다.
-        // - 구현해야 할 것: 모든 몬스터 사망 시 Victory 종료, 아니면 MonsterTurn 진입을 수행한다.
-        if (AreAllMonstersDead())
+        // - 구현해야 할 것: 승패 확인 후 AdvanceToNextActor를 호출한다.
+        AdvanceToNextActor();
+    }
+
+    private void BeginTargetSelection(CombatActionType actionType, ActiveSkill skill)
+    {
+        // TODO:
+        // - 목표: 플레이어의 대상 지정이 필요한 행동을 저장하고 TargetSelect 상태로 진입한다.
+        // - 의도: 버튼 클릭 시 즉시 첫 몬스터를 공격하지 않고, 다음 몬스터 클릭으로 대상이 확정되게 한다.
+        // - 구현해야 할 것: 행동/스킬을 pending 필드에 저장하고 TargetSelect로 상태 전환한다.
+        pendingPlayerAction = actionType;
+        pendingPlayerSkill = skill;
+        hasPendingPlayerAction = true;
+        ChangeState(CombatTurnState.TargetSelect);
+    }
+
+    private void CancelTargetSelection()
+    {
+        // TODO:
+        // - 목표: 대상 선택 대기 상태를 취소하고 PlayerAction으로 돌아간다.
+        // - 의도: 잘못 Attack/Skill을 눌렀을 때 우클릭으로 행동 선택을 되돌릴 수 있게 한다.
+        // - 구현해야 할 것: pending 행동을 비우고 PlayerAction으로 전환한다.
+        ClearPendingPlayerAction();
+        Debug.Log("[CombatFlow] Target selection canceled.");
+        ChangeState(CombatTurnState.PlayerAction);
+    }
+
+    private void TrySelectTargetFromScreenPosition(Vector3 screenPosition)
+    {
+        // TODO:
+        // - 목표: 화면 좌표를 카메라 Ray로 변환하고 2D Collider에 맞은 몬스터를 선택한다.
+        // - 의도: 블로그 참고 방식(ScreenPointToRay -> Raycast)을 2D 전투 씬에 맞춰 사용한다.
+        // - 구현해야 할 것: Camera.main, Physics2D.GetRayIntersection, MonsterBase 조회, 생존 여부 검증, 대상 확정 처리를 수행한다.
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null)
         {
-            EndCombatWithResult(DemoCombatResult.Victory);
+            Debug.LogWarning("[CombatFlow] Cannot select target because Camera.main is missing.");
             return;
         }
 
-        ChangeState(CombatTurnState.MonsterTurn);
+        Ray ray = mainCamera.ScreenPointToRay(screenPosition);
+        RaycastHit2D hit = Physics2D.GetRayIntersection(ray, Mathf.Infinity);
+        if (hit.collider == null)
+        {
+            Debug.Log("[CombatFlow] Target selection missed.");
+            return;
+        }
+
+        MonsterBase selectedMonster = hit.collider.GetComponentInParent<MonsterBase>();
+        if (selectedMonster == null)
+        {
+            Debug.Log("[CombatFlow] Raycast hit is not a monster target.");
+            return;
+        }
+
+        int targetIndex = monsters.IndexOf(selectedMonster);
+        if (targetIndex < 0)
+        {
+            Debug.LogWarning(
+                "[CombatFlow] Selected monster is not registered in the combat monster list."
+            );
+            return;
+        }
+
+        if (selectedMonster.IsDead)
+        {
+            Debug.Log("[CombatFlow] Selected monster is already dead.");
+            return;
+        }
+
+        ResolvePendingPlayerAction(targetIndex);
     }
 
-    private void ResolveAllMonsterActions()
+    private void ResolvePendingPlayerAction(int targetIndex)
     {
-        // 기존 구현:
-        // foreach (var monster in monsters)
-        // {
-        //     monster.SetDefending(false);
-        // }
-        //
-        // for (int i = 0; i < monsters.Count; i++)
-        // {
-        //     if (monsters[i].IsDead)
-        //     {
-        //         continue;
-        //     }
-        //
-        //     ResolveSingleMonsterAction(i);
-        //
-        //     if (IsPlayerDefeated())
-        //     {
-        //         return;
-        //     }
-        // }
-
         // TODO:
-        // - 목표: 살아있는 모든 몬스터의 행동을 순서대로 처리한다.
-        // - 의도: MonsterTurn에서 그룹 전체 행동을 CombatFlow가 일괄 관리한다.
-        // - 구현해야 할 것: 몬스터 방어 상태 초기화, 사망 몬스터 스킵, 단일 몬스터 행동 실행, Player 사망 시 조기 종료를 수행한다.
-        foreach (var monster in monsters)
+        // - 목표: 선택된 대상에게 pending 플레이어 행동을 실행한다.
+        // - 의도: 대상 선택과 행동 실행을 분리해 Attack/Skill이 같은 TargetSelect 흐름을 공유하게 한다.
+        // - 구현해야 할 것: Attack/Skill 분기, 데미지/MP 처리, pending 정리, 메인 행동 후처리를 수행한다.
+        if (!hasPendingPlayerAction)
         {
-            monster.SetDefending(false);
+            Debug.LogWarning("[CombatFlow] Target selected without a pending player action.");
+            ChangeState(CombatTurnState.PlayerAction);
+            return;
         }
 
-        for (int i = 0; i < monsters.Count; i++)
+        bool actionResolved;
+        switch (pendingPlayerAction)
         {
-            if (monsters[i].IsDead)
-            {
-                continue;
-            }
-
-            ResolveSingleMonsterAction(i);
-
-            if (IsPlayerDefeated())
-            {
+            case CombatActionType.Attack:
+                actionResolved = ResolvePlayerAttack(targetIndex);
+                break;
+            case CombatActionType.Skill:
+                actionResolved = ResolvePlayerSkill(targetIndex, pendingPlayerSkill);
+                break;
+            default:
+                Debug.LogWarning(
+                    $"[CombatFlow] Unsupported pending player action: {pendingPlayerAction}"
+                );
+                ClearPendingPlayerAction();
+                ChangeState(CombatTurnState.PlayerAction);
                 return;
-            }
         }
+
+        ClearPendingPlayerAction();
+        if (actionResolved)
+        {
+            AfterPlayerMainAction();
+            return;
+        }
+
+        ChangeState(CombatTurnState.PlayerAction);
+    }
+
+    private bool ResolvePlayerAttack(int targetIndex)
+    {
+        // TODO:
+        // - 목표: 선택된 몬스터에게 플레이어 기본 공격을 적용한다.
+        // - 의도: 대상 선택 이후의 실제 공격 처리를 별도 함수로 격리한다.
+        // - 구현해야 할 것: 데미지 계산, 로그 출력, 몬스터 피해 적용을 수행한다.
+        int dmg = CalculateDamage(
+            player.ATK,
+            monsters[targetIndex].DEF,
+            monsters[targetIndex].IsDefending
+        );
+        Debug.Log($"[CombatFlow] Player Attack -> Monster[{targetIndex}], damage={dmg}");
+        ApplyDamageToMonster(targetIndex, dmg);
+        return true;
+    }
+
+    private bool ResolvePlayerSkill(int targetIndex, ActiveSkill skill)
+    {
+        // TODO:
+        // - 목표: 선택된 몬스터에게 플레이어 액티브 스킬을 적용한다.
+        // - 의도: 스킬 MP 소비는 대상 선택이 확정된 뒤에만 발생하게 한다.
+        // - 구현해야 할 것: 스킬/MP 재검증, MP 소비, 배율 데미지 계산, 몬스터 피해 적용을 수행한다.
+        if (skill == null)
+        {
+            Debug.LogWarning("[CombatFlow] Pending skill is empty.");
+            return false;
+        }
+
+        if (!player.TrySpendMP(skill.mpCost))
+        {
+            Debug.Log(
+                $"[CombatFlow] MP 부족: [{skill.skillName}] (필요 {skill.mpCost} / 보유 {player.CurrentMP})"
+            );
+            return false;
+        }
+
+        int skillATK = Mathf.RoundToInt(player.ATK * skill.atkMultiplier);
+        int dmg = CalculateDamage(
+            skillATK,
+            monsters[targetIndex].DEF,
+            monsters[targetIndex].IsDefending
+        );
+        Debug.Log(
+            $"[CombatFlow] Player Skill [{skill.skillName}] -> Monster[{targetIndex}], "
+                + $"damage={dmg}, MP-{skill.mpCost} ({player.CurrentMP}/{player.MaxMP})"
+        );
+        ApplyDamageToMonster(targetIndex, dmg);
+        return true;
+    }
+
+    private void ClearPendingPlayerAction()
+    {
+        // TODO:
+        // - 목표: TargetSelect에서 사용한 임시 행동 데이터를 정리한다.
+        // - 의도: 다음 플레이어 행동이 이전 대상 선택 데이터에 영향받지 않게 한다.
+        // - 구현해야 할 것: pending action/skill/flag를 기본값으로 되돌린다.
+        pendingPlayerAction = CombatActionType.Attack;
+        pendingPlayerSkill = null;
+        hasPendingPlayerAction = false;
     }
 
     private void ResolveSingleMonsterAction(int index)
@@ -659,11 +960,9 @@ public class CombatFlow : MonoBehaviour
                 ActiveSkill skill = monster.GetActiveSkill(0);
                 if (skill == null)
                 {
-                    int fallbackDamage = CalculateDamage(monster.ATK, player.DEF, player.IsDefending);
-                    Debug.Log(
-                        $"[CombatFlow] Monster[{index}] Skill slot empty. Attack fallback -> Player, damage={fallbackDamage}"
+                    Debug.LogWarning(
+                        $"[CombatFlow] Monster[{index}] selected Skill, but its skill slot is empty."
                     );
-                    ApplyDamageToPlayer(fallbackDamage);
                     break;
                 }
 
@@ -764,33 +1063,6 @@ public class CombatFlow : MonoBehaviour
         }
     }
 
-    private int GetFirstAliveMonster()
-    {
-        // 기존 구현:
-        // for (int i = 0; i < monsters.Count; i++)
-        // {
-        //     if (!monsters[i].IsDead)
-        //     {
-        //         return i;
-        //     }
-        // }
-        // return -1;
-
-        // TODO:
-        // - 목표: 플레이어 행동의 기본 대상을 찾는다.
-        // - 의도: 타겟 선택 UI가 없는 Week 1 상태에서 첫 생존 몬스터를 자동 타겟으로 사용한다.
-        // - 구현해야 할 것: monsters를 앞에서부터 순회하고 첫 생존 몬스터 인덱스를 반환하며 없으면 -1을 반환한다.
-        for (int i = 0; i < monsters.Count; i++)
-        {
-            if (!monsters[i].IsDead)
-            {
-                return i;
-            }
-        }
-
-        return -1;
-    }
-
     private bool AreAllMonstersDead()
     {
         // 기존 구현:
@@ -816,6 +1088,27 @@ public class CombatFlow : MonoBehaviour
         }
 
         return true;
+    }
+
+    private bool TryEndCombatIfFinished()
+    {
+        // TODO:
+        // - 목표: 라운드 큐 진행 전후에 전투 종료 조건을 공통으로 확인한다.
+        // - 의도: 어떤 유닛 행동 뒤에도 Victory/Defeat가 즉시 반영되게 한다.
+        // - 구현해야 할 것: Monster 전멸은 Victory, Player 사망은 Defeat로 전환하고 종료 여부를 반환한다.
+        if (AreAllMonstersDead())
+        {
+            EndCombatWithResult(DemoCombatResult.Victory);
+            return true;
+        }
+
+        if (IsPlayerDefeated())
+        {
+            EndCombatWithResult(DemoCombatResult.Defeat);
+            return true;
+        }
+
+        return false;
     }
 
     private bool IsPlayerDefeated()
@@ -860,9 +1153,9 @@ public class CombatFlow : MonoBehaviour
     {
         // TODO:
         // - 목표: 플레이어 입력이 현재 전투 상태에서 유효한지 판단한다.
-        // - 의도: UI 버튼은 항상 호출될 수 있지만 실제 행동은 PlayerTurn에서만 처리되게 한다.
-        // - 구현해야 할 것: turnState가 PlayerTurn인지 확인하고 아니면 로그 없이 입력을 무시한다.
-        return turnState == CombatTurnState.PlayerTurn;
+        // - 의도: UI 버튼은 항상 호출될 수 있지만 실제 행동은 PlayerAction에서만 처리되게 한다.
+        // - 구현해야 할 것: turnState가 PlayerAction인지 확인하고 아니면 로그 없이 입력을 무시한다.
+        return turnState == CombatTurnState.PlayerAction;
     }
 
     private void EnterVictory()
@@ -893,10 +1186,13 @@ public class CombatFlow : MonoBehaviour
         // - 구현해야 할 것: GameSystemManager.Instance가 있으면 EndCombat을 호출하고, 없으면 경고 로그만 남긴다.
         if (GameSystemManager.Instance == null)
         {
-            Debug.LogWarning($"[CombatFlow] GameSystemManager is missing. Result was not reported: {result}");
+            Debug.LogWarning(
+                $"[CombatFlow] GameSystemManager is missing. Result was not reported: {result}"
+            );
             return;
         }
 
+        GameSystemManager.Instance.RecordPlayerCombatState(player);
         GameSystemManager.Instance.EndCombat(result);
     }
 }

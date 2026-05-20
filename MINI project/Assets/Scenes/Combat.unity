@@ -511,10 +511,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa11df0ba9353e94cbccb197391f7425, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Monster1
-  maxHP: 150
-  maxMP: 25
-  atk: 11
-  def: 4
+  maxHP: 20
+  maxMP: 10
+  atk: 7
+  def: 2
   activeSkills:
   - rid: -2
   - rid: -2
@@ -524,6 +524,7 @@ MonoBehaviour:
   attackWeight: 70
   skillWeight: 20
   defendWeight: 10
+  monsterGrade: 1
   references:
     version: 2
     RefIds:
@@ -3656,7 +3657,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d30d25105ee25b64a81f0eb6cd4c4dee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Player
-  maxHP: 150
+  maxHP: 20
   maxMP: 25
   atk: 11
   def: 4
@@ -4510,6 +4511,7 @@ MonoBehaviour:
   monsters:
   - {fileID: 151674192}
   defendDamageMultiplier: 0.5
+  initiativeBonusMax: 2
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -48,7 +48,7 @@ public abstract class EntityBase : MonoBehaviour
         // - 구현해야 할 것: maxHP 최소값 보장, maxMP 최소값 보장, currentHP를 maxHP 이하로 제한한다.
         maxHP = Mathf.Max(1, maxHP);
         maxMP = Mathf.Max(0, maxMP);
-        ClampCurrentHPToMax();
+        ClampCurrentResourcesToMax();
     }
 
     protected virtual void Awake()
@@ -61,8 +61,7 @@ public abstract class EntityBase : MonoBehaviour
         // - 목표: 엔티티가 전투에 들어가기 전 스킬 슬롯과 런타임 상태를 초기화한다.
         // - 의도: Player와 Monster가 공통 초기화 흐름을 재사용하게 한다.
         // - 구현해야 할 것: 스킬 슬롯 배열을 보정하고 HP/MP/방어 상태를 새 전투 상태로 리셋한다.
-        EnsureSkillSlots();
-        ResetForNewCombat();
+        RestoreToFull();
     }
 
     public virtual void ResetForNewCombat()
@@ -77,12 +76,30 @@ public abstract class EntityBase : MonoBehaviour
         // - 목표: 전투 시작 또는 재시작 시 런타임 상태를 기본값으로 복원한다.
         // - 의도: 씬 재사용/전투 반복 시 이전 전투의 HP, MP, 방어 상태가 남지 않게 한다.
         // - 구현해야 할 것: 스킬 슬롯 배열을 보정하고 currentHP/currentMP/isDefending을 초기화한다.
+        RestoreToFull();
+    }
+
+    public virtual void PrepareForCombat()
+    {
+        // TODO:
+        // - 목표: 전투 진입 시 지속되어야 하는 HP/MP는 유지하고 전투 중 상태만 정리한다.
+        // - 의도: Player처럼 전투 사이 HP를 이어가야 하는 엔티티가 매 전투마다 최대 HP로 회복되지 않게 한다.
+        // - 구현해야 할 것: 스킬 슬롯과 수치 범위를 보정하고 방어 상태만 해제한다.
         EnsureSkillSlots();
         maxHP = Mathf.Max(1, maxHP);
         maxMP = Mathf.Max(0, maxMP);
-        currentHP = maxHP;
-        currentMP = maxMP;
+        ClampCurrentResourcesToMax();
         isDefending = false;
+    }
+
+    public void SetCurrentResources(int hp, int mp)
+    {
+        // TODO:
+        // - 목표: GameSystemManager/SaveLoader가 보관한 런타임 HP/MP를 엔티티에 복원한다.
+        // - 의도: 씬이 바뀌어도 Player의 현재 체력과 MP가 다음 전투로 이어지게 한다.
+        // - 구현해야 할 것: 입력값을 현재 maxHP/maxMP 범위로 보정해 저장한다.
+        currentHP = Mathf.Clamp(hp, 0, Mathf.Max(1, maxHP));
+        currentMP = Mathf.Clamp(mp, 0, Mathf.Max(0, maxMP));
     }
 
     public int TakeDamage(int damage)
@@ -96,10 +113,10 @@ public abstract class EntityBase : MonoBehaviour
         // - 목표: 입력받은 피해량을 현재 HP에 적용하고 실제 적용 피해량을 반환한다.
         // - 의도: CombatFlow가 피해 처리와 로그 출력을 일관되게 수행할 수 있게 한다.
         // - 구현해야 할 것: 음수 피해를 0으로 보정하고 currentHP가 0 미만으로 내려가지 않도록 제한한다.
-        ClampCurrentHPToMax();
+        ClampCurrentResourcesToMax();
         int appliedDamage = Mathf.Max(0, damage);
         currentHP = Mathf.Max(0, currentHP - appliedDamage);
-        ClampCurrentHPToMax();
+        ClampCurrentResourcesToMax();
         return appliedDamage;
     }
 
@@ -168,32 +185,6 @@ public abstract class EntityBase : MonoBehaviour
         return IsValidSlot(slotIndex, passiveSkills.Length) ? passiveSkills[slotIndex] : null;
     }
 
-    public virtual CombatActionType DecideAction()
-    {
-        // 기존 구현:
-        // return CombatActionType.Attack;
-
-        // TODO:
-        // - 목표: 엔티티가 기본 행동을 결정한다.
-        // - 의도: MonsterBase나 특수 몬스터가 행동 결정 로직을 override할 수 있는 확장 지점을 제공한다.
-        // - 구현해야 할 것: 기본값은 Attack으로 두고, 실제 몬스터 의사결정은 하위 클래스에서 override한다.
-        return CombatActionType.Attack;
-    }
-
-    public virtual void ExecuteAction(CombatActionType actionType, EntityBase target)
-    {
-        // 기존 구현:
-        // { }
-
-        // TODO:
-        // - 목표: 결정된 행동을 대상에게 실행하는 공통 확장 지점을 제공한다.
-        // - 의도: CombatAction 데이터 구조가 확정된 뒤 DecideAction과 ExecuteAction을 분리한다.
-        // - 구현해야 할 것: actionType과 target을 받아 공격/스킬/방어/아이템 실행을 하위 클래스 또는 전투 시스템과 연결한다.
-        Debug.Log(
-            $"[EntityBase] ExecuteAction is TODO. actionType={actionType}, target={target?.name ?? "null"}"
-        );
-    }
-
     protected void ConfigureStats(int newMaxHP, int newMaxMP, int newATK, int newDEF)
     {
         // 기존 구현:
@@ -212,25 +203,7 @@ public abstract class EntityBase : MonoBehaviour
         def = newDEF;
         maxHP = Mathf.Max(1, maxHP);
         maxMP = Mathf.Max(0, maxMP);
-        ClampCurrentHPToMax();
-    }
-
-    protected bool HasStats(int expectedMaxHP, int expectedMaxMP, int expectedATK, int expectedDEF)
-    {
-        // 기존 구현:
-        // return maxHP == expectedMaxHP
-        //     && maxMP == expectedMaxMP
-        //     && atk == expectedATK
-        //     && def == expectedDEF;
-
-        // TODO:
-        // - 목표: 현재 전투 수치가 특정 기대값과 같은지 확인한다.
-        // - 의도: 기본 EntityBase 수치인지 판별해 몬스터별 임시 기본값을 덮어쓸 수 있게 한다.
-        // - 구현해야 할 것: maxHP/maxMP/atk/def를 기대값과 모두 비교한 결과를 반환한다.
-        return maxHP == expectedMaxHP
-            && maxMP == expectedMaxMP
-            && atk == expectedATK
-            && def == expectedDEF;
+        ClampCurrentResourcesToMax();
     }
 
     protected void SetActiveSkill(int slotIndex, ActiveSkill skill)
@@ -270,46 +243,6 @@ public abstract class EntityBase : MonoBehaviour
         if (IsValidSlot(slotIndex, passiveSkills.Length))
         {
             passiveSkills[slotIndex] = skill;
-        }
-    }
-
-    protected void EnsureActiveSkill(int slotIndex, ActiveSkill fallback)
-    {
-        // 기존 구현:
-        // EnsureSkillSlots();
-        // if (IsValidSlot(slotIndex, activeSkills.Length) && activeSkills[slotIndex] == null)
-        // {
-        //     activeSkills[slotIndex] = fallback;
-        // }
-
-        // TODO:
-        // - 목표: 지정한 액티브 슬롯이 비어 있을 때 기본 스킬을 채운다.
-        // - 의도: 인스펙터나 데이터 로딩이 없는 데모 상태에서도 필수 스킬 슬롯을 확보한다.
-        // - 구현해야 할 것: 슬롯 배열을 보정하고 유효한 빈 슬롯에 fallback을 저장한다.
-        EnsureSkillSlots();
-        if (IsValidSlot(slotIndex, activeSkills.Length) && activeSkills[slotIndex] == null)
-        {
-            activeSkills[slotIndex] = fallback;
-        }
-    }
-
-    protected void EnsurePassiveSkill(int slotIndex, PassiveSkill fallback)
-    {
-        // 기존 구현:
-        // EnsureSkillSlots();
-        // if (IsValidSlot(slotIndex, passiveSkills.Length) && passiveSkills[slotIndex] == null)
-        // {
-        //     passiveSkills[slotIndex] = fallback;
-        // }
-
-        // TODO:
-        // - 목표: 지정한 패시브 슬롯이 비어 있을 때 기본 패시브를 채운다.
-        // - 의도: 추후 직업/룬/스킬 시스템이 기본 패시브 슬롯을 안전하게 보장할 수 있게 한다.
-        // - 구현해야 할 것: 슬롯 배열을 보정하고 유효한 빈 슬롯에 fallback을 저장한다.
-        EnsureSkillSlots();
-        if (IsValidSlot(slotIndex, passiveSkills.Length) && passiveSkills[slotIndex] == null)
-        {
-            passiveSkills[slotIndex] = fallback;
         }
     }
 
@@ -369,13 +302,28 @@ public abstract class EntityBase : MonoBehaviour
         return slotIndex >= 0 && slotIndex < length;
     }
 
-    private void ClampCurrentHPToMax()
+    private void RestoreToFull()
     {
         // TODO:
-        // - 목표: currentHP가 항상 0 이상 maxHP 이하에 머물도록 보정한다.
-        // - 의도: Inspector 수치 변경, 코드 수치 재설정, 피해 처리 이후에도 HP 표현과 사망 판정이 일관되게 한다.
-        // - 구현해야 할 것: currentHP를 0..maxHP 범위로 제한한다.
+        // - 목표: 새 엔티티 생성 또는 몬스터 재등장처럼 완전 회복이 필요한 경우 HP/MP를 최대치로 초기화한다.
+        // - 의도: 전투 사이 체력을 유지해야 하는 Player는 PrepareForCombat/override를 사용하고, 새 전투마다 새 상태가 필요한 Monster는 이 흐름을 사용한다.
+        // - 구현해야 할 것: 슬롯/수치 보정 후 currentHP/currentMP/isDefending을 초기 상태로 설정한다.
+        EnsureSkillSlots();
+        maxHP = Mathf.Max(1, maxHP);
+        maxMP = Mathf.Max(0, maxMP);
+        currentHP = maxHP;
+        currentMP = maxMP;
+        isDefending = false;
+    }
+
+    private void ClampCurrentResourcesToMax()
+    {
+        // TODO:
+        // - 목표: currentHP/currentMP가 항상 각 최대치 범위 안에 머물도록 보정한다.
+        // - 의도: Inspector 수치 변경, 코드 수치 재설정, 피해 처리 이후에도 HP/MP 표현과 판정이 일관되게 한다.
+        // - 구현해야 할 것: currentHP를 0..maxHP, currentMP를 0..maxMP 범위로 제한한다.
         currentHP = Mathf.Clamp(currentHP, 0, maxHP);
+        currentMP = Mathf.Clamp(currentMP, 0, maxMP);
     }
 }
 

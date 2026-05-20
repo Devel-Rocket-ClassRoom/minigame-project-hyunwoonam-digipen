@@ -1,8 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-#pragma warning disable CS0649, CS0414
-
 /// <summary>
 /// 임시 전투 결과 타입입니다.
 /// </summary>
@@ -29,6 +27,9 @@ public class GameSystemManager : Singleton<GameSystemManager>
     private int currentFloor;
     private int currentDungeonNodeIndex;
     private DemoCombatResult lastCombatResult;
+    private bool hasPlayerCombatState;
+    private int playerCurrentHP;
+    private int playerCurrentMP;
 
     /// <summary>
     /// CSV/JSON 기반 정적 데이터 관리 시스템입니다.
@@ -69,6 +70,21 @@ public class GameSystemManager : Singleton<GameSystemManager>
     /// 마지막으로 전달받은 전투 결과입니다.
     /// </summary>
     public DemoCombatResult LastCombatResult => lastCombatResult;
+
+    /// <summary>
+    /// 현재 도전에서 이어갈 Player HP가 기록되어 있는지 여부입니다.
+    /// </summary>
+    public bool HasPlayerCombatState => hasPlayerCombatState;
+
+    /// <summary>
+    /// 현재 도전에서 이어갈 Player HP입니다.
+    /// </summary>
+    public int PlayerCurrentHP => playerCurrentHP;
+
+    /// <summary>
+    /// 현재 도전에서 이어갈 Player MP입니다.
+    /// </summary>
+    public int PlayerCurrentMP => playerCurrentMP;
 
     protected override void Awake()
     {
@@ -203,6 +219,7 @@ public class GameSystemManager : Singleton<GameSystemManager>
         currentFloor = 0;
         currentDungeonNodeIndex = 0;
         lastCombatResult = DemoCombatResult.None;
+        ClearPlayerCombatState();
 
         floorNodeCreator.GenerateDemoFloorNode();
         gameSceneManager.LoadSafe0();
@@ -242,6 +259,64 @@ public class GameSystemManager : Singleton<GameSystemManager>
         // - 구현해야 할 것: 현재 층, 노드, 진행 여부를 SaveLoader.SaveContinue로 전달한다.
 
         Debug.Log("SaveContinue");
+    }
+
+    public void RecordPlayerCombatState(Player player)
+    {
+        // TODO:
+        // - 목표: CombatFlow가 전투 종료 직전 Player의 현재 HP/MP를 현재 도전 상태에 기록한다.
+        // - 의도: Combat 씬이 다시 로드되어 Player 오브젝트가 새로 생겨도 체력과 MP가 다음 전투로 이어지게 한다.
+        // - 한계: 현재는 메모리 기반 런타임 상태이며, SaveLoader 전체 스냅샷 구현 시 저장 계층으로 이동한다.
+        if (player == null)
+        {
+            Debug.LogWarning(
+                "[GameSystemManager] Cannot record Player combat state because player is null."
+            );
+            return;
+        }
+
+        hasPlayerCombatState = true;
+        playerCurrentHP = player.CurrentHP;
+        playerCurrentMP = player.CurrentMP;
+        Debug.Log(
+            $"[GameSystemManager] Player combat state recorded. HP={playerCurrentHP}, MP={playerCurrentMP}"
+        );
+    }
+
+    public bool TryApplyPlayerCombatState(Player player)
+    {
+        // TODO:
+        // - 목표: 현재 도전에 저장된 Player HP/MP가 있으면 Combat 씬의 Player에 복원한다.
+        // - 의도: 전투 시작마다 Player가 최대 HP로 회복되는 흐름을 막고, Safe0/FloorNode/Combat 사이 상태를 이어간다.
+        // - 한계: 새 게임 직후처럼 기록이 없으면 Player의 씬/초기값을 그대로 사용한다.
+        if (!hasPlayerCombatState)
+        {
+            return false;
+        }
+
+        if (player == null)
+        {
+            Debug.LogWarning(
+                "[GameSystemManager] Cannot apply Player combat state because player is null."
+            );
+            return false;
+        }
+
+        player.SetCurrentResources(playerCurrentHP, playerCurrentMP);
+        Debug.Log(
+            $"[GameSystemManager] Player combat state applied. HP={player.CurrentHP}, MP={player.CurrentMP}"
+        );
+        return true;
+    }
+
+    private void ClearPlayerCombatState()
+    {
+        // TODO:
+        // - 목표: 새 도전 시작 시 이전 도전의 Player HP/MP 스냅샷을 제거한다.
+        // - 의도: New Game이 이전 전투의 체력 상태를 이어받지 않게 한다.
+        hasPlayerCombatState = false;
+        playerCurrentHP = 0;
+        playerCurrentMP = 0;
     }
 
     /// <summary>
@@ -298,5 +373,3 @@ public class GameSystemManager : Singleton<GameSystemManager>
         }
     }
 }
-
-#pragma warning restore CS0649, CS0414

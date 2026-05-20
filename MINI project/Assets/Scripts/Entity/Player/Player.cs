@@ -4,60 +4,19 @@ using UnityEngine;
 /// 플레이어 캐릭터입니다.
 /// </summary>
 /// <remarks>
-/// Week 1에서는 EntityBase의 임시 전투 수치와 기본 스킬만 보유합니다.
+/// Week 1에서는 EntityBase의 임시 전투 수치와 스킬 슬롯만 보유합니다.
 /// 행동 결정과 턴 진행은 CombatFlow가 담당합니다.
-/// 스킬은 추후 안전지대에서 교체 가능합니다.
+/// 스킬 슬롯은 비어 있을 수 있으며, 추후 안전지대에서 장착합니다.
 /// </remarks>
 public class Player : EntityBase
 {
-    protected override void Awake()
+    public override void ResetForNewCombat()
     {
-        // 기존 구현:
-        // EnsureActiveSkill(
-        //     0,
-        //     new ActiveSkill
-        //     {
-        //         skillName = "강타",
-        //         mpCost = 5,
-        //         atkMultiplier = 1.5f,
-        //     }
-        // );
-        // EnsureActiveSkill(
-        //     1,
-        //     new ActiveSkill
-        //     {
-        //         skillName = "맹공",
-        //         mpCost = 10,
-        //         atkMultiplier = 2.0f,
-        //     }
-        // );
-        //
-        // base.Awake();
-
         // TODO:
-        // - 목표: Player가 전투 시작 전에 기본 액티브 스킬 슬롯을 보유하도록 초기화한다.
-        // - 의도: 안전지대 스킬 장착 시스템이 없더라도 CombatFlow가 Skill1/Skill2를 사용할 수 있게 한다.
-        // - 구현해야 할 것: 슬롯 0/1에 기본 ActiveSkill을 보장하고 EntityBase.Awake() 초기화를 호출한다.
-        EnsureActiveSkill(
-            0,
-            new ActiveSkill
-            {
-                skillName = "강타",
-                mpCost = 5,
-                atkMultiplier = 1.5f,
-            }
-        );
-        EnsureActiveSkill(
-            1,
-            new ActiveSkill
-            {
-                skillName = "맹공",
-                mpCost = 10,
-                atkMultiplier = 2.0f,
-            }
-        );
-
-        base.Awake();
+        // - 목표: 새 전투에 들어가도 Player의 현재 HP/MP를 최대치로 회복하지 않는다.
+        // - 의도: 전투 사이 체력과 MP가 현재 도전 상태로 이어지게 한다.
+        // - 구현해야 할 것: EntityBase.PrepareForCombat으로 슬롯/범위/방어 상태만 보정한다.
+        PrepareForCombat();
     }
 
     /// <summary>
