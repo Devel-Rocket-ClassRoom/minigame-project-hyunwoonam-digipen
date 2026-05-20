@@ -169,3 +169,5 @@ CLAUDE.md
 dotnet-tools.json
 # 코덱스 관련
 /.codex/
+# 테스트
+Assets/Tests/
