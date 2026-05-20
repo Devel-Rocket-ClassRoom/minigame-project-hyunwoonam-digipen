@@ -120,6 +120,18 @@ public class GameSceneManager
     }
 
     /// <summary>
+    /// FloorMap 씬으로 이동합니다.
+    /// </summary>
+    public void LoadFloorNode()
+    {
+        // TODO:
+        // - 목표: FloorNode 선택 화면을 실제 FloorMap Unity 씬으로 로드한다.
+        // - 의도: 안전지대에서 던전 노드 맵으로 이동하는 경로를 GameSceneManager에 모은다.
+        // - 구현해야 할 것: LoadScene(GameSceneId.FloorNode)를 호출한다.
+        LoadScene(GameSceneId.FloorNode);
+    }
+
+    /// <summary>
     /// 게임 씬 ID에 대응하는 Unity 씬 이름을 반환합니다.
     /// </summary>
     public string GetUnitySceneName(GameSceneId sceneId)
@@ -137,7 +149,7 @@ public class GameSceneManager
             case GameSceneId.Combat:
                 return "Combat";
             case GameSceneId.FloorNode:
-                return "FloorNode";
+                return "FloorMap";
             default:
                 return string.Empty;
         }

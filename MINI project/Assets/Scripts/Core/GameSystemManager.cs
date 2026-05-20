@@ -110,7 +110,7 @@ public class GameSystemManager : Singleton<GameSystemManager>
         // - 의도: Play Mode 종료나 씬 오브젝트 파괴 시 정리 흐름을 명확히 한다.
         // - 구현해야 할 것: 현재 인스턴스일 때 ShutdownSystems()를 호출하고 base.OnDestroy()로 Singleton 상태를 정리한다.
 
-        if (Instance == this)
+        if (IsSingletonInstance)
         {
             ShutdownSystems();
         }
@@ -143,8 +143,8 @@ public class GameSystemManager : Singleton<GameSystemManager>
     {
         // TODO:
         // - 목표: Play Mode 테스트 중 키 입력으로 주요 씬 전환을 빠르게 확인한다.
-        // - 의도: UI 연결 전에도 MainMenu/Safe0/Combat 이동을 GameSceneManager 경로로 수동 검증할 수 있게 한다.
-        // - 구현해야 할 것: Q/W/E 키에 각각 gameSceneManager 호출을 연결한다.
+        // - 의도: UI 연결 전에도 MainMenu/Safe0/FloorMap/Combat 이동을 GameSceneManager 경로로 수동 검증할 수 있게 한다.
+        // - 구현해야 할 것: Q/W/R/E 키에 각각 gameSceneManager 호출을 연결한다.
 
         if (Input.GetKeyDown(KeyCode.Q))
         {
@@ -154,6 +154,11 @@ public class GameSystemManager : Singleton<GameSystemManager>
         if (Input.GetKeyDown(KeyCode.W))
         {
             gameSceneManager.LoadSafe0();
+        }
+
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            EnterFloorMap();
         }
 
         if (Input.GetKeyDown(KeyCode.E))
@@ -247,6 +252,29 @@ public class GameSystemManager : Singleton<GameSystemManager>
     }
 
     /// <summary>
+    /// 현재 데모 노드를 준비하고 FloorMap으로 이동합니다.
+    /// </summary>
+    public void EnterFloorMap()
+    {
+        // TODO:
+        // - 목표: Safe0에서 던전 노드 맵으로 이동하는 임시 진입점을 제공한다.
+        // - 의도: FloorMap 씬이 노드 UI를 보여주고 선택 결과를 StartCombatNode로 돌려보내게 한다.
+        // - 구현해야 할 것: 런 상태와 데모 노드 목록을 보장한 뒤 FloorMap 씬을 로드한다.
+        if (!isRunActive)
+        {
+            isRunActive = true;
+            currentFloor = 0;
+        }
+
+        if (floorNodeCreator.Nodes.Count == 0)
+        {
+            floorNodeCreator.GenerateDemoFloorNode();
+        }
+
+        gameSceneManager.LoadFloorNode();
+    }
+
+    /// <summary>
     /// 현재 데모 진행 상황을 저장하는 임시 진입점입니다.
     /// </summary>
     public void SaveContinueData()
@@ -334,6 +362,26 @@ public class GameSystemManager : Singleton<GameSystemManager>
         // - 목표: 선택한 FloorNode 정보를 기록하고 Combat 씬으로 진입한다.
         // - 의도: FloorNodeController가 노드 선택 결과를 GameSystemManager에 전달하게 한다.
         // - 구현해야 할 것: 시스템 초기화, currentDungeonNodeIndex 저장, CombatContext 설정, Combat 씬 이동을 수행한다.
+        if (floorNodeCreator.Nodes.Count == 0)
+        {
+            floorNodeCreator.GenerateDemoFloorNode();
+        }
+
+        if (!floorNodeCreator.TryGetNode(nodeIndex, out FloorNodeData node))
+        {
+            Debug.LogWarning($"[GameSystemManager] Unknown FloorNode index: {nodeIndex}");
+            return;
+        }
+
+        isRunActive = true;
+        currentDungeonNodeIndex = node.NodeIndex;
+        currentFloor = node.Floor;
+        lastCombatResult = DemoCombatResult.None;
+
+        Debug.Log(
+            $"[GameSystemManager] StartCombatNode index={node.NodeIndex}, floor={node.Floor}, boss={node.IsBossNode}"
+        );
+        gameSceneManager.LoadCombat();
     }
 
     /// <summary>

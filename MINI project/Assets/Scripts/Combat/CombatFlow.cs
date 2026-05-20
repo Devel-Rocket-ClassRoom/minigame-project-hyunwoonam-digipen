@@ -300,7 +300,11 @@ public class CombatFlow : MonoBehaviour
         // - 목표: Player와 모든 Monster의 전투 런타임 상태를 새 전투 상태로 초기화한다.
         // - 의도: Player의 HP/MP는 현재 도전 상태로 유지하고, Monster는 새 전투마다 초기화한다.
         // - 구현해야 할 것: 저장된 Player 런타임 상태가 있으면 복원하고, Player는 전투 상태만 준비하며, 각 Monster는 새 전투 상태로 리셋한다.
-        GameSystemManager.Instance.TryApplyPlayerCombatState(player);
+        if (GameSystemManager.TryGetInstance(out GameSystemManager gameSystemManager))
+        {
+            gameSystemManager.TryApplyPlayerCombatState(player);
+        }
+
         player.ResetForNewCombat();
 
         foreach (var monster in monsters)
@@ -1183,8 +1187,8 @@ public class CombatFlow : MonoBehaviour
         // TODO:
         // - 목표: CombatFlow가 직접 씬을 로드하지 않고 전투 결과만 GameSystemManager에 전달한다.
         // - 의도: Combat 씬 단독 실행이나 임시 테스트에서 GameSystemManager가 없을 때 NullReferenceException을 막는다.
-        // - 구현해야 할 것: GameSystemManager.Instance가 있으면 EndCombat을 호출하고, 없으면 경고 로그만 남긴다.
-        if (GameSystemManager.Instance == null)
+        // - 구현해야 할 것: GameSystemManager가 있으면 EndCombat을 호출하고, 없으면 경고 로그만 남긴다.
+        if (!GameSystemManager.TryGetInstance(out GameSystemManager gameSystemManager))
         {
             Debug.LogWarning(
                 $"[CombatFlow] GameSystemManager is missing. Result was not reported: {result}"
@@ -1192,8 +1196,8 @@ public class CombatFlow : MonoBehaviour
             return;
         }
 
-        GameSystemManager.Instance.RecordPlayerCombatState(player);
-        GameSystemManager.Instance.EndCombat(result);
+        gameSystemManager.RecordPlayerCombatState(player);
+        gameSystemManager.EndCombat(result);
     }
 }
 
