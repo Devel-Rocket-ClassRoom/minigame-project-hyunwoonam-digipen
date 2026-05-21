@@ -1,0 +1,28 @@
+{
+    "asset": "ed21f8e54020b5a41902baca293847c2",
+    "fileName": "019e4c62-2f5c-7612-b59b-ae16315f86f6.png",
+    "prompt": "Flat minimalist white vector icon of a closed package or backpack, high contrast, black background, professional RPG game UI asset, simple shape, no shadows, no gradients.",
+    "negativePrompt": "",
+    "model": "gemini-3.1-flash",
+    "modelName": "Gemini 3.1 Nano Banana 2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": []
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}
