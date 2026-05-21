@@ -26,7 +26,12 @@ public class GameSystemManager : Singleton<GameSystemManager>
     private bool isRunActive;
     private int currentFloor;
     private int currentDungeonNodeIndex;
+    private int nextSelectableFloor;
+    private int maxRechallengeFloor;
+    private int currentSafeZoneFloor;
     private DemoCombatResult lastCombatResult;
+    private FloorNodeData selectedCombatNode;
+    private bool pendingSafeArrivalRechallengeUnlock;
     private bool hasPlayerCombatState;
     private int playerCurrentHP;
     private int playerCurrentMP;
@@ -66,6 +71,14 @@ public class GameSystemManager : Singleton<GameSystemManager>
     /// </summary>
     public int CurrentDungeonNodeIndex => currentDungeonNodeIndex;
 
+    public int NextSelectableFloor => nextSelectableFloor;
+
+    public int MaxRechallengeFloor => maxRechallengeFloor;
+
+    public int CurrentSafeZoneFloor => currentSafeZoneFloor;
+
+    public FloorNodeData SelectedCombatNode => selectedCombatNode;
+
     /// <summary>
     /// 마지막으로 전달받은 전투 결과입니다.
     /// </summary>
@@ -95,7 +108,7 @@ public class GameSystemManager : Singleton<GameSystemManager>
 
         base.Awake();
 
-        if (Instance != this)
+        if (!IsSingletonInstance)
         {
             return;
         }
@@ -143,8 +156,8 @@ public class GameSystemManager : Singleton<GameSystemManager>
     {
         // TODO:
         // - 목표: Play Mode 테스트 중 키 입력으로 주요 씬 전환을 빠르게 확인한다.
-        // - 의도: UI 연결 전에도 MainMenu/Safe0/FloorMap/Combat 이동을 GameSceneManager 경로로 수동 검증할 수 있게 한다.
-        // - 구현해야 할 것: Q/W/R/E 키에 각각 gameSceneManager 호출을 연결한다.
+        // - 의도: UI 연결 전에도 MainMenu/Safe0/Combat 이동을 GameSceneManager 경로로 수동 검증할 수 있게 한다.
+        // - 구현해야 할 것: Q/W/E 키에 각각 gameSceneManager 호출을 연결한다.
 
         if (Input.GetKeyDown(KeyCode.Q))
         {
@@ -156,14 +169,14 @@ public class GameSystemManager : Singleton<GameSystemManager>
             gameSceneManager.LoadSafe0();
         }
 
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            EnterFloorMap();
-        }
-
         if (Input.GetKeyDown(KeyCode.E))
         {
             gameSceneManager.LoadCombat();
+        }
+
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            EnterFloorMap();
         }
     }
 
@@ -222,8 +235,13 @@ public class GameSystemManager : Singleton<GameSystemManager>
 
         isRunActive = true;
         currentFloor = 0;
-        currentDungeonNodeIndex = 0;
+        currentDungeonNodeIndex = -1;
+        nextSelectableFloor = 1;
+        maxRechallengeFloor = 0;
+        currentSafeZoneFloor = 0;
         lastCombatResult = DemoCombatResult.None;
+        selectedCombatNode = null;
+        pendingSafeArrivalRechallengeUnlock = false;
         ClearPlayerCombatState();
 
         floorNodeCreator.GenerateDemoFloorNode();
@@ -252,29 +270,6 @@ public class GameSystemManager : Singleton<GameSystemManager>
     }
 
     /// <summary>
-    /// 현재 데모 노드를 준비하고 FloorMap으로 이동합니다.
-    /// </summary>
-    public void EnterFloorMap()
-    {
-        // TODO:
-        // - 목표: Safe0에서 던전 노드 맵으로 이동하는 임시 진입점을 제공한다.
-        // - 의도: FloorMap 씬이 노드 UI를 보여주고 선택 결과를 StartCombatNode로 돌려보내게 한다.
-        // - 구현해야 할 것: 런 상태와 데모 노드 목록을 보장한 뒤 FloorMap 씬을 로드한다.
-        if (!isRunActive)
-        {
-            isRunActive = true;
-            currentFloor = 0;
-        }
-
-        if (floorNodeCreator.Nodes.Count == 0)
-        {
-            floorNodeCreator.GenerateDemoFloorNode();
-        }
-
-        gameSceneManager.LoadFloorNode();
-    }
-
-    /// <summary>
     /// 현재 데모 진행 상황을 저장하는 임시 진입점입니다.
     /// </summary>
     public void SaveContinueData()
@@ -287,6 +282,42 @@ public class GameSystemManager : Singleton<GameSystemManager>
         // - 구현해야 할 것: 현재 층, 노드, 진행 여부를 SaveLoader.SaveContinue로 전달한다.
 
         Debug.Log("SaveContinue");
+    }
+
+    /// <summary>
+    /// 현재 데모 노드를 준비하고 FloorMap으로 이동합니다.
+    /// </summary>
+    public void EnterFloorMap()
+    {
+        InitializeSystems();
+
+        if (!isRunActive)
+        {
+            isRunActive = true;
+            currentFloor = 0;
+            currentSafeZoneFloor = 0;
+            nextSelectableFloor = Mathf.Max(1, nextSelectableFloor);
+        }
+
+        EnsureDemoFloorMap();
+        gameSceneManager.LoadFloorNode();
+    }
+
+    public void NotifySafeZoneEntered(int safeZoneFloor)
+    {
+        currentSafeZoneFloor = safeZoneFloor;
+        currentFloor = safeZoneFloor;
+
+        if (!pendingSafeArrivalRechallengeUnlock || selectedCombatNode == null)
+        {
+            return;
+        }
+
+        maxRechallengeFloor = Mathf.Max(maxRechallengeFloor, selectedCombatNode.Floor);
+        pendingSafeArrivalRechallengeUnlock = false;
+        Debug.Log(
+            $"[GameSystemManager] Safe{safeZoneFloor} arrival unlocked rechallenge up to floor {maxRechallengeFloor}."
+        );
     }
 
     public void RecordPlayerCombatState(Player player)
@@ -362,20 +393,25 @@ public class GameSystemManager : Singleton<GameSystemManager>
         // - 목표: 선택한 FloorNode 정보를 기록하고 Combat 씬으로 진입한다.
         // - 의도: FloorNodeController가 노드 선택 결과를 GameSystemManager에 전달하게 한다.
         // - 구현해야 할 것: 시스템 초기화, currentDungeonNodeIndex 저장, CombatContext 설정, Combat 씬 이동을 수행한다.
-        if (floorNodeCreator.Nodes.Count == 0)
-        {
-            floorNodeCreator.GenerateDemoFloorNode();
-        }
+        InitializeSystems();
+        EnsureDemoFloorMap();
 
         if (!floorNodeCreator.TryGetNode(nodeIndex, out FloorNodeData node))
         {
-            Debug.LogWarning($"[GameSystemManager] Unknown FloorNode index: {nodeIndex}");
+            Debug.LogWarning($"[GameSystemManager] Unknown floor node index: {nodeIndex}");
+            return;
+        }
+
+        if (!CanSelectFloorNode(node))
+        {
+            Debug.LogWarning($"[GameSystemManager] Floor node is locked: {nodeIndex}");
             return;
         }
 
         isRunActive = true;
-        currentDungeonNodeIndex = node.NodeIndex;
         currentFloor = node.Floor;
+        currentDungeonNodeIndex = node.NodeIndex;
+        selectedCombatNode = node;
         lastCombatResult = DemoCombatResult.None;
 
         Debug.Log(
@@ -403,8 +439,7 @@ public class GameSystemManager : Singleton<GameSystemManager>
         switch (result)
         {
             case DemoCombatResult.Victory:
-                Debug.Log("[GameSystemManager] Victory -> Safe0 (Week 1 fallback)");
-                gameSceneManager.LoadSafe0();
+                HandleVictory();
                 break;
             case DemoCombatResult.Defeat:
                 isRunActive = false;
@@ -418,6 +453,63 @@ public class GameSystemManager : Singleton<GameSystemManager>
             default:
                 Debug.LogWarning($"[GameSystemManager] Unsupported combat result: {result}");
                 break;
+        }
+    }
+
+    public bool CanSelectFloorNode(FloorNodeData node)
+    {
+        if (node == null)
+        {
+            return false;
+        }
+
+        if (node.Floor == currentFloor)
+        {
+            return false;
+        }
+
+        if (!node.IsCleared && node.Floor == nextSelectableFloor)
+        {
+            return true;
+        }
+
+        return node.IsCleared && node.Floor <= maxRechallengeFloor;
+    }
+
+    private void HandleVictory()
+    {
+        if (selectedCombatNode == null)
+        {
+            Debug.LogWarning(
+                "[GameSystemManager] Victory received without a selected combat node."
+            );
+            gameSceneManager.LoadFloorNode();
+            return;
+        }
+
+        floorNodeCreator.MarkNodeCleared(selectedCombatNode.NodeIndex);
+        currentFloor = selectedCombatNode.Floor;
+
+        if (selectedCombatNode.IsBossNode)
+        {
+            pendingSafeArrivalRechallengeUnlock = true;
+            Debug.Log("[GameSystemManager] Boss Victory -> Safe0 (Week 1 temporary safe)");
+            gameSceneManager.LoadSafe0();
+            return;
+        }
+
+        nextSelectableFloor = selectedCombatNode.Floor + 1;
+        Debug.Log(
+            $"[GameSystemManager] Victory -> FloorMap. nextSelectableFloor={nextSelectableFloor}"
+        );
+        gameSceneManager.LoadFloorNode();
+    }
+
+    private void EnsureDemoFloorMap()
+    {
+        if (!floorNodeCreator.HasNodes())
+        {
+            floorNodeCreator.GenerateDemoFloorNode();
         }
     }
 }

@@ -102,13 +102,13 @@ public class CombatFlow : MonoBehaviour
     /// </summary>
     public CombatTurnState TurnState => turnState;
 
-    private void ChangeState(CombatTurnState nextState)
+    private void ChangeState(CombatTurnState nextState, bool forceEnter = false)
     {
         // TODO:
         // - 목표: CombatFlow의 모든 상태 전환을 단일 진입점으로 통제한다.
         // - 의도: turnState가 바뀌는 순간 switch로 해당 상태의 진입 동작이 반드시 실행되게 한다.
         // - 구현해야 할 것: 중복 전환 방어, 상태 변경 로그, 상태별 Enter 메서드 호출을 수행한다.
-        if (turnState == nextState)
+        if (ShouldSkipStateEntry(turnState, nextState, forceEnter))
         {
             return;
         }
@@ -141,6 +141,15 @@ public class CombatFlow : MonoBehaviour
                 Debug.LogWarning($"[CombatFlow] Unknown turn state: {turnState}");
                 break;
         }
+    }
+
+    internal static bool ShouldSkipStateEntry(
+        CombatTurnState currentState,
+        CombatTurnState nextState,
+        bool forceEnter
+    )
+    {
+        return currentState == nextState && !forceEnter;
     }
 
     private void Start()
@@ -263,12 +272,7 @@ public class CombatFlow : MonoBehaviour
             monsters.RemoveAll(monster => monster == null);
         }
 
-        if (monsters.Count == 0)
-        {
-            monsters = new List<MonsterBase>(
-                FindObjectsByType<MonsterBase>(FindObjectsSortMode.None)
-            );
-        }
+        RefreshSceneMonsterReferences();
     }
 
     private bool HasRequiredReferences()
@@ -436,11 +440,11 @@ public class CombatFlow : MonoBehaviour
                 continue;
             }
 
-            ChangeState(
+            CombatTurnState nextState =
                 currentActorTurn.ActorType == CombatActorType.Player
                     ? CombatTurnState.PlayerAction
-                    : CombatTurnState.MonsterAction
-            );
+                    : CombatTurnState.MonsterAction;
+            ChangeState(nextState, true);
             return;
         }
 
@@ -1064,6 +1068,7 @@ public class CombatFlow : MonoBehaviour
         if (monsters[index].IsDead)
         {
             Debug.Log($"[CombatFlow] Monster[{index}] 사망");
+            monsters[index].Die();
         }
     }
 
@@ -1083,6 +1088,8 @@ public class CombatFlow : MonoBehaviour
         // - 목표: 전투 승리 조건인 몬스터 전멸 여부를 판단한다.
         // - 의도: 플레이어 메인 행동 후 Victory 전환 여부를 결정한다.
         // - 구현해야 할 것: 살아있는 몬스터가 하나라도 있으면 false, 모두 죽었으면 true를 반환한다.
+        RefreshSceneMonsterReferences();
+
         for (int i = 0; i < monsters.Count; i++)
         {
             if (!monsters[i].IsDead)
@@ -1092,6 +1099,28 @@ public class CombatFlow : MonoBehaviour
         }
 
         return true;
+    }
+
+    private void RefreshSceneMonsterReferences()
+    {
+        if (monsters == null)
+        {
+            monsters = new List<MonsterBase>();
+        }
+        else
+        {
+            monsters.RemoveAll(monster => monster == null);
+        }
+
+        MonsterBase[] sceneMonsters = FindObjectsByType<MonsterBase>(FindObjectsSortMode.None);
+        for (int i = 0; i < sceneMonsters.Length; i++)
+        {
+            MonsterBase sceneMonster = sceneMonsters[i];
+            if (!monsters.Contains(sceneMonster))
+            {
+                monsters.Add(sceneMonster);
+            }
+        }
     }
 
     private bool TryEndCombatIfFinished()
