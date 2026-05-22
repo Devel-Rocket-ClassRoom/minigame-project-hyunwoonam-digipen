@@ -4,6 +4,8 @@ public abstract class Singleton<T> : MonoBehaviour where T : Singleton<T>
 {
     private static T instance;
 
+    protected bool IsSingletonInstance => instance == this;
+
     public static T Instance
     {
         get
@@ -21,6 +23,17 @@ public abstract class Singleton<T> : MonoBehaviour where T : Singleton<T>
 
             return instance;
         }
+    }
+
+    public static bool TryGetInstance(out T value)
+    {
+        if (instance == null)
+        {
+            instance = FindAnyObjectByType<T>();
+        }
+
+        value = instance;
+        return value != null;
     }
 
     protected virtual void Awake()

@@ -1,0 +1,28 @@
+{
+    "asset": "fcc483828ecae0f4286ee7d7ea1df31b",
+    "fileName": "019e4c62-3352-73d7-82d1-320ee9256113.png",
+    "prompt": "Flat minimalist white vector icon of a sharp sword, high contrast, black background, professional RPG game UI asset, simple shape, no shadows, no gradients.",
+    "negativePrompt": "",
+    "model": "gemini-3.1-flash",
+    "modelName": "Gemini 3.1 Nano Banana 2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": []
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}

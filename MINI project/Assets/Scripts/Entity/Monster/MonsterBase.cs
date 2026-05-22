@@ -19,10 +19,18 @@ public abstract class MonsterBase : EntityBase
     [SerializeField]
     private int monsterGrade = 1;
 
+    [Header("Death")]
+    [Tooltip("사망 후 GameObject가 파괴되기까지 지연(초). 0이면 즉시 파괴됩니다.")]
+    [SerializeField]
+    private float deathDestroyDelay = 0.3f;
+
+    private bool hasDied;
+
     public int AttackWeight => attackWeight;
     public int SkillWeight => skillWeight;
     public int DefendWeight => defendWeight;
     public int MonsterGrade => monsterGrade;
+    public bool HasDied => hasDied;
 
     protected override void Awake()
     {
@@ -82,6 +90,35 @@ public abstract class MonsterBase : EntityBase
         Debug.Log(
             $"[MonsterBase] ExecuteAction is TODO. actionType={actionType}, target={target?.name ?? "null"}"
         );
+    }
+
+    /// <summary>
+    /// 사망 시 GameObject를 파괴하여 씬에서 제거합니다.
+    /// </summary>
+    /// <remarks>
+    /// - CombatFlow.ApplyDamageToMonster에서 IsDead 판정 직후 호출됩니다.
+    /// - deathDestroyDelay 만큼 지연 후 Destroy(gameObject)가 실행됩니다.
+    /// - 같은 몬스터에 Die가 두 번 호출되어도 hasDied 가드로 중복 Destroy를 막습니다.
+    /// - 사망 애니메이션/드롭/이펙트가 필요하면 파생 클래스에서 override 합니다.
+    /// </remarks>
+    public virtual void Die()
+    {
+        if (hasDied)
+        {
+            return;
+        }
+
+        hasDied = true;
+        Debug.Log($"[MonsterBase] {name} Die. delay={deathDestroyDelay:0.00}s");
+
+        float delay = Mathf.Max(0f, deathDestroyDelay);
+        if (delay <= 0f)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Destroy(gameObject, delay);
     }
 
     private void EnsureTargetCollider()

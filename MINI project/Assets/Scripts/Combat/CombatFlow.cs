@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -71,6 +72,8 @@ public sealed class CombatActorTurn
 /// </remarks>
 public class CombatFlow : MonoBehaviour
 {
+    public const float MinimumActorActionSeconds = 1f;
+
     [Header("참조 (비워두면 씬에서 자동 탐색)")]
     [SerializeField]
     private Player player;
@@ -89,10 +92,27 @@ public class CombatFlow : MonoBehaviour
     [SerializeField]
     private int initiativeBonusMax = 2;
 
+    [Header("행동 연출 시간")]
+    [Tooltip(
+        "각 액터의 행동이 끝나기 전 최소로 유지할 시간입니다. 이펙트/모션이 붙으면 이 시간 이후 완료 신호까지 기다리는 구조로 확장합니다."
+    )]
+    [SerializeField]
+    private float actorActionHoldSeconds = MinimumActorActionSeconds;
+
+    [Header("UI / 피격 이펙트")]
+    [SerializeField]
+    private GameObject hitEffectPrefab;
+
+    [SerializeField]
+    private float hitEffectLifetimeSeconds = CombatHitEffectPresenter.DefaultEffectLifetimeSeconds;
+
     private CombatTurnState turnState = CombatTurnState.Idle;
     private CombatActionType pendingPlayerAction;
     private ActiveSkill pendingPlayerSkill;
     private bool hasPendingPlayerAction;
+    private bool isResolvingActorAction;
+    private Coroutine actorActionRoutine;
+    private PlayerStatsPanelUI playerStatsPanelUI;
     private readonly List<CombatActorTurn> turnQueue = new List<CombatActorTurn>();
     private int currentTurnIndex;
     private CombatActorTurn currentActorTurn;
@@ -102,13 +122,23 @@ public class CombatFlow : MonoBehaviour
     /// </summary>
     public CombatTurnState TurnState => turnState;
 
-    private void ChangeState(CombatTurnState nextState)
+    public static float GetActionHoldSeconds(float configuredSeconds)
+    {
+        return Mathf.Max(MinimumActorActionSeconds, configuredSeconds);
+    }
+
+    public static bool CanAcceptPlayerInputForState(CombatTurnState state, bool isResolvingAction)
+    {
+        return state == CombatTurnState.PlayerAction && !isResolvingAction;
+    }
+
+    private void ChangeState(CombatTurnState nextState, bool forceEnter = false)
     {
         // TODO:
         // - 목표: CombatFlow의 모든 상태 전환을 단일 진입점으로 통제한다.
         // - 의도: turnState가 바뀌는 순간 switch로 해당 상태의 진입 동작이 반드시 실행되게 한다.
         // - 구현해야 할 것: 중복 전환 방어, 상태 변경 로그, 상태별 Enter 메서드 호출을 수행한다.
-        if (turnState == nextState)
+        if (ShouldSkipStateEntry(turnState, nextState, forceEnter))
         {
             return;
         }
@@ -141,6 +171,15 @@ public class CombatFlow : MonoBehaviour
                 Debug.LogWarning($"[CombatFlow] Unknown turn state: {turnState}");
                 break;
         }
+    }
+
+    internal static bool ShouldSkipStateEntry(
+        CombatTurnState currentState,
+        CombatTurnState nextState,
+        bool forceEnter
+    )
+    {
+        return currentState == nextState && !forceEnter;
     }
 
     private void Start()
@@ -263,12 +302,7 @@ public class CombatFlow : MonoBehaviour
             monsters.RemoveAll(monster => monster == null);
         }
 
-        if (monsters.Count == 0)
-        {
-            monsters = new List<MonsterBase>(
-                FindObjectsByType<MonsterBase>(FindObjectsSortMode.None)
-            );
-        }
+        RefreshSceneMonsterReferences();
     }
 
     private bool HasRequiredReferences()
@@ -300,12 +334,20 @@ public class CombatFlow : MonoBehaviour
         // - 목표: Player와 모든 Monster의 전투 런타임 상태를 새 전투 상태로 초기화한다.
         // - 의도: Player의 HP/MP는 현재 도전 상태로 유지하고, Monster는 새 전투마다 초기화한다.
         // - 구현해야 할 것: 저장된 Player 런타임 상태가 있으면 복원하고, Player는 전투 상태만 준비하며, 각 Monster는 새 전투 상태로 리셋한다.
-        GameSystemManager.Instance.TryApplyPlayerCombatState(player);
+        if (GameSystemManager.TryGetInstance(out GameSystemManager gameSystemManager))
+        {
+            gameSystemManager.TryApplyPlayerCombatState(player);
+        }
+
         player.ResetForNewCombat();
+        EntityWorldUI.EnsureFor(player, false);
+        playerStatsPanelUI = PlayerStatsPanelUI.EnsureForScene(player);
+        RefreshPlayerStatsPanel();
 
         foreach (var monster in monsters)
         {
             monster.ResetForNewCombat();
+            EntityWorldUI.EnsureFor(monster, true);
         }
     }
 
@@ -432,11 +474,11 @@ public class CombatFlow : MonoBehaviour
                 continue;
             }
 
-            ChangeState(
+            CombatTurnState nextState =
                 currentActorTurn.ActorType == CombatActorType.Player
                     ? CombatTurnState.PlayerAction
-                    : CombatTurnState.MonsterAction
-            );
+                    : CombatTurnState.MonsterAction;
+            ChangeState(nextState, true);
             return;
         }
 
@@ -507,8 +549,8 @@ public class CombatFlow : MonoBehaviour
         }
 
         Debug.Log($"[CombatFlow] === Monster[{currentActorTurn.MonsterIndex}] Action ===");
-        ResolveSingleMonsterAction(currentActorTurn.MonsterIndex);
-        AdvanceToNextActor();
+        CombatActionType resolvedAction = ResolveSingleMonsterAction(currentActorTurn.MonsterIndex);
+        StartActorActionHold(resolvedAction, AdvanceToNextActor);
     }
 
     /// <summary>
@@ -675,9 +717,10 @@ public class CombatFlow : MonoBehaviour
         }
 
         player.SetDefending(true);
+        ShowActionIndicator(player, CombatActionType.Defend);
         Debug.Log("[CombatFlow] Player Defend");
 
-        AfterPlayerMainAction();
+        StartActorActionHold(CombatActionType.Defend, AfterPlayerMainAction);
     }
 
     /// <summary>
@@ -806,6 +849,7 @@ public class CombatFlow : MonoBehaviour
             return;
         }
 
+        CombatActionType resolvedActionType = pendingPlayerAction;
         bool actionResolved;
         switch (pendingPlayerAction)
         {
@@ -827,7 +871,7 @@ public class CombatFlow : MonoBehaviour
         ClearPendingPlayerAction();
         if (actionResolved)
         {
-            AfterPlayerMainAction();
+            StartActorActionHold(resolvedActionType, AfterPlayerMainAction);
             return;
         }
 
@@ -845,6 +889,7 @@ public class CombatFlow : MonoBehaviour
             monsters[targetIndex].DEF,
             monsters[targetIndex].IsDefending
         );
+        ShowActionIndicator(player, CombatActionType.Attack);
         Debug.Log($"[CombatFlow] Player Attack -> Monster[{targetIndex}], damage={dmg}");
         ApplyDamageToMonster(targetIndex, dmg);
         return true;
@@ -880,6 +925,7 @@ public class CombatFlow : MonoBehaviour
             $"[CombatFlow] Player Skill [{skill.skillName}] -> Monster[{targetIndex}], "
                 + $"damage={dmg}, MP-{skill.mpCost} ({player.CurrentMP}/{player.MaxMP})"
         );
+        ShowActionIndicator(player, CombatActionType.Skill);
         ApplyDamageToMonster(targetIndex, dmg);
         return true;
     }
@@ -895,7 +941,7 @@ public class CombatFlow : MonoBehaviour
         hasPendingPlayerAction = false;
     }
 
-    private void ResolveSingleMonsterAction(int index)
+    private CombatActionType ResolveSingleMonsterAction(int index)
     {
         // 기존 구현:
         // MonsterBase m = monsters[index];
@@ -951,6 +997,7 @@ public class CombatFlow : MonoBehaviour
             case CombatActionType.Attack:
             {
                 int dmg = CalculateDamage(monster.ATK, player.DEF, player.IsDefending);
+                ShowActionIndicator(monster, CombatActionType.Attack);
                 Debug.Log($"[CombatFlow] Monster[{index}] Attack -> Player, damage={dmg}");
                 ApplyDamageToPlayer(dmg);
                 break;
@@ -963,11 +1010,12 @@ public class CombatFlow : MonoBehaviour
                     Debug.LogWarning(
                         $"[CombatFlow] Monster[{index}] selected Skill, but its skill slot is empty."
                     );
-                    break;
+                    return action;
                 }
 
                 int skillATK = Mathf.RoundToInt(monster.ATK * skill.atkMultiplier);
                 int dmg = CalculateDamage(skillATK, player.DEF, player.IsDefending);
+                ShowActionIndicator(monster, CombatActionType.Skill);
                 Debug.Log(
                     $"[CombatFlow] Monster[{index}] Skill [{skill.skillName}] -> Player, damage={dmg}"
                 );
@@ -977,6 +1025,7 @@ public class CombatFlow : MonoBehaviour
             case CombatActionType.Defend:
             {
                 monster.SetDefending(true);
+                ShowActionIndicator(monster, CombatActionType.Defend);
                 Debug.Log($"[CombatFlow] Monster[{index}] Defend");
                 break;
             }
@@ -990,6 +1039,8 @@ public class CombatFlow : MonoBehaviour
                 break;
             }
         }
+
+        return action;
     }
 
     private int CalculateDamage(int atk, int def, bool defending)
@@ -1030,6 +1081,8 @@ public class CombatFlow : MonoBehaviour
         // - 의도: CombatFlow가 전투 로그와 사망 판정을 일관되게 관리한다.
         // - 구현해야 할 것: player.TakeDamage 호출, HP 로그 출력, player.IsDead일 때 사망 로그 출력을 수행한다.
         int appliedDamage = player.TakeDamage(dmg);
+        RefreshPlayerStatsPanel();
+        ShowHitEffect(player, appliedDamage);
         Debug.Log($"[CombatFlow] Player HP: {player.CurrentHP}/{player.MaxHP} (-{appliedDamage})");
         if (player.IsDead)
         {
@@ -1054,13 +1107,43 @@ public class CombatFlow : MonoBehaviour
         // - 의도: 플레이어 행동 처리에서 몬스터 피해 적용을 공통화한다.
         // - 구현해야 할 것: monsters[index].TakeDamage 호출, HP 로그 출력, 사망 시 사망 로그 출력을 수행한다.
         int appliedDamage = monsters[index].TakeDamage(dmg);
+        EntityWorldUI.EnsureFor(monsters[index], true)?.UpdateHealthDisplay();
+        ShowHitEffect(monsters[index], appliedDamage);
         Debug.Log(
             $"[CombatFlow] Monster[{index}] HP: {monsters[index].CurrentHP}/{monsters[index].MaxHP} (-{appliedDamage})"
         );
         if (monsters[index].IsDead)
         {
             Debug.Log($"[CombatFlow] Monster[{index}] 사망");
+            monsters[index].Die();
         }
+    }
+
+    private void StartActorActionHold(CombatActionType actionType, System.Action onComplete)
+    {
+        if (actorActionRoutine != null)
+        {
+            StopCoroutine(actorActionRoutine);
+            actorActionRoutine = null;
+        }
+
+        actorActionRoutine = StartCoroutine(HoldActorActionThenComplete(actionType, onComplete));
+    }
+
+    private IEnumerator HoldActorActionThenComplete(
+        CombatActionType actionType,
+        System.Action onComplete
+    )
+    {
+        isResolvingActorAction = true;
+
+        float holdSeconds = GetActionHoldSeconds(actorActionHoldSeconds);
+        Debug.Log($"[CombatFlow] Hold {actionType} action for at least {holdSeconds:0.00}s.");
+        yield return new WaitForSeconds(holdSeconds);
+
+        actorActionRoutine = null;
+        isResolvingActorAction = false;
+        onComplete?.Invoke();
     }
 
     private bool AreAllMonstersDead()
@@ -1079,6 +1162,8 @@ public class CombatFlow : MonoBehaviour
         // - 목표: 전투 승리 조건인 몬스터 전멸 여부를 판단한다.
         // - 의도: 플레이어 메인 행동 후 Victory 전환 여부를 결정한다.
         // - 구현해야 할 것: 살아있는 몬스터가 하나라도 있으면 false, 모두 죽었으면 true를 반환한다.
+        RefreshSceneMonsterReferences();
+
         for (int i = 0; i < monsters.Count; i++)
         {
             if (!monsters[i].IsDead)
@@ -1088,6 +1173,80 @@ public class CombatFlow : MonoBehaviour
         }
 
         return true;
+    }
+
+    private void RefreshSceneMonsterReferences()
+    {
+        if (monsters == null)
+        {
+            monsters = new List<MonsterBase>();
+        }
+        else
+        {
+            monsters.RemoveAll(monster => monster == null);
+        }
+
+        MonsterBase[] sceneMonsters = FindObjectsByType<MonsterBase>(FindObjectsSortMode.None);
+        for (int i = 0; i < sceneMonsters.Length; i++)
+        {
+            MonsterBase sceneMonster = sceneMonsters[i];
+            if (!monsters.Contains(sceneMonster))
+            {
+                monsters.Add(sceneMonster);
+            }
+
+            EntityWorldUI.EnsureFor(sceneMonster, true);
+        }
+    }
+
+    private void ShowActionIndicator(EntityBase entity, CombatActionType actionType)
+    {
+        EntityWorldUI worldUI = EntityWorldUI.EnsureFor(entity, entity is MonsterBase);
+        if (worldUI == null)
+        {
+            return;
+        }
+
+        worldUI.ShowAction(actionType, GetActionHoldSeconds(actorActionHoldSeconds));
+    }
+
+    private void RefreshPlayerStatsPanel()
+    {
+        if (player == null)
+        {
+            return;
+        }
+
+        if (playerStatsPanelUI == null)
+        {
+            playerStatsPanelUI = PlayerStatsPanelUI.EnsureForScene(player);
+        }
+
+        playerStatsPanelUI?.Refresh();
+    }
+
+    private void ShowHitEffect(EntityBase target, int appliedDamage)
+    {
+        if (target == null || appliedDamage <= 0)
+        {
+            return;
+        }
+
+        GameObject effectPrefab =
+            hitEffectPrefab != null ? hitEffectPrefab : CombatHitEffectPresenter.LoadSplashPrefab();
+        if (effectPrefab == null)
+        {
+            Debug.LogWarning(
+                $"[CombatFlow] Hit effect prefab is missing. Expected {CombatHitEffectPresenter.SplashPrefabAssetPath}."
+            );
+            return;
+        }
+
+        CombatHitEffectPresenter.SpawnHitEffect(
+            target,
+            effectPrefab,
+            Mathf.Max(0f, hitEffectLifetimeSeconds)
+        );
     }
 
     private bool TryEndCombatIfFinished()
@@ -1155,7 +1314,7 @@ public class CombatFlow : MonoBehaviour
         // - 목표: 플레이어 입력이 현재 전투 상태에서 유효한지 판단한다.
         // - 의도: UI 버튼은 항상 호출될 수 있지만 실제 행동은 PlayerAction에서만 처리되게 한다.
         // - 구현해야 할 것: turnState가 PlayerAction인지 확인하고 아니면 로그 없이 입력을 무시한다.
-        return turnState == CombatTurnState.PlayerAction;
+        return CanAcceptPlayerInputForState(turnState, isResolvingActorAction);
     }
 
     private void EnterVictory()
@@ -1183,8 +1342,8 @@ public class CombatFlow : MonoBehaviour
         // TODO:
         // - 목표: CombatFlow가 직접 씬을 로드하지 않고 전투 결과만 GameSystemManager에 전달한다.
         // - 의도: Combat 씬 단독 실행이나 임시 테스트에서 GameSystemManager가 없을 때 NullReferenceException을 막는다.
-        // - 구현해야 할 것: GameSystemManager.Instance가 있으면 EndCombat을 호출하고, 없으면 경고 로그만 남긴다.
-        if (GameSystemManager.Instance == null)
+        // - 구현해야 할 것: GameSystemManager가 있으면 EndCombat을 호출하고, 없으면 경고 로그만 남긴다.
+        if (!GameSystemManager.TryGetInstance(out GameSystemManager gameSystemManager))
         {
             Debug.LogWarning(
                 $"[CombatFlow] GameSystemManager is missing. Result was not reported: {result}"
@@ -1192,8 +1351,8 @@ public class CombatFlow : MonoBehaviour
             return;
         }
 
-        GameSystemManager.Instance.RecordPlayerCombatState(player);
-        GameSystemManager.Instance.EndCombat(result);
+        gameSystemManager.RecordPlayerCombatState(player);
+        gameSystemManager.EndCombat(result);
     }
 }
 
