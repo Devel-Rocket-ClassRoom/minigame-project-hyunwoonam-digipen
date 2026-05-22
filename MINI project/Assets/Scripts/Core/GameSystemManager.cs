@@ -178,6 +178,11 @@ public class GameSystemManager : Singleton<GameSystemManager>
         {
             EnterFloorMap();
         }
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Application.Quit();
+        }
     }
 
     /// <summary>
