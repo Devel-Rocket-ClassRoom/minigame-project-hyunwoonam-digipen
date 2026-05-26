@@ -1,0 +1,112 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace Tempt
+{
+    /// <summary>
+    /// 전투 시작 시 노드 정보에 맞춰 몬스터를 생성/배치한다.
+    /// </summary>
+    public sealed class CombatMonsterSpawnert : MonoBehaviour
+    {
+        /// <summary>생성된 몬스터들.</summary>
+        public List<MonsterBaset> SpawnedT = new List<MonsterBaset>();
+
+        /// <summary>
+        /// 노드에서 몬스터를 무작위 선택 후 생성.
+        /// </summary>
+        public void SpawnFromNode(FloorNodet node, float erosionMultiplier)
+        {
+            // 동작 요약:
+            // - DataManagert.PickMonsterGroup(node.Difficulty, node.MonsterCount) 호출.
+            // - 기존 씬 몬스터 비활성/제거.
+            // - 각 ID에 대해 Resources/Addressables에서 프리팹 로드.
+            // - Instantiate, MonsterBaset.InitializeFromData(data, erosionMultiplier).
+            // - 배치 간격 일정하게 정렬.
+            // - SpawnedT에 누적.
+            //TODO: Cleanup(); // 이전 몬스터 제거
+            //TODO: List<int> monsterIds = GameSystemManagert.Instance.Data.PickMonsterGroup(node.Difficulty, node.MonsterCount);
+            //TODO: float spacing = 2.0f; // 배치 간격(단위: Unity 미터)
+            //TODO: for (int i = 0; i < monsterIds.Count; i++)
+            //TODO: {
+            //TODO:     MonsterDatat data = GameSystemManagert.Instance.Data.Monsters[monsterIds[i]];
+            //TODO:     GameObject prefab = Resources.Load<GameObject>("Monsters/" + data.PrefabKey);
+            //TODO:     Vector3 pos = new Vector3(i * spacing, 0, 0);
+            //TODO:     GameObject go = Instantiate(prefab, pos, Quaternion.identity);
+            //TODO:     MonsterBaset monster = go.GetComponent<MonsterBaset>();
+            //TODO:     monster.InitializeFromData(data, erosionMultiplier);
+            //TODO:     SpawnedT.Add(monster);
+            //TODO: }
+            Cleanup(); //Wave0write
+            if (node == null || !GameSystemManagert.TryGetInstance(out GameSystemManagert gsm)) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            IList<int> monsterIds = node.IsBoss //Wave0write
+                ? new List<int> { PickBossMonsterId(gsm.Data, node.StageIndex) } //Wave0write
+                : gsm.Data.PickMonsterGroup(node.Difficulty, node.MonsterCount); //Wave0write
+            float spacing = 2f; //Wave0write
+            for (int i = 0; i < monsterIds.Count; i++) //Wave0write
+            { //Wave0write
+                if (!gsm.Data.Monsters.TryGetValue(monsterIds[i], out MonsterDatat data)) //Wave0write
+                { //Wave0write
+                    continue; //Wave0write
+                } //Wave0write
+
+                Vector3 pos = transform.position + new Vector3(i * spacing, 0f, 0f); //Wave0write
+                GameObject prefab = !string.IsNullOrEmpty(data.PrefabKey) ? Resources.Load<GameObject>("Monsters/" + data.PrefabKey) : null; //Wave0write
+                GameObject go = prefab != null ? Instantiate(prefab, pos, Quaternion.identity) : new GameObject(data.NameKey); //Wave0write
+                go.transform.position = pos; //Wave0write
+                MonsterBaset monster = go.GetComponent<MonsterBaset>(); //Wave0write
+                if (monster == null) //Wave0write
+                { //Wave0write
+                    monster = go.AddComponent<Monster1t>(); //Wave0write
+                } //Wave0write
+
+                monster.InitializeFromData(data, erosionMultiplier); //Wave0write
+                SpawnedT.Add(monster); //Wave0write
+            } //Wave0write
+        }
+
+        /// <summary>정리.</summary>
+        public void Cleanup()
+        {
+            // 동작 요약: SpawnedT 순회 Destroy + 리스트 비움.
+            //TODO: foreach (var m in SpawnedT) if (m != null) Destroy(m.gameObject);
+            //TODO: SpawnedT.Clear();
+            foreach (MonsterBaset monster in SpawnedT) //Wave0write
+            { //Wave0write
+                if (monster != null) //Wave0write
+                { //Wave0write
+                    Destroy(monster.gameObject); //Wave0write
+                } //Wave0write
+            } //Wave0write
+
+            SpawnedT.Clear(); //Wave0write
+        }
+
+        private static int PickBossMonsterId(DataManagert data, int stageIndex) //Wave0write
+        { //Wave0write
+            int fallback = 0; //Wave0write
+            foreach (MonsterDatat monster in data.Monsters.Values) //Wave0write
+            { //Wave0write
+                if (!monster.IsBoss) //Wave0write
+                { //Wave0write
+                    continue; //Wave0write
+                } //Wave0write
+
+                if (fallback == 0) //Wave0write
+                { //Wave0write
+                    fallback = monster.Id; //Wave0write
+                } //Wave0write
+
+                if (monster.Id == 1900 + stageIndex) //Wave0write
+                { //Wave0write
+                    return monster.Id; //Wave0write
+                } //Wave0write
+            } //Wave0write
+
+            return fallback; //Wave0write
+        } //Wave0write
+    }
+}
