@@ -400,26 +400,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa11df0ba9353e94cbccb197391f7425, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Monster1
-  maxHP: 20
-  maxMP: 10
-  atk: 7
-  def: 2
-  activeSkills:
-  - rid: -2
-  - rid: -2
-  passiveSkills:
-  - rid: -2
-  - rid: -2
-  attackWeight: 70
-  skillWeight: 20
-  defendWeight: 10
-  monsterGrade: 1
-  deathDestroyDelay: 0.3
-  references:
-    version: 2
-    RefIds:
-    - rid: -2
-      type: {class: , ns: , asm: }
+  DisplayName: 
+  WorldUI: {fileID: 0}
+  MonsterDataId: 0
+  RewardExp: 0
+  RewardGold: 0
+  DropTableId: 0
 --- !u!1 &187469183
 GameObject:
   m_ObjectHideFlags: 0
@@ -766,19 +752,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 245870295}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 2100000002}
-        m_TargetAssemblyTypeName: CombatFlow, Assembly-CSharp
-        m_MethodName: OnSkill1Button
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &245870295
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2284,19 +2258,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1309112462}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 2100000002}
-        m_TargetAssemblyTypeName: CombatFlow, Assembly-CSharp
-        m_MethodName: OnAttackButton
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1309112462
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2615,19 +2577,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1512600079}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 2100000002}
-        m_TargetAssemblyTypeName: CombatFlow, Assembly-CSharp
-        m_MethodName: OnDefendButton
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1512600079
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2881,21 +2831,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d30d25105ee25b64a81f0eb6cd4c4dee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Player
-  maxHP: 140
-  maxMP: 25
-  atk: 11
-  def: 4
-  activeSkills:
-  - rid: -2
-  - rid: -2
-  passiveSkills:
-  - rid: -2
-  - rid: -2
-  references:
-    version: 2
-    RefIds:
-    - rid: -2
-      type: {class: , ns: , asm: }
+  DisplayName: 
+  WorldUI: {fileID: 0}
+  StartingClass: 0
 --- !u!1 &1701897693
 GameObject:
   m_ObjectHideFlags: 0
@@ -3359,19 +3297,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1893792580}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 2100000002}
-        m_TargetAssemblyTypeName: CombatFlow, Assembly-CSharp
-        m_MethodName: OnSkill2Button
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1893792580
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3410,6 +3336,73 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1893792577}
   m_CullTransparentMesh: 1
+--- !u!1 &1921733197
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1921733200}
+  - component: {fileID: 1921733199}
+  - component: {fileID: 1921733198}
+  m_Layer: 0
+  m_Name: CombatController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1921733198
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1921733197}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f77f6657b2584e0eb39773629fed3a8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Tempt.CombatMonsterSpawner
+  SpawnedT: []
+--- !u!114 &1921733199
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1921733197}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c450a534d8fb8f0438505f224f8ffe68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Tempt.CombatController
+  playerRef: {fileID: 1700440940}
+  spawnerRef: {fileID: 1921733198}
+  hudRef: {fileID: 0}
+  autoPlayerActions: 1
+  Spawner: {fileID: 0}
+  Hud: {fileID: 0}
+  Player: {fileID: 0}
+  Companions: []
+  Monsters: []
+--- !u!4 &1921733200
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1921733197}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1984856963
 GameObject:
   m_ObjectHideFlags: 0
@@ -3595,62 +3588,13 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!1 &2100000000
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2100000001}
-  - component: {fileID: 2100000002}
-  m_Layer: 0
-  m_Name: CombatFlow
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2100000001
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2100000000}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2100000002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4aa86d33d4bd6ed418f02f37f604f0b3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  player: {fileID: 0}
-  monsters:
-  - {fileID: 151674192}
-  defendDamageMultiplier: 0.5
-  initiativeBonusMax: 2
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 1701897696}
-  - {fileID: 2100000001}
   - {fileID: 33065909}
   - {fileID: 187469186}
   - {fileID: 1700440939}
   - {fileID: 151674191}
+  - {fileID: 1921733200}

@@ -1,338 +1,285 @@
-using System;
+using System.Collections.Generic;
 using UnityEngine;
 
-#pragma warning disable CS0649
-
-/// <summary>
-/// Player와 Monster가 공유하는 전투 엔티티 base입니다.
-/// </summary>
-public abstract class EntityBase : MonoBehaviour
+namespace Tempt
 {
-    [SerializeField]
-    protected int maxHP = 150;
-
-    [SerializeField]
-    protected int maxMP = 25;
-
-    [SerializeField]
-    protected int atk = 11;
-
-    [SerializeField]
-    protected int def = 4;
-
-    [Header("Skill Slots")]
-    [SerializeReference]
-    private ActiveSkill[] activeSkills = new ActiveSkill[2];
-
-    [SerializeReference]
-    private PassiveSkill[] passiveSkills = new PassiveSkill[2];
-
-    private int currentHP;
-    private int currentMP;
-    private bool isDefending;
-
-    public int MaxHP => maxHP;
-    public int MaxMP => maxMP;
-    public int ATK => atk;
-    public int DEF => def;
-    public int CurrentHP => currentHP;
-    public int CurrentMP => currentMP;
-    public bool IsDefending => isDefending;
-    public bool IsDead => currentHP <= 0;
-
-    protected virtual void OnValidate()
+    /// <summary>
+    /// 모든 전투 엔티티(Player/Companion/Monster)의 공통 베이스.
+    /// 보유: 스탯, 액티브 스킬 2칸, 패시브 스킬 목록(자동 적용), 공격/방어/피해 처리, 머리 위 UI 훅.
+    /// 패시브 스킬은 CharacterBase.SyncPassivesFromRunes()가 룬 해금 시 자동으로 채우며
+    /// 플레이어/동료가 직접 선택하거나 제거할 수 없다.
+    /// </summary>
+    public abstract class EntityBase : MonoBehaviour
     {
-        // TODO:
-        // - 목표: Inspector에서 전투 수치를 수정해도 런타임 HP가 최대 HP를 넘지 않게 보정한다.
-        // - 의도: Play Mode 중 maxHP를 낮췄을 때 currentHP가 maxHP보다 커지는 상태 불일치를 막는다.
-        // - 구현해야 할 것: maxHP 최소값 보장, maxMP 최소값 보장, currentHP를 maxHP 이하로 제한한다.
-        maxHP = Mathf.Max(1, maxHP);
-        maxMP = Mathf.Max(0, maxMP);
-        ClampCurrentResourcesToMax();
-    }
+        /// <summary>스탯 블록.</summary>
+        public StatBlock Stats { get; protected set; }
 
-    protected virtual void Awake()
-    {
-        // 기존 구현:
-        // EnsureSkillSlots();
-        // ResetForNewCombat();
+        /// <summary>액티브 스킬 2칸.</summary>
+        public Skill[] ActiveSkills { get; protected set; } = new Skill[2];
 
-        // TODO:
-        // - 목표: 엔티티가 전투에 들어가기 전 스킬 슬롯과 런타임 상태를 초기화한다.
-        // - 의도: Player와 Monster가 공통 초기화 흐름을 재사용하게 한다.
-        // - 구현해야 할 것: 스킬 슬롯 배열을 보정하고 HP/MP/방어 상태를 새 전투 상태로 리셋한다.
-        RestoreToFull();
-    }
+        /// <summary>
+        /// 패시브 스킬 목록.
+        /// 룬 해금으로만 추가되며, 전투 시작/레벨업 시 SyncPassivesFromRunes()가 갱신한다.
+        /// Monster는 이 목록을 사용하지 않는다(몬스터 스킬은 모두 ActionWeights 기반 액티브).
+        /// </summary>
+        public IReadOnlyList<Skill> PassiveSkills => passiveSkills;
 
-    public virtual void ResetForNewCombat()
-    {
-        // 기존 구현:
-        // EnsureSkillSlots();
-        // currentHP = maxHP;
-        // currentMP = maxMP;
-        // isDefending = false;
+        private List<Skill> passiveSkills = new List<Skill>();
 
-        // TODO:
-        // - 목표: 전투 시작 또는 재시작 시 런타임 상태를 기본값으로 복원한다.
-        // - 의도: 씬 재사용/전투 반복 시 이전 전투의 HP, MP, 방어 상태가 남지 않게 한다.
-        // - 구현해야 할 것: 스킬 슬롯 배열을 보정하고 currentHP/currentMP/isDefending을 초기화한다.
-        RestoreToFull();
-    }
+        /// <summary>이번 라운드 동안 방어 중인가.</summary>
+        public bool IsDefending { get; private set; }
 
-    public virtual void PrepareForCombat()
-    {
-        // TODO:
-        // - 목표: 전투 진입 시 지속되어야 하는 HP/MP는 유지하고 전투 중 상태만 정리한다.
-        // - 의도: Player처럼 전투 사이 HP를 이어가야 하는 엔티티가 매 전투마다 최대 HP로 회복되지 않게 한다.
-        // - 구현해야 할 것: 스킬 슬롯과 수치 범위를 보정하고 방어 상태만 해제한다.
-        EnsureSkillSlots();
-        maxHP = Mathf.Max(1, maxHP);
-        maxMP = Mathf.Max(0, maxMP);
-        ClampCurrentResourcesToMax();
-        isDefending = false;
-    }
+        /// <summary>사망 여부.</summary>
+        public bool IsDead => Stats != null && Stats.CurrentHP <= 0;
 
-    public void SetCurrentResources(int hp, int mp)
-    {
-        // TODO:
-        // - 목표: GameSystemManager/SaveLoader가 보관한 런타임 HP/MP를 엔티티에 복원한다.
-        // - 의도: 씬이 바뀌어도 Player의 현재 체력과 MP가 다음 전투로 이어지게 한다.
-        // - 구현해야 할 것: 입력값을 현재 maxHP/maxMP 범위로 보정해 저장한다.
-        currentHP = Mathf.Clamp(hp, 0, Mathf.Max(1, maxHP));
-        currentMP = Mathf.Clamp(mp, 0, Mathf.Max(0, maxMP));
-    }
+        /// <summary>표시 이름(언어 키 또는 직접 문자열).</summary>
+        public string DisplayName;
 
-    public int TakeDamage(int damage)
-    {
-        // 기존 구현:
-        // int appliedDamage = Mathf.Max(0, damage);
-        // currentHP = Mathf.Max(0, currentHP - appliedDamage);
-        // return appliedDamage;
+        /// <summary>머리 위 UI 핸들.</summary>
+        public EntityWorldUI WorldUI;
 
-        // TODO:
-        // - 목표: 입력받은 피해량을 현재 HP에 적용하고 실제 적용 피해량을 반환한다.
-        // - 의도: CombatFlow가 피해 처리와 로그 출력을 일관되게 수행할 수 있게 한다.
-        // - 구현해야 할 것: 음수 피해를 0으로 보정하고 currentHP가 0 미만으로 내려가지 않도록 제한한다.
-        ClampCurrentResourcesToMax();
-        int appliedDamage = Mathf.Max(0, damage);
-        currentHP = Mathf.Max(0, currentHP - appliedDamage);
-        ClampCurrentResourcesToMax();
-        return appliedDamage;
-    }
-
-    public bool TrySpendMP(int amount)
-    {
-        // 기존 구현:
-        // if (currentMP < amount)
-        // {
-        //     return false;
-        // }
-        //
-        // currentMP -= amount;
-        // return true;
-
-        // TODO:
-        // - 목표: MP가 충분할 때만 스킬 비용을 소비한다.
-        // - 의도: CombatFlow가 스킬 사용 가능 여부를 EntityBase의 런타임 자원 상태로 판단하게 한다.
-        // - 구현해야 할 것: currentMP와 amount를 비교하고 성공 시 currentMP를 차감한 뒤 true를 반환한다.
-        int spendAmount = Mathf.Max(0, amount);
-        if (currentMP < spendAmount)
+        /// <summary>
+        /// 전투 진입 시 슬롯/상태를 정리한다.
+        /// HP/MP의 완전 회복 여부는 파생 클래스 결정.
+        /// </summary>
+        public virtual void PrepareForCombat()
         {
-            return false;
+            // 동작 요약:
+            // - Stats.ClampToMax().
+            // - IsDefending = false.
+            // - 액티브 스킬 슬롯 길이 2 보정.
+            // - WorldUI.HideActionIcon().
+            // - 패시브 효과는 전투 시작 전 SyncPassivesFromRunes()가 이미 갱신했으므로
+            //   여기서 ApplyAllPassiveEffects()를 호출해 스탯에 반영한다.
+            //TODO: Stats.ClampToMax();
+            //TODO: IsDefending = false;
+            //TODO: if (ActiveSkills == null || ActiveSkills.Length != 2) ActiveSkills = new Skill[2];
+            //TODO: WorldUI?.HideActionIcon();
+            //TODO: ApplyAllPassiveEffects();
+            if (Stats == null) //Wave0write
+            { //Wave0write
+                Stats = new StatBlock(); //Wave0write
+                Stats.SetBaseStats(1, 0, 0, 0, 0); //Wave0write
+            } //Wave0write
+
+            Stats.ClampToMax(); //Wave0write
+            IsDefending = false; //Wave0write
+            if (ActiveSkills == null || ActiveSkills.Length != 2) //Wave0write
+            { //Wave0write
+                ActiveSkills = new Skill[2]; //Wave0write
+            } //Wave0write
+
+            WorldUI?.HideActionIcon(); //Wave0write
+            ApplyAllPassiveEffects(); //Wave0write
         }
 
-        currentMP -= spendAmount;
-        return true;
-    }
-
-    public void SetDefending(bool value)
-    {
-        // 기존 구현:
-        // isDefending = value;
-
-        // TODO:
-        // - 목표: 이번 턴 방어 상태를 설정하거나 해제한다.
-        // - 의도: 데미지 계산 시 방어 중인지 CombatFlow가 확인할 수 있게 한다.
-        // - 구현해야 할 것: isDefending 필드에 value를 저장한다.
-        isDefending = value;
-    }
-
-    public ActiveSkill GetActiveSkill(int slotIndex)
-    {
-        // 기존 구현:
-        // EnsureSkillSlots();
-        // return IsValidSlot(slotIndex, activeSkills.Length) ? activeSkills[slotIndex] : null;
-
-        // TODO:
-        // - 목표: 지정한 액티브 스킬 슬롯의 스킬을 반환한다.
-        // - 의도: Player와 Monster가 공통 슬롯 구조로 액티브 스킬을 제공하게 한다.
-        // - 구현해야 할 것: 슬롯 배열을 보정하고 slotIndex가 유효하면 해당 ActiveSkill을 반환한다.
-        EnsureSkillSlots();
-        return IsValidSlot(slotIndex, activeSkills.Length) ? activeSkills[slotIndex] : null;
-    }
-
-    public PassiveSkill GetPassiveSkill(int slotIndex)
-    {
-        // 기존 구현:
-        // EnsureSkillSlots();
-        // return IsValidSlot(slotIndex, passiveSkills.Length) ? passiveSkills[slotIndex] : null;
-
-        // TODO:
-        // - 목표: 지정한 패시브 스킬 슬롯의 스킬을 반환한다.
-        // - 의도: 추후 패시브 발동 시스템이 공통 슬롯 구조를 조회할 수 있게 한다.
-        // - 구현해야 할 것: 슬롯 배열을 보정하고 slotIndex가 유효하면 해당 PassiveSkill을 반환한다.
-        EnsureSkillSlots();
-        return IsValidSlot(slotIndex, passiveSkills.Length) ? passiveSkills[slotIndex] : null;
-    }
-
-    protected void ConfigureStats(int newMaxHP, int newMaxMP, int newATK, int newDEF)
-    {
-        // 기존 구현:
-        // maxHP = newMaxHP;
-        // maxMP = newMaxMP;
-        // atk = newATK;
-        // def = newDEF;
-
-        // TODO:
-        // - 목표: 엔티티의 기본 전투 수치를 코드에서 일괄 설정한다.
-        // - 의도: Monster1 같은 임시 데이터가 인스펙터 설정 없이도 기본값을 구성할 수 있게 한다.
-        // - 구현해야 할 것: maxHP/maxMP/atk/def 필드에 인자로 받은 값을 저장한다.
-        maxHP = newMaxHP;
-        maxMP = newMaxMP;
-        atk = newATK;
-        def = newDEF;
-        maxHP = Mathf.Max(1, maxHP);
-        maxMP = Mathf.Max(0, maxMP);
-        ClampCurrentResourcesToMax();
-    }
-
-    protected void SetActiveSkill(int slotIndex, ActiveSkill skill)
-    {
-        // 기존 구현:
-        // EnsureSkillSlots();
-        // if (IsValidSlot(slotIndex, activeSkills.Length))
-        // {
-        //     activeSkills[slotIndex] = skill;
-        // }
-
-        // TODO:
-        // - 목표: 지정한 액티브 슬롯에 스킬을 저장한다.
-        // - 의도: Player의 장착 변경과 몬스터 인스펙터/초기화 데이터를 같은 슬롯 구조로 처리한다.
-        // - 구현해야 할 것: 슬롯 배열을 보정하고 유효한 slotIndex일 때 activeSkills에 skill을 대입한다.
-        EnsureSkillSlots();
-        if (IsValidSlot(slotIndex, activeSkills.Length))
+        /// <summary>
+        /// 라운드 종료 시 호출. 방어 해제 등 정리.
+        /// </summary>
+        public virtual void OnRoundEnd()
         {
-            activeSkills[slotIndex] = skill;
-        }
-    }
-
-    protected void SetPassiveSkill(int slotIndex, PassiveSkill skill)
-    {
-        // 기존 구현:
-        // EnsureSkillSlots();
-        // if (IsValidSlot(slotIndex, passiveSkills.Length))
-        // {
-        //     passiveSkills[slotIndex] = skill;
-        // }
-
-        // TODO:
-        // - 목표: 지정한 패시브 슬롯에 스킬을 저장한다.
-        // - 의도: Player의 장착 변경과 추후 패시브 시스템을 같은 슬롯 구조로 처리한다.
-        // - 구현해야 할 것: 슬롯 배열을 보정하고 유효한 slotIndex일 때 passiveSkills에 skill을 대입한다.
-        EnsureSkillSlots();
-        if (IsValidSlot(slotIndex, passiveSkills.Length))
-        {
-            passiveSkills[slotIndex] = skill;
-        }
-    }
-
-    private void EnsureSkillSlots()
-    {
-        // 기존 구현:
-        // if (activeSkills == null)
-        // {
-        //     activeSkills = new ActiveSkill[2];
-        // }
-        // else if (activeSkills.Length != 2)
-        // {
-        //     Array.Resize(ref activeSkills, 2);
-        // }
-        //
-        // if (passiveSkills == null)
-        // {
-        //     passiveSkills = new PassiveSkill[2];
-        // }
-        // else if (passiveSkills.Length != 2)
-        // {
-        //     Array.Resize(ref passiveSkills, 2);
-        // }
-
-        // TODO:
-        // - 목표: 액티브/패시브 스킬 슬롯 배열을 각각 2칸으로 보정한다.
-        // - 의도: Player와 Monster가 Active 2 + Passive 2 슬롯 정책을 항상 만족하게 한다.
-        // - 구현해야 할 것: null 배열은 새로 만들고 길이가 다르면 Array.Resize로 2칸에 맞춘다.
-        if (activeSkills == null)
-        {
-            activeSkills = new ActiveSkill[2];
-        }
-        else if (activeSkills.Length != 2)
-        {
-            Array.Resize(ref activeSkills, 2);
+            // 동작 요약: IsDefending = false; WorldUI.HideActionIcon().
+            //TODO: IsDefending = false;
+            //TODO: WorldUI?.HideActionIcon();
+            IsDefending = false; //Wave0write
+            WorldUI?.HideActionIcon(); //Wave0write
         }
 
-        if (passiveSkills == null)
+        /// <summary>
+        /// 데미지 적용. DamageCalculatort에서 호출.
+        /// </summary>
+        public int ApplyDamage(int rawDamage)
         {
-            passiveSkills = new PassiveSkill[2];
+            // 동작 요약:
+            // - Stats.TakeDamage(rawDamage, IsDefending) 호출(IsDefending이 true면 추가 경감).
+            // - WorldUI.PlayHitFx().
+            // - 실제 차감 피해 반환.
+            //TODO: int actualDamage = Stats.TakeDamage(rawDamage, IsDefending);
+            //TODO: WorldUI?.PlayHitFx();
+            //TODO: return actualDamage;
+            if (Stats == null) //Wave0write
+            { //Wave0write
+                return 0; //Wave0write
+            } //Wave0write
+
+            int actualDamage = Stats.TakeDamage(rawDamage, IsDefending); //Wave0write
+            WorldUI?.PlayHitFx(); //Wave0write
+            return actualDamage; //Wave0write
         }
-        else if (passiveSkills.Length != 2)
+
+        /// <summary>
+        /// 회복 적용.
+        /// </summary>
+        public int ApplyHeal(int rawHeal)
         {
-            Array.Resize(ref passiveSkills, 2);
+            // 동작 요약:
+            // - Stats.CurrentHP에 더하고 MaxHP로 클램프.
+            // - WorldUI.PlayHealFx().
+            // - 실제 회복량 반환.
+            //TODO: int before = Stats.CurrentHP;
+            //TODO: Stats.CurrentHP = Mathf.Min(Stats.CurrentHP + rawHeal, Stats.MaxHP);
+            //TODO: int actualHeal = Stats.CurrentHP - before;
+            //TODO: WorldUI?.PlayHealFx();
+            //TODO: return actualHeal;
+            if (Stats == null || rawHeal <= 0) //Wave0write
+            { //Wave0write
+                return 0; //Wave0write
+            } //Wave0write
+
+            int before = Stats.CurrentHP; //Wave0write
+            Stats.CurrentHP = Mathf.Min(Stats.CurrentHP + rawHeal, Stats.MaxHP); //Wave0write
+            int actualHeal = Stats.CurrentHP - before; //Wave0write
+            WorldUI?.PlayHealFx(); //Wave0write
+            return actualHeal; //Wave0write
         }
-    }
 
-    private static bool IsValidSlot(int slotIndex, int length)
-    {
-        // 기존 구현:
-        // return slotIndex >= 0 && slotIndex < length;
+        /// <summary>
+        /// 보호막 적용(이번 라운드 한정 또는 일정 시간).
+        /// </summary>
+        public void ApplyShield(int amount, int durationRounds)
+        {
+            // 동작 요약: 보호막 상태 컴포넌트(미정의 시 단순 누적값) 추가.
+            //TODO: // ShieldStatet가 정의된 경우: var shield = GetComponent<ShieldStatet>() ?? gameObject.AddComponent<ShieldStatet>();
+            //TODO: // shield.Add(amount, durationRounds);
+            //TODO: // 미정의 시 임시 누적: Stats.CurrentHP += amount; Stats.ClampToMax(); // 보호막 = 임시 HP 보정
+            //TODO: WorldUI?.ShowShieldFx(amount);
+            if (Stats != null && amount > 0) //Wave0write
+            { //Wave0write
+                Stats.CurrentHP = Mathf.Min(Stats.MaxHP, Stats.CurrentHP + amount); //Wave0write
+            } //Wave0write
 
-        // TODO:
-        // - 목표: 슬롯 인덱스가 배열 범위 안에 있는지 판단한다.
-        // - 의도: 슬롯 접근 함수들이 중복된 범위 검사를 직접 구현하지 않게 한다.
-        // - 구현해야 할 것: slotIndex가 0 이상이고 length보다 작은지 반환한다.
-        return slotIndex >= 0 && slotIndex < length;
-    }
+        }
 
-    private void RestoreToFull()
-    {
-        // TODO:
-        // - 목표: 새 엔티티 생성 또는 몬스터 재등장처럼 완전 회복이 필요한 경우 HP/MP를 최대치로 초기화한다.
-        // - 의도: 전투 사이 체력을 유지해야 하는 Player는 PrepareForCombat/override를 사용하고, 새 전투마다 새 상태가 필요한 Monster는 이 흐름을 사용한다.
-        // - 구현해야 할 것: 슬롯/수치 보정 후 currentHP/currentMP/isDefending을 초기 상태로 설정한다.
-        EnsureSkillSlots();
-        maxHP = Mathf.Max(1, maxHP);
-        maxMP = Mathf.Max(0, maxMP);
-        currentHP = maxHP;
-        currentMP = maxMP;
-        isDefending = false;
-    }
+        /// <summary>
+        /// 이번 턴 방어 상태 설정.
+        /// </summary>
+        public void SetDefending(bool value)
+        {
+            // 동작 요약: IsDefending = value; 머리 위 파랑 아이콘 표시/해제.
+            //TODO: IsDefending = value;
+            //TODO: if (value) WorldUI?.ShowActionIcon(ActionIconTypet.Defend);
+            //TODO: else WorldUI?.HideActionIcon();
+            IsDefending = value; //Wave0write
+            if (value) //Wave0write
+            { //Wave0write
+                WorldUI?.ShowDefendIcon(); //Wave0write
+            } //Wave0write
+            else //Wave0write
+            { //Wave0write
+                WorldUI?.HideActionIcon(); //Wave0write
+            } //Wave0write
+        }
 
-    private void ClampCurrentResourcesToMax()
-    {
-        // TODO:
-        // - 목표: currentHP/currentMP가 항상 각 최대치 범위 안에 머물도록 보정한다.
-        // - 의도: Inspector 수치 변경, 코드 수치 재설정, 피해 처리 이후에도 HP/MP 표현과 판정이 일관되게 한다.
-        // - 구현해야 할 것: currentHP를 0..maxHP, currentMP를 0..maxMP 범위로 제한한다.
-        currentHP = Mathf.Clamp(currentHP, 0, maxHP);
-        currentMP = Mathf.Clamp(currentMP, 0, maxMP);
+        /// <summary>
+        /// 액티브 스킬 슬롯 조회.
+        /// </summary>
+        public Skill GetActiveSkill(int slotIndex)
+        {
+            // 동작 요약: 범위 검사 후 ActiveSkills[slotIndex] 반환.
+            //TODO: if (slotIndex < 0 || slotIndex >= ActiveSkills.Length) return null;
+            //TODO: return ActiveSkills[slotIndex];
+            return ActiveSkills != null && slotIndex >= 0 && slotIndex < ActiveSkills.Length ? ActiveSkills[slotIndex] : null; //Wave0write
+        }
+
+        /// <summary>
+        /// 액티브 스킬 슬롯 설정. 길드/룬 변경 시 호출.
+        /// </summary>
+        public void SetActiveSkill(int slotIndex, Skill skill)
+        {
+            // 동작 요약: 범위 검사 후 ActiveSkills[slotIndex] = skill.
+            //TODO: if (slotIndex < 0 || slotIndex >= ActiveSkills.Length) return;
+            //TODO: ActiveSkills[slotIndex] = skill;
+            if (ActiveSkills == null || ActiveSkills.Length != 2) //Wave0write
+            { //Wave0write
+                ActiveSkills = new Skill[2]; //Wave0write
+            } //Wave0write
+
+            if (slotIndex >= 0 && slotIndex < ActiveSkills.Length) //Wave0write
+            { //Wave0write
+                ActiveSkills[slotIndex] = skill; //Wave0write
+            } //Wave0write
+        }
+
+        /// <summary>
+        /// 패시브 스킬 추가. CharacterBase.SyncPassivesFromRunes()만 호출해야 한다.
+        /// 외부에서 직접 호출 금지.
+        /// </summary>
+        internal void AddPassiveSkill(Skill skill)
+        {
+            // 동작 요약:
+            // - skill.Data.SkillType == Passive 검증.
+            // - passiveSkills에 중복 없이 추가.
+            //TODO: if (skill == null || skill.Data == null) return;
+            //TODO: if (skill.Data.SkillType != SkillType.Passive) return;
+            //TODO: if (!passiveSkills.Contains(skill)) passiveSkills.Add(skill);
+            if (skill?.Data == null || skill.Data.SkillType != SkillType.Passive) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            if (!passiveSkills.Exists(s => s.Data != null && s.Data.Id == skill.Data.Id)) //Wave0write
+            { //Wave0write
+                passiveSkills.Add(skill); //Wave0write
+            } //Wave0write
+        }
+
+        /// <summary>
+        /// 패시브 스킬 목록 초기화. SyncPassivesFromRunes() 호출 전 선행 처리.
+        /// </summary>
+        internal void ClearPassiveSkills()
+        {
+            // 동작 요약: passiveSkills.Clear().
+            //TODO: passiveSkills.Clear();
+            passiveSkills.Clear(); //Wave0write
+        }
+
+        /// <summary>
+        /// 현재 passiveSkills 목록에 등록된 모든 패시브 효과를 Stats.PassiveBonus에 적용.
+        /// PrepareForCombat 시 1회 호출. 중복 적용 방지를 위해 ResetPassiveBonuses() 후 재적용.
+        /// </summary>
+        protected void ApplyAllPassiveEffects()
+        {
+            // 동작 요약:
+            // - Stats.ResetPassiveBonuses().
+            // - passiveSkills 순회: 각 Skillt의 Data.EffectFormula / EffectValue 기준으로 스탯 보정 적용.
+            // - StatBlockt는 기본 스탯 + 장비 보정 + 룬 보정 + 패시브 보정을 합산해 최종 스탯을 갱신한다.
+            //TODO: Stats.ResetPassiveBonuses();
+            //TODO: foreach (Skill passive in passiveSkills)
+            //TODO: {
+            //TODO:     if (passive?.Data == null) continue;
+            //TODO:     SkillData d = passive.Data;
+            //TODO:     // DamageScale → ATK 보정, HealScale → HP 보정, ShieldScale → DEF 보정 등
+            //TODO:     // 실제 매핑은 SkillData.EffectFormula 필드 확정 후 분기 처리
+            //TODO:     // 예: if (d.DamageScale > 0f) Stats.ApplyPassiveBonus(StatType.ATK, (int)(Stats.ATK * d.DamageScale));
+            //TODO: }
+            if (Stats == null) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            Stats.ResetPassiveBonuses(); //Wave0write
+            foreach (Skill passive in passiveSkills) //Wave0write
+            { //Wave0write
+                SkillData data = passive?.Data; //Wave0write
+                if (data == null) //Wave0write
+                { //Wave0write
+                    continue; //Wave0write
+                } //Wave0write
+
+                if (data.DamageScale > 0f) //Wave0write
+                { //Wave0write
+                    Stats.ApplyPassiveBonus(StatType.ATK, Mathf.RoundToInt(Stats.BaseATK * data.DamageScale)); //Wave0write
+                } //Wave0write
+                if (data.HealScale > 0f) //Wave0write
+                { //Wave0write
+                    Stats.ApplyPassiveBonus(StatType.HP, Mathf.RoundToInt(Stats.BaseMaxHP * data.HealScale)); //Wave0write
+                } //Wave0write
+                if (data.ShieldScale > 0f) //Wave0write
+                { //Wave0write
+                    Stats.ApplyPassiveBonus(StatType.DEF, Mathf.RoundToInt(Stats.BaseDEF * data.ShieldScale)); //Wave0write
+                } //Wave0write
+            } //Wave0write
+        }
     }
 }
 
-public enum CombatActionType
-{
-    Attack,
-    Skill,
-    Defend,
-    Item,
-}
-
-#pragma warning restore CS0649

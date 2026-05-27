@@ -1,188 +1,113 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnitySceneManager = UnityEngine.SceneManagement.SceneManager;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
-/// <summary>
-/// 선택한 FloorNode의 임시 몬스터 수에 맞춰 Combat 씬의 Monster1 개체를 준비합니다.
-/// </summary>
-public class CombatMonsterSpawner : MonoBehaviour
+namespace Tempt
 {
-    private const string CombatSceneName = "Combat";
-    private const int MaxTemporaryMonsterCount = 3;
-    private const float HorizontalSpacing = 2f;
-    private static readonly Vector3 DefaultMonsterSpawnOrigin = new Vector3(3.87f, 2.29f, 0f);
-
-    public const string MonsterPrefabAssetPath = "Assets/prefabs/Monster1.prefab";
-    public const string MonsterPrefabResourcePath = "Prefabs/Monster1";
-
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    private static void RegisterSceneLoaded()
+    /// <summary>
+    /// 전투 시작 시 노드 정보에 맞춰 몬스터를 생성/배치한다.
+    /// </summary>
+    public sealed class CombatMonsterSpawner : MonoBehaviour
     {
-        UnitySceneManager.sceneLoaded -= OnSceneLoaded;
-        UnitySceneManager.sceneLoaded += OnSceneLoaded;
-        EnsureController(UnitySceneManager.GetActiveScene());
-    }
+        /// <summary>생성된 몬스터들.</summary>
+        public List<MonsterBase> SpawnedT = new List<MonsterBase>();
 
-    private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        EnsureController(scene);
-    }
-
-    private static void EnsureController(Scene scene)
-    {
-        if (scene.name != CombatSceneName)
+        /// <summary>
+        /// 노드에서 몬스터를 무작위 선택 후 생성.
+        /// </summary>
+        public void SpawnFromNode(FloorNode node, float erosionMultiplier)
         {
-            return;
+            // 동작 요약:
+            // - DataManager.PickMonsterGroup(node.Difficulty, node.MonsterCount) 호출.
+            // - 기존 씬 몬스터 비활성/제거.
+            // - 각 ID에 대해 Resources/Addressables에서 프리팹 로드.
+            // - Instantiate, MonsterBase.InitializeFromData(data, erosionMultiplier).
+            // - 배치 간격 일정하게 정렬.
+            // - SpawnedT에 누적.
+            //TODO: Cleanup(); // 이전 몬스터 제거
+            //TODO: List<int> monsterIds = GameSystemManager.Instance.Data.PickMonsterGroup(node.Difficulty, node.MonsterCount);
+            //TODO: float spacing = 2.0f; // 배치 간격(단위: Unity 미터)
+            //TODO: for (int i = 0; i < monsterIds.Count; i++)
+            //TODO: {
+            //TODO:     MonsterData data = GameSystemManager.Instance.Data.Monsters[monsterIds[i]];
+            //TODO:     GameObject prefab = Resources.Load<GameObject>("Monsters/" + data.PrefabKey);
+            //TODO:     Vector3 pos = new Vector3(i * spacing, 0, 0);
+            //TODO:     GameObject go = Instantiate(prefab, pos, Quaternion.identity);
+            //TODO:     MonsterBase monster = go.GetComponent<MonsterBase>();
+            //TODO:     monster.InitializeFromData(data, erosionMultiplier);
+            //TODO:     SpawnedT.Add(monster);
+            //TODO: }
+            Cleanup(); //Wave0write
+            if (node == null || !GameSystemManager.TryGetInstance(out GameSystemManager gsm)) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            IList<int> monsterIds = node.IsBoss //Wave0write
+                ? new List<int> { PickBossMonsterId(gsm.Data, node.StageIndex) } //Wave0write
+                : gsm.Data.PickMonsterGroup(node.Difficulty, node.MonsterCount); //Wave0write
+            float spacing = 2f; //Wave0write
+            for (int i = 0; i < monsterIds.Count; i++) //Wave0write
+            { //Wave0write
+                if (!gsm.Data.Monsters.TryGetValue(monsterIds[i], out MonsterData data)) //Wave0write
+                { //Wave0write
+                    continue; //Wave0write
+                } //Wave0write
+
+                Vector3 pos = transform.position + new Vector3(i * spacing, 0f, 0f); //Wave0write
+                GameObject prefab = !string.IsNullOrEmpty(data.PrefabKey) ? Resources.Load<GameObject>("Monsters/" + data.PrefabKey) : null; //Wave0write
+                GameObject go = prefab != null ? Instantiate(prefab, pos, Quaternion.identity) : new GameObject(data.NameKey); //Wave0write
+                go.transform.position = pos; //Wave0write
+                MonsterBase monster = go.GetComponent<MonsterBase>(); //Wave0write
+                if (monster == null) //Wave0write
+                { //Wave0write
+                    monster = go.AddComponent<Monster1>(); //Wave0write
+                } //Wave0write
+
+                monster.InitializeFromData(data, erosionMultiplier); //Wave0write
+                SpawnedT.Add(monster); //Wave0write
+            } //Wave0write
         }
 
-        if (FindAnyObjectByType<CombatMonsterSpawner>() != null)
+        /// <summary>정리.</summary>
+        public void Cleanup()
         {
-            return;
+            // 동작 요약: SpawnedT 순회 Destroy + 리스트 비움.
+            //TODO: foreach (var m in SpawnedT) if (m != null) Destroy(m.gameObject);
+            //TODO: SpawnedT.Clear();
+            foreach (MonsterBase monster in SpawnedT) //Wave0write
+            { //Wave0write
+                if (monster != null) //Wave0write
+                { //Wave0write
+                    Destroy(monster.gameObject); //Wave0write
+                } //Wave0write
+            } //Wave0write
+
+            SpawnedT.Clear(); //Wave0write
         }
 
-        GameObject controller = new GameObject("CombatMonsterSpawner");
-        controller.AddComponent<CombatMonsterSpawner>();
-    }
+        private static int PickBossMonsterId(DataManager data, int stageIndex) //Wave0write
+        { //Wave0write
+            int fallback = 0; //Wave0write
+            foreach (MonsterData monster in data.Monsters.Values) //Wave0write
+            { //Wave0write
+                if (!monster.IsBoss) //Wave0write
+                { //Wave0write
+                    continue; //Wave0write
+                } //Wave0write
 
-    private void Awake()
-    {
-        SpawnForSelectedNode();
-    }
+                if (fallback == 0) //Wave0write
+                { //Wave0write
+                    fallback = monster.Id; //Wave0write
+                } //Wave0write
 
-    public static Vector3 GetCenteredSpawnPosition(Vector3 origin, int index, int count)
-    {
-        int safeCount = Mathf.Max(1, count);
-        float startX = -(safeCount - 1) * HorizontalSpacing * 0.5f;
-        return origin + new Vector3(startX + index * HorizontalSpacing, 0f, 0f);
-    }
+                if (monster.Id == 1900 + stageIndex) //Wave0write
+                { //Wave0write
+                    return monster.Id; //Wave0write
+                } //Wave0write
+            } //Wave0write
 
-    public static Monster1 LoadMonsterPrefab()
-    {
-#if UNITY_EDITOR
-        GameObject editorPrefabObject = AssetDatabase.LoadAssetAtPath<GameObject>(
-            MonsterPrefabAssetPath
-        );
-        if (editorPrefabObject != null)
-        {
-            return editorPrefabObject.GetComponent<Monster1>();
-        }
-#endif
-
-        GameObject prefabObject = Resources.Load<GameObject>(MonsterPrefabResourcePath);
-        if (prefabObject == null)
-        {
-            return null;
-        }
-
-        return prefabObject.GetComponent<Monster1>();
-    }
-
-    private void SpawnForSelectedNode()
-    {
-        if (!GameSystemManager.TryGetInstance(out GameSystemManager gameSystemManager))
-        {
-            Debug.LogWarning(
-                "[CombatMonsterSpawner] GameSystemManager is missing. Keeping scene monsters."
-            );
-            return;
-        }
-
-        FloorNodeData selectedNode = gameSystemManager.SelectedCombatNode;
-        if (selectedNode == null)
-        {
-            Debug.Log("[CombatMonsterSpawner] No selected FloorNode. Keeping scene monsters.");
-            return;
-        }
-
-        int desiredCount = Mathf.Clamp(selectedNode.MonsterCount, 1, MaxTemporaryMonsterCount);
-        List<Monster1> monsters = new List<Monster1>(
-            FindObjectsByType<Monster1>(FindObjectsSortMode.None)
-        );
-        Vector3 origin = GetSpawnOrigin(monsters);
-        Monster1 prefab = LoadMonsterPrefab();
-
-        if (prefab != null)
-        {
-            DisableSceneMonsters(monsters);
-            SpawnFromPrefab(prefab, origin, desiredCount);
-            Debug.Log(
-                $"[CombatMonsterSpawner] Spawned {desiredCount} prefab Monster1 for node={selectedNode.NodeIndex}, difficulty={selectedNode.Difficulty}."
-            );
-            return;
-        }
-
-        if (monsters.Count == 0)
-        {
-            Debug.LogWarning(
-                "[CombatMonsterSpawner] No Monster1 prefab or scene template found in Combat scene."
-            );
-            return;
-        }
-
-        while (monsters.Count < desiredCount)
-        {
-            GameObject clone = Instantiate(monsters[0].gameObject, monsters[0].transform.parent);
-            clone.name = $"Monster_{monsters.Count + 1}";
-            Monster1 monster = clone.GetComponent<Monster1>();
-            monsters.Add(monster);
-        }
-
-        for (int i = monsters.Count - 1; i >= desiredCount; i--)
-        {
-            Destroy(monsters[i].gameObject);
-            monsters.RemoveAt(i);
-        }
-
-        for (int i = 0; i < monsters.Count; i++)
-        {
-            monsters[i].transform.position = GetCenteredSpawnPosition(origin, i, monsters.Count);
-            EntityWorldUI.EnsureFor(monsters[i], true);
-        }
-
-        Debug.Log(
-            $"[CombatMonsterSpawner] Spawned {monsters.Count} Monster1 for node={selectedNode.NodeIndex}, difficulty={selectedNode.Difficulty}."
-        );
-    }
-
-    private static Vector3 GetSpawnOrigin(List<Monster1> sceneMonsters)
-    {
-        for (int i = 0; i < sceneMonsters.Count; i++)
-        {
-            if (sceneMonsters[i] != null)
-            {
-                return sceneMonsters[i].transform.position;
-            }
-        }
-
-        return DefaultMonsterSpawnOrigin;
-    }
-
-    private static void DisableSceneMonsters(List<Monster1> sceneMonsters)
-    {
-        for (int i = 0; i < sceneMonsters.Count; i++)
-        {
-            if (sceneMonsters[i] == null)
-            {
-                continue;
-            }
-
-            sceneMonsters[i].gameObject.SetActive(false);
-            Destroy(sceneMonsters[i].gameObject);
-        }
-    }
-
-    private static void SpawnFromPrefab(Monster1 prefab, Vector3 origin, int desiredCount)
-    {
-        for (int i = 0; i < desiredCount; i++)
-        {
-            Vector3 position = GetCenteredSpawnPosition(origin, i, desiredCount);
-            Monster1 monster = Instantiate(prefab, position, Quaternion.identity);
-            monster.name = $"Monster_{i + 1}";
-            EntityWorldUI.EnsureFor(monster, true);
-        }
+            return fallback; //Wave0write
+        } //Wave0write
     }
 }
+

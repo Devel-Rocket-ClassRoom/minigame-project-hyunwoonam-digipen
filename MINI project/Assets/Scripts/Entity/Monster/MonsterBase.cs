@@ -1,137 +1,175 @@
+using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// 몬스터 공통 base입니다. 기본 행동은 가중치로 결정합니다.
-/// </summary>
-public abstract class MonsterBase : EntityBase
+namespace Tempt
 {
-    [Header("Action Weights")]
-    [SerializeField]
-    private int attackWeight = 70;
-
-    [SerializeField]
-    private int skillWeight = 20;
-
-    [SerializeField]
-    private int defendWeight = 10;
-
-    [Header("Turn Order")]
-    [SerializeField]
-    private int monsterGrade = 1;
-
-    [Header("Death")]
-    [Tooltip("사망 후 GameObject가 파괴되기까지 지연(초). 0이면 즉시 파괴됩니다.")]
-    [SerializeField]
-    private float deathDestroyDelay = 0.3f;
-
-    private bool hasDied;
-
-    public int AttackWeight => attackWeight;
-    public int SkillWeight => skillWeight;
-    public int DefendWeight => defendWeight;
-    public int MonsterGrade => monsterGrade;
-    public bool HasDied => hasDied;
-
-    protected override void Awake()
-    {
-        // TODO:
-        // - 목표: 몬스터가 Raycast 대상 선택에 맞을 수 있도록 2D Collider를 보장한다.
-        // - 의도: CombatFlow의 Camera ScreenPointToRay + Physics2D raycast가 MonsterBase를 찾을 수 있게 한다.
-        // - 구현해야 할 것: Collider2D가 없으면 BoxCollider2D를 추가하고 EntityBase 초기화를 이어서 호출한다.
-        EnsureTargetCollider();
-        base.Awake();
-    }
-
-    public virtual CombatActionType DecideAction()
-    {
-        // 기존 구현:
-        // int totalWeight = Mathf.Max(1, attackWeight + skillWeight + defendWeight);
-        // int roll = Random.Range(0, totalWeight);
-        //
-        // if (roll < attackWeight)
-        // {
-        //     return CombatActionType.Attack;
-        // }
-        //
-        // if (roll < attackWeight + skillWeight)
-        // {
-        //     return CombatActionType.Skill;
-        // }
-        //
-        // return CombatActionType.Defend;
-
-        // TODO:
-        // - 목표: 몬스터의 기본 행동을 Attack/Skill/Defend 가중치로 선택한다.
-        // - 의도: Monster1 같은 단순 몬스터는 별도 FSM 없이 MonsterBase의 공통 의사결정을 재사용한다.
-        // - 구현해야 할 것: 총 가중치를 계산하고 랜덤 롤을 통해 CombatActionType을 반환한다.
-        int effectiveSkillWeight = GetActiveSkill(0) == null ? 0 : skillWeight;
-        int totalWeight = Mathf.Max(1, attackWeight + effectiveSkillWeight + defendWeight);
-        int roll = Random.Range(0, totalWeight);
-
-        if (roll < attackWeight)
-        {
-            return CombatActionType.Attack;
-        }
-
-        if (roll < attackWeight + effectiveSkillWeight)
-        {
-            return CombatActionType.Skill;
-        }
-
-        return CombatActionType.Defend;
-    }
-
-    public virtual void ExecuteAction(CombatActionType actionType, EntityBase target)
-    {
-        // TODO:
-        // - 목표: 몬스터가 결정한 행동을 실행하는 확장 지점을 MonsterBase에 둔다.
-        // - 의도: Player는 직접 입력으로 행동하므로 자동 의사결정/실행 API를 EntityBase가 아니라 MonsterBase 책임으로 제한한다.
-        // - 구현해야 할 것: CombatAction 데이터 구조가 확정되면 actionType과 target 기반 실행을 CombatFlow와 연결한다.
-        Debug.Log(
-            $"[MonsterBase] ExecuteAction is TODO. actionType={actionType}, target={target?.name ?? "null"}"
-        );
-    }
-
     /// <summary>
-    /// 사망 시 GameObject를 파괴하여 씬에서 제거합니다.
+    /// 몬스터 베이스. CharacterBaset를 사용하지 않으며 룬/EXP 미보유.
+    /// 행동은 MonsterActionSelectort가 가중치로 선택. 침식 변이 셰이더 적용 훅 보유.
+    /// 드랍은 DropTableId를 통해 DataManager.ResolveDrops()로 결정.
+    /// 각각의 몬스터 코드(Monster1 등)에서 DropTableId를 포함한 스탯/스킬/애니메이션을 재정의한다.
     /// </summary>
-    /// <remarks>
-    /// - CombatFlow.ApplyDamageToMonster에서 IsDead 판정 직후 호출됩니다.
-    /// - deathDestroyDelay 만큼 지연 후 Destroy(gameObject)가 실행됩니다.
-    /// - 같은 몬스터에 Die가 두 번 호출되어도 hasDied 가드로 중복 Destroy를 막습니다.
-    /// - 사망 애니메이션/드롭/이펙트가 필요하면 파생 클래스에서 override 합니다.
-    /// </remarks>
-    public virtual void Die()
+    public abstract class MonsterBase : EntityBase
     {
-        if (hasDied)
+        /// <summary>몬스터 데이터 ID.</summary>
+        public int MonsterDataId;
+
+        /// <summary>행동 가중치.</summary>
+        public ActionWeightTable ActionWeights;
+
+        /// <summary>처치 시 지급 EXP.</summary>
+        public int RewardExp;
+
+        /// <summary>처치 시 지급 골드.</summary>
+        public int RewardGold;
+
+        /// <summary>
+        /// 드랍 테이블 ID. DataManager.ResolveDrops(DropTableId)로 실제 드랍 결정.
+        /// 0이면 드랍 없음.
+        /// 각 몬스터 코드(Monster1 등)에서 재정의(override 또는 InitializeFromData 복사).
+        /// </summary>
+        public int DropTableId;
+
+        /// <summary>침식 변이 적용 여부.</summary>
+        public bool IsEroded { get; private set; }
+
+        /// <summary>
+        /// 데이터에서 초기화. CombatMonsterSpawnert가 호출.
+        /// </summary>
+        public void InitializeFromData(MonsterData data, float erosionMultiplier)
         {
-            return;
+            // 동작 요약:
+            // - MonsterDataId = data.Id.
+            // - Stats 셋업 (data 수치 + erosionMultiplier 배수 적용, 1.5배 기본).
+            // - ActiveSkills 슬롯에 data.SkillIds 매핑.
+            // - ActionWeights, RewardExp, RewardGold 복사.
+            // - DropTableId = data.DropTableId.
+            // - erosionMultiplier > 1 → ApplyErosionVisual().
+            //TODO: MonsterDataId = data.Id;
+            //TODO: Stats.BaseMaxHP = Mathf.RoundToInt(data.BaseMaxHP * erosionMultiplier);
+            //TODO: Stats.BaseMaxMP = data.BaseMaxMP;
+            //TODO: Stats.BaseATK   = Mathf.RoundToInt(data.BaseATK * erosionMultiplier);
+            //TODO: Stats.BaseDEF   = Mathf.RoundToInt(data.BaseDEF * erosionMultiplier);
+            //TODO: Stats.BaseSPD   = data.BaseSPD;
+            //TODO: Stats.RestoreToFull();
+            //TODO: // 스킬 매핑
+            //TODO: ActiveSkills = new System.Collections.Generic.List<Skill>();
+            //TODO: foreach (int sid in data.SkillIds)
+            //TODO:     ActiveSkills.Add(new Skill(GameSystemManager.Instance.Data.Skills[sid]));
+            //TODO: ActionWeights = data.ActionWeights;
+            //TODO: RewardExp  = data.RewardExp;
+            //TODO: RewardGold = data.RewardGold;
+            //TODO: DropTableId = data.DropTableId;
+            //TODO: if (erosionMultiplier > 1f) ApplyErosionVisual();
+            if (data == null) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            MonsterDataId = data.Id; //Wave0write
+            DisplayName = data.NameKey; //Wave0write
+            Stats = new StatBlock(); //Wave0write
+            float mult = Mathf.Max(1f, erosionMultiplier); //Wave0write
+            Stats.SetBaseStats( //Wave0write
+                Mathf.RoundToInt(data.MaxHP * mult), //Wave0write
+                data.MaxMP, //Wave0write
+                Mathf.RoundToInt(data.ATK * mult), //Wave0write
+                Mathf.RoundToInt(data.DEF * mult), //Wave0write
+                data.SPD); //Wave0write
+            Stats.RestoreToFull(); //Wave0write
+
+            ActiveSkills = new Skill[2]; //Wave0write
+            if (data.SkillIds != null && GameSystemManager.TryGetInstance(out GameSystemManager gsm)) //Wave0write
+            { //Wave0write
+                for (int i = 0; i < data.SkillIds.Count && i < ActiveSkills.Length; i++) //Wave0write
+                { //Wave0write
+                    if (gsm.Data.Skills.TryGetValue(data.SkillIds[i], out SkillData skillData)) //Wave0write
+                    { //Wave0write
+                        ActiveSkills[i] = new Skill(skillData); //Wave0write
+                    } //Wave0write
+                } //Wave0write
+            } //Wave0write
+
+            ActionWeights = data.ActionWeights ?? new ActionWeightTable { Attack = 80, Skill = 0, Defend = 20 }; //Wave0write
+            RewardExp = data.RewardExp; //Wave0write
+            RewardGold = data.RewardGold; //Wave0write
+            DropTableId = data.DropTableId; //Wave0write
+            if (erosionMultiplier > 1f) //Wave0write
+            { //Wave0write
+                ApplyErosionVisual(); //Wave0write
+            } //Wave0write
         }
 
-        hasDied = true;
-        Debug.Log($"[MonsterBase] {name} Die. delay={deathDestroyDelay:0.00}s");
-
-        float delay = Mathf.Max(0f, deathDestroyDelay);
-        if (delay <= 0f)
+        /// <summary>
+        /// 침식 시각화 적용(어두운 색조 + 셰이더 변이).
+        /// </summary>
+        public void ApplyErosionVisual()
         {
-            Destroy(gameObject);
-            return;
+            // 동작 요약:
+            // - IsEroded = true.
+            // - SpriteRenderer/머티리얼에 data.ErosionShaderKey 셰이더 키 적용.
+            //TODO: IsEroded = true;
+            //TODO: // SpriteRenderer 또는 MeshRenderer의 머티리얼 교체
+            //TODO: var sr = GetComponent<SpriteRenderer>();
+            //TODO: if (sr != null)
+            //TODO: {
+            //TODO:     MonsterData data = GameSystemManager.Instance.Data.Monsters[MonsterDataId];
+            //TODO:     Material erosionMat = Resources.Load<Material>("Materials/" + data.ErosionShaderKey);
+            //TODO:     if (erosionMat != null) sr.material = erosionMat;
+            //TODO: }
+            IsEroded = true; //Wave0write
+            SpriteRenderer sr = GetComponent<SpriteRenderer>(); //Wave0write
+            if (sr != null) //Wave0write
+            { //Wave0write
+                sr.color = Color.Lerp(sr.color, Color.magenta, 0.25f); //Wave0write
+            } //Wave0write
         }
 
-        Destroy(gameObject, delay);
+        /// <summary>
+        /// 처치 시 보상 정보 반환. CombatControllert가 노드 클리어 시 합산용으로 사용.
+        /// 드랍 아이템은 DataManager.ResolveDrops(DropTableId)로 확률 계산.
+        /// </summary>
+        public NodeRewardContribution GetRewardContribution()
+        {
+            // 동작 요약:
+            // - DataManager data = GameSystemManager.Instance.Data.
+            // - List<DroppedItemStack> drops = data.ResolveDrops(DropTableId).
+            // - DroppedItemIds 목록 = drops.SelectMany(d => Enumerable.Repeat(d.ItemId, d.Count)).
+            // - NodeRewardContribution { Exp = RewardExp, Gold = RewardGold, DroppedItemIds } 반환.
+            //TODO: DataManager dataMgr = GameSystemManager.Instance.Data;
+            //TODO: List<DroppedItemStack> drops = dataMgr.ResolveDrops(DropTableId);
+            //TODO: var itemIds = new List<int>();
+            //TODO: foreach (var stack in drops)
+            //TODO:     for (int i = 0; i < stack.Count; i++) itemIds.Add(stack.ItemId);
+            //TODO: return new NodeRewardContribution { Exp = RewardExp, Gold = RewardGold, DroppedItemIds = itemIds };
+            var itemIds = new List<int>(); //Wave0write
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm)) //Wave0write
+            { //Wave0write
+                List<DroppedItemStack> drops = gsm.Data.ResolveDrops(DropTableId); //Wave0write
+                foreach (DroppedItemStack stack in drops) //Wave0write
+                { //Wave0write
+                    for (int i = 0; i < stack.Count; i++) //Wave0write
+                    { //Wave0write
+                        itemIds.Add(stack.ItemId); //Wave0write
+                    } //Wave0write
+                } //Wave0write
+            } //Wave0write
+
+            return new NodeRewardContribution { Exp = RewardExp, Gold = RewardGold, DroppedItemIds = itemIds }; //Wave0write
+        }
     }
 
-    private void EnsureTargetCollider()
+    /// <summary>한 마리가 노드 보상에 기여하는 분.</summary>
+    public sealed class NodeRewardContribution
     {
-        // TODO:
-        // - 목표: 씬에 배치된 몬스터 오브젝트가 클릭 가능한 물리 타겟을 갖게 한다.
-        // - 의도: 수동으로 Collider2D를 빠뜨려도 Week 1 데모에서 타겟 선택이 동작하게 한다.
-        // - 구현해야 할 것: 기존 Collider2D가 없을 때 BoxCollider2D를 런타임에 추가한다.
-        if (GetComponent<Collider2D>() != null)
-        {
-            return;
-        }
+        /// <summary>지급 EXP.</summary>
+        public int Exp;
 
-        gameObject.AddComponent<BoxCollider2D>();
+        /// <summary>드랍 골드.</summary>
+        public int Gold;
+
+        /// <summary>드랍 아이템 ID 목록(중복 허용, 수량 반영).</summary>
+        public List<int> DroppedItemIds;
     }
 }
+

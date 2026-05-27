@@ -1,340 +1,248 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem.UI;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using UnitySceneManager = UnityEngine.SceneManagement.SceneManager;
 
-/// <summary>
-/// FloorMap 씬에서 전체 데모 층계 노드를 표시하고 선택을 처리합니다.
-/// </summary>
-public class FloorMapController : MonoBehaviour
+namespace Tempt
 {
-    private const string FloorMapSceneName = "FloorMap";
-    private const float RowHeight = 118f;
-    private const float ButtonWidth = 172f;
-    private const float ButtonHeight = 76f;
-
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    private static void RegisterSceneLoaded()
+    /// <summary>
+    /// 플로어 맵 씬 컨트롤러. 전체 노드 스크롤 렌더링, 선택 가능 노드만 활성화,
+    /// 단계별 침식률 표시, 재도전 모드 진입 가능 여부 처리.
+    /// </summary>
+    public sealed class FloorMapController : SceneControllerBase
     {
-        UnitySceneManager.sceneLoaded -= OnSceneLoaded;
-        UnitySceneManager.sceneLoaded += OnSceneLoaded;
-        EnsureController(UnitySceneManager.GetActiveScene());
-    }
+        /// <summary>이 씬에서 사용하는 맵 모델 참조.</summary>
+        public FloorMapModel Map;
 
-    private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        EnsureController(scene);
-    }
+        /// <summary>현재 재도전 모드(상위 안전지대 도달 후 아래층 재방문).</summary>
+        public bool IsRechallengeMode;
 
-    private static void EnsureController(Scene scene)
-    {
-        if (scene.name != FloorMapSceneName)
+        [SerializeField] private RectTransform nodeContainer;
+        [SerializeField] private RectTransform connectionContainer;
+        [SerializeField] private FloorNodeUI nodeTemplate;
+        [SerializeField] private TextMeshProUGUI headerLabel;
+        [SerializeField] private float floorSpacingY = 180f;
+        [SerializeField] private float nodeSpacingX = 170f;
+        [SerializeField] private float topPadding = 110f;
+        [SerializeField] private float connectionThickness = 4f;
+
+        private readonly List<FloorNodeUI> spawnedNodes = new List<FloorNodeUI>();
+        private readonly List<GameObject> spawnedConnections = new List<GameObject>();
+        private readonly Dictionary<int, Vector2> nodePositions = new Dictionary<int, Vector2>();
+
+        /// <inheritdoc/>
+        public override void OnEnter()
         {
-            return;
-        }
-
-        if (FindAnyObjectByType<FloorMapController>() != null)
-        {
-            return;
-        }
-
-        GameObject controller = new GameObject("FloorMapController");
-        controller.AddComponent<FloorMapController>();
-    }
-
-    private void Start()
-    {
-        EnsureEventSystem();
-        BuildNodeView();
-    }
-
-    private void BuildNodeView()
-    {
-        GameSystemManager gameSystemManager = FindAnyObjectByType<GameSystemManager>();
-        FloorNodeCreator creator = GetFloorNodeCreator(gameSystemManager);
-
-        if (creator.Nodes.Count == 0)
-        {
-            creator.GenerateDemoFloorNode();
-        }
-
-        Canvas canvas = CreateCanvas();
-        CreateHeader(canvas.transform);
-        RectTransform content = CreateScrollView(canvas.transform);
-        RenderFloorRows(content, creator.Nodes, gameSystemManager);
-
-        Debug.Log($"[FloorMapController] Floor nodes rendered: {creator.Nodes.Count}");
-    }
-
-    private FloorNodeCreator GetFloorNodeCreator(GameSystemManager gameSystemManager)
-    {
-        if (gameSystemManager != null)
-        {
-            return gameSystemManager.FloorNodeCreator;
-        }
-
-        FloorNodeCreator creator = new FloorNodeCreator();
-        creator.Initialize(new DataManager());
-        Debug.LogWarning(
-            "[FloorMapController] GameSystemManager is missing. Using local demo nodes."
-        );
-        return creator;
-    }
-
-    private Canvas CreateCanvas()
-    {
-        GameObject canvasObject = new GameObject("FloorMapCanvas");
-        Canvas canvas = canvasObject.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-
-        CanvasScaler scaler = canvasObject.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1280f, 720f);
-
-        canvasObject.AddComponent<GraphicRaycaster>();
-        return canvas;
-    }
-
-    private void CreateHeader(Transform parent)
-    {
-        Text header = CreateText(parent, "Floor Map", 30, TextAnchor.MiddleCenter);
-        RectTransform rectTransform = header.GetComponent<RectTransform>();
-        rectTransform.anchorMin = new Vector2(0.5f, 1f);
-        rectTransform.anchorMax = new Vector2(0.5f, 1f);
-        rectTransform.pivot = new Vector2(0.5f, 1f);
-        rectTransform.anchoredPosition = new Vector2(0f, -32f);
-        rectTransform.sizeDelta = new Vector2(520f, 48f);
-    }
-
-    private RectTransform CreateScrollView(Transform parent)
-    {
-        GameObject scrollObject = new GameObject("FloorMapScroll");
-        scrollObject.transform.SetParent(parent, false);
-        RectTransform scrollRectTransform = scrollObject.AddComponent<RectTransform>();
-        scrollRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
-        scrollRectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-        scrollRectTransform.pivot = new Vector2(0.5f, 0.5f);
-        scrollRectTransform.anchoredPosition = new Vector2(0f, -24f);
-        scrollRectTransform.sizeDelta = new Vector2(920f, 520f);
-
-        Image background = scrollObject.AddComponent<Image>();
-        background.color = new Color(0.06f, 0.07f, 0.08f, 0.88f);
-
-        ScrollRect scrollRect = scrollObject.AddComponent<ScrollRect>();
-        scrollRect.horizontal = false;
-        scrollRect.vertical = true;
-        scrollRect.movementType = ScrollRect.MovementType.Clamped;
-
-        GameObject viewportObject = new GameObject("Viewport");
-        viewportObject.transform.SetParent(scrollObject.transform, false);
-        RectTransform viewport = viewportObject.AddComponent<RectTransform>();
-        viewport.anchorMin = Vector2.zero;
-        viewport.anchorMax = Vector2.one;
-        viewport.offsetMin = new Vector2(16f, 16f);
-        viewport.offsetMax = new Vector2(-16f, -16f);
-
-        Image viewportImage = viewportObject.AddComponent<Image>();
-        viewportImage.color = new Color(0f, 0f, 0f, 0.12f);
-        viewportObject.AddComponent<Mask>().showMaskGraphic = false;
-
-        GameObject contentObject = new GameObject("Content");
-        contentObject.transform.SetParent(viewportObject.transform, false);
-        RectTransform content = contentObject.AddComponent<RectTransform>();
-        content.anchorMin = new Vector2(0.5f, 1f);
-        content.anchorMax = new Vector2(0.5f, 1f);
-        content.pivot = new Vector2(0.5f, 1f);
-        content.anchoredPosition = Vector2.zero;
-        content.sizeDelta = new Vector2(860f, 0f);
-
-        scrollRect.viewport = viewport;
-        scrollRect.content = content;
-        return content;
-    }
-
-    private void RenderFloorRows(
-        RectTransform content,
-        IReadOnlyList<FloorNodeData> nodes,
-        GameSystemManager gameSystemManager
-    )
-    {
-        SortedDictionary<int, List<FloorNodeData>> nodesByFloor = GroupNodesByFloor(nodes);
-        int rowIndex = 0;
-
-        foreach (KeyValuePair<int, List<FloorNodeData>> floorNodes in nodesByFloor)
-        {
-            RectTransform row = CreateFloorRow(content, floorNodes.Key, rowIndex);
-            List<FloorNodeData> floorNodeList = floorNodes.Value;
-
-            for (int i = 0; i < floorNodeList.Count; i++)
+            GameSystemManager gsm = GameSystemManager.Instance; //Wave0write
+            Map = gsm.CurrentRun?.FloorMap; //Wave0write
+            IsRechallengeMode = false; //Wave0write
+            if (Map == null)
             {
-                CreateNodeButton(row, floorNodeList[i], i, floorNodeList.Count, gameSystemManager);
+                Debug.LogError("[FloorMapController] CurrentRun.FloorMap 이 없습니다.");
+                return;
             }
 
-            rowIndex++;
-        }
-
-        content.sizeDelta = new Vector2(content.sizeDelta.x, Mathf.Max(1, rowIndex) * RowHeight);
-    }
-
-    private SortedDictionary<int, List<FloorNodeData>> GroupNodesByFloor(
-        IReadOnlyList<FloorNodeData> nodes
-    )
-    {
-        SortedDictionary<int, List<FloorNodeData>> result =
-            new SortedDictionary<int, List<FloorNodeData>>();
-
-        for (int i = 0; i < nodes.Count; i++)
-        {
-            FloorNodeData node = nodes[i];
-            if (!result.TryGetValue(node.Floor, out List<FloorNodeData> floorNodes))
+            if (!ValidateUiRefs())
             {
-                floorNodes = new List<FloorNodeData>();
-                result.Add(node.Floor, floorNodes);
+                return;
             }
 
-            floorNodes.Add(node);
+            RenderMap();
         }
 
-        return result;
-    }
-
-    private RectTransform CreateFloorRow(RectTransform parent, int floor, int rowIndex)
-    {
-        GameObject rowObject = new GameObject($"FloorRow_{floor}");
-        rowObject.transform.SetParent(parent, false);
-
-        RectTransform row = rowObject.AddComponent<RectTransform>();
-        row.anchorMin = new Vector2(0.5f, 1f);
-        row.anchorMax = new Vector2(0.5f, 1f);
-        row.pivot = new Vector2(0.5f, 1f);
-        row.anchoredPosition = new Vector2(0f, -rowIndex * RowHeight);
-        row.sizeDelta = new Vector2(840f, RowHeight);
-
-        Image rowImage = rowObject.AddComponent<Image>();
-        rowImage.color =
-            rowIndex % 2 == 0 ? new Color(1f, 1f, 1f, 0.04f) : new Color(1f, 1f, 1f, 0.02f);
-
-        Text floorLabel = CreateText(rowObject.transform, $"{floor}F", 22, TextAnchor.MiddleLeft);
-        RectTransform labelRect = floorLabel.GetComponent<RectTransform>();
-        labelRect.anchorMin = new Vector2(0f, 0.5f);
-        labelRect.anchorMax = new Vector2(0f, 0.5f);
-        labelRect.pivot = new Vector2(0f, 0.5f);
-        labelRect.anchoredPosition = new Vector2(18f, 0f);
-        labelRect.sizeDelta = new Vector2(92f, RowHeight);
-
-        return row;
-    }
-
-    private void CreateNodeButton(
-        RectTransform parent,
-        FloorNodeData node,
-        int visualIndex,
-        int floorNodeCount,
-        GameSystemManager gameSystemManager
-    )
-    {
-        GameObject buttonObject = new GameObject($"FloorNode_{node.Floor}_{node.NodeSlot}");
-        buttonObject.transform.SetParent(parent, false);
-
-        RectTransform rectTransform = buttonObject.AddComponent<RectTransform>();
-        rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
-        rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-        rectTransform.pivot = new Vector2(0.5f, 0.5f);
-        rectTransform.sizeDelta = new Vector2(ButtonWidth, ButtonHeight);
-
-        float startX = -(floorNodeCount - 1) * (ButtonWidth + 24f) * 0.5f;
-        rectTransform.anchoredPosition = new Vector2(
-            startX + visualIndex * (ButtonWidth + 24f),
-            0f
-        );
-
-        bool canSelect =
-            gameSystemManager != null
-                ? gameSystemManager.CanSelectFloorNode(node)
-                : !node.IsCleared;
-
-        Image image = buttonObject.AddComponent<Image>();
-        image.color = GetNodeColor(node, canSelect);
-
-        Button button = buttonObject.AddComponent<Button>();
-        button.interactable = canSelect;
-
-        FloorNodeData capturedNode = node;
-        button.onClick.AddListener(() => OnNodeButtonClicked(capturedNode));
-
-        string nodeType = node.IsBossNode ? "Boss" : "Combat";
-        string clearText = node.IsCleared ? "Cleared" : nodeType;
-        string label =
-            $"{node.DisplayName}\n{clearText}\nD{node.Difficulty} / M{node.MonsterCount}";
-
-        Text text = CreateText(buttonObject.transform, label, 17, TextAnchor.MiddleCenter);
-        RectTransform textRect = text.GetComponent<RectTransform>();
-        textRect.anchorMin = Vector2.zero;
-        textRect.anchorMax = Vector2.one;
-        textRect.offsetMin = new Vector2(6f, 4f);
-        textRect.offsetMax = new Vector2(-6f, -4f);
-    }
-
-    private Color GetNodeColor(FloorNodeData node, bool canSelect)
-    {
-        if (!canSelect)
+        /// <inheritdoc/>
+        public override void OnExit()
         {
-            return node.IsCleared
-                ? new Color(0.18f, 0.32f, 0.2f, 0.75f)
-                : new Color(0.18f, 0.18f, 0.18f, 0.75f);
+            ClearRenderedMap();
+            Map = null; //Wave0write
         }
 
-        if (node.IsBossNode)
+        /// <summary>
+        /// 노드 선택 콜백(FloorNodeUI → 컨트롤러).
+        /// </summary>
+        public void OnNodeClicked(int nodeId)
         {
-            return new Color(0.52f, 0.12f, 0.12f, 0.96f);
+            if (Map == null || !Map.NodesById.TryGetValue(nodeId, out FloorNode node)) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            bool selectable = node.Floor == Map.NextSelectableFloor || (IsRechallengeMode && node.Floor < Map.NextSelectableFloor); //Wave0write
+            if (!selectable || (!IsRechallengeMode && node.IsCleared)) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            GameSystemManager.Instance.StartCombatNode(node, IsRechallengeMode); //Wave0write
         }
 
-        return new Color(0.14f, 0.23f, 0.34f, 0.96f);
-    }
-
-    private Text CreateText(Transform parent, string value, int fontSize, TextAnchor alignment)
-    {
-        GameObject textObject = new GameObject("Text");
-        textObject.transform.SetParent(parent, false);
-
-        Text text = textObject.AddComponent<Text>();
-        text.text = value;
-        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        text.fontSize = fontSize;
-        text.alignment = alignment;
-        text.color = Color.white;
-        text.raycastTarget = false;
-        return text;
-    }
-
-    private void OnNodeButtonClicked(FloorNodeData node)
-    {
-        GameSystemManager gameSystemManager = FindAnyObjectByType<GameSystemManager>();
-
-        if (gameSystemManager == null)
+        /// <summary>
+        /// 후퇴(안전지대로 복귀) 가능 여부.
+        /// 단계 보스 클리어 전에는 잠김(설계변경).
+        /// </summary>
+        public bool CanRetreatToSafe()
         {
-            Debug.LogWarning(
-                $"[FloorMapController] Cannot enter combat for floor {node.Floor} because GameSystemManager is missing."
-            );
-            return;
+            GameRunState run = GameSystemManager.Instance.CurrentRun; //Wave0write
+            if (run == null || Map == null) //Wave0write
+            { //Wave0write
+                return false; //Wave0write
+            } //Wave0write
+
+            int stageIndex = StageIndexFromFloor(run.CurrentFloor); //Wave0write
+            return Map.IsStageCleared(stageIndex); //Wave0write
         }
 
-        Debug.Log($"[FloorMapController] Selected floor {node.Floor}, node={node.NodeIndex}");
-        gameSystemManager.StartCombatNode(node.NodeIndex);
-    }
-
-    private void EnsureEventSystem()
-    {
-        if (FindAnyObjectByType<EventSystem>() != null)
+        /// <summary>
+        /// 안전지대로 복귀 시도. 가능하면 GSM.Scenes.LoadSafeZone 호출.
+        /// </summary>
+        public void RequestReturnToSafe()
         {
-            return;
+            if (!CanRetreatToSafe()) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            GameRunState run = GameSystemManager.Instance.CurrentRun; //Wave0write
+            int safeZoneIndex = System.Math.Max(0, StageIndexFromFloor(run.CurrentFloor) - 1); //Wave0write
+            GameSystemManager.Instance.Scenes.LoadSafeZone(safeZoneIndex); //Wave0write
         }
 
-        GameObject eventSystemObject = new GameObject("EventSystem");
-        eventSystemObject.AddComponent<EventSystem>();
-        eventSystemObject.AddComponent<InputSystemUIInputModule>();
+        private static int StageIndexFromFloor(int floor) //Wave0write
+        { //Wave0write
+            if (floor <= 3) return 1; //Wave0write
+            if (floor <= 11) return 2; //Wave0write
+            if (floor <= 19) return 3; //Wave0write
+            if (floor <= 29) return 4; //Wave0write
+            if (floor <= 39) return 5; //Wave0write
+            return 6; //Wave0write
+        } //Wave0write
+
+        private bool ValidateUiRefs()
+        {
+            if (nodeContainer != null && connectionContainer != null && nodeTemplate != null)
+            {
+                return true;
+            }
+
+            Debug.LogError("[FloorMapController] nodeContainer / connectionContainer / nodeTemplate 참조가 씬에 직접 할당되어 있지 않습니다.");
+            return false;
+        }
+
+        private void RenderMap()
+        {
+            ClearRenderedMap();
+            nodePositions.Clear();
+
+            List<int> floors = new List<int>(Map.NodesByFloor.Keys);
+            floors.Sort();
+            float requiredHeight = topPadding * 2f + Mathf.Max(1, floors.Count) * floorSpacingY;
+            nodeContainer.sizeDelta = new Vector2(nodeContainer.sizeDelta.x, requiredHeight);
+            connectionContainer.sizeDelta = new Vector2(connectionContainer.sizeDelta.x, requiredHeight);
+            if (nodeContainer.parent is RectTransform content)
+            {
+                content.sizeDelta = new Vector2(content.sizeDelta.x, requiredHeight);
+            }
+
+            for (int floorIndex = 0; floorIndex < floors.Count; floorIndex++)
+            {
+                int floor = floors[floorIndex];
+                if (!Map.NodesByFloor.TryGetValue(floor, out List<FloorNode> nodes) || nodes == null)
+                {
+                    continue;
+                }
+
+                float rowY = -topPadding - floorIndex * floorSpacingY;
+                float rowStartX = -((nodes.Count - 1) * nodeSpacingX) * 0.5f;
+                for (int nodeIndex = 0; nodeIndex < nodes.Count; nodeIndex++)
+                {
+                    FloorNode node = nodes[nodeIndex];
+                    if (node == null)
+                    {
+                        continue;
+                    }
+
+                    Vector2 anchoredPosition = new Vector2(rowStartX + nodeIndex * nodeSpacingX, rowY);
+                    nodePositions[node.NodeId] = anchoredPosition;
+                    FloorNodeUI ui = Instantiate(nodeTemplate, nodeContainer);
+                    ui.gameObject.SetActive(true);
+                    ui.RectTransform.anchoredPosition = anchoredPosition;
+                    ui.Bind(node, OnNodeClicked);
+                    ui.SetInteractable(IsNodeSelectable(node));
+                    spawnedNodes.Add(ui);
+                }
+            }
+
+            foreach (FloorNode node in Map.NodesById.Values)
+            {
+                if (node?.NextNodeIds == null || !nodePositions.TryGetValue(node.NodeId, out Vector2 from))
+                {
+                    continue;
+                }
+
+                foreach (int nextId in node.NextNodeIds)
+                {
+                    if (nodePositions.TryGetValue(nextId, out Vector2 to))
+                    {
+                        SpawnConnection(from, to);
+                    }
+                }
+            }
+
+            if (headerLabel != null)
+            {
+                headerLabel.text = "FLOOR MAP";
+            }
+        }
+
+        private bool IsNodeSelectable(FloorNode node)
+        {
+            if (node == null)
+            {
+                return false;
+            }
+
+            bool selectable = node.Floor == Map.NextSelectableFloor || (IsRechallengeMode && node.Floor < Map.NextSelectableFloor);
+            return selectable && (IsRechallengeMode || !node.IsCleared);
+        }
+
+        private void SpawnConnection(Vector2 from, Vector2 to)
+        {
+            var line = new GameObject("ConnectionLine", typeof(RectTransform), typeof(Image));
+            line.transform.SetParent(connectionContainer, false);
+            RectTransform rect = line.GetComponent<RectTransform>();
+            Image image = line.GetComponent<Image>();
+            Vector2 delta = to - from;
+            rect.anchorMin = new Vector2(0.5f, 1f);
+            rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = from + delta * 0.5f;
+            rect.sizeDelta = new Vector2(delta.magnitude, connectionThickness);
+            rect.localEulerAngles = new Vector3(0f, 0f, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg);
+            image.color = new Color(0.55f, 0.55f, 0.60f, 0.45f);
+            line.transform.SetAsFirstSibling();
+            spawnedConnections.Add(line);
+        }
+
+        private void ClearRenderedMap()
+        {
+            foreach (FloorNodeUI ui in spawnedNodes)
+            {
+                if (ui != null)
+                {
+                    Destroy(ui.gameObject);
+                }
+            }
+            spawnedNodes.Clear();
+
+            foreach (GameObject line in spawnedConnections)
+            {
+                if (line != null)
+                {
+                    Destroy(line);
+                }
+            }
+            spawnedConnections.Clear();
+            nodePositions.Clear();
+        }
     }
 }

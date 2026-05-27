@@ -1,182 +1,180 @@
+using System;
+using System.Collections;
 using UnityEngine;
-using UnitySceneManager = UnityEngine.SceneManagement.SceneManager;
+using UnityEngine.SceneManagement;
 
-#pragma warning disable CS0649
-
-/// <summary>
-/// Unity 씬 전환을 담당하는 임시 클래스입니다.
-/// </summary>
-/// <remarks>
-/// Unity 기본 SceneManager와 이름 충돌을 피하기 위해 실제 호출은 별칭인
-/// UnitySceneManager를 사용합니다. 현재는 동기 LoadScene만 사용하고, 이후
-/// Loading/Enter/Exit 단계 확장합니다.
-/// </remarks>
-public class GameSceneManager
+namespace Tempt
 {
-    private GameSceneId currentScene;
-    private GameSceneId previousScene;
-    private GameSceneTransitionState transitionState;
-    private string lastRequestedSceneName;
-
     /// <summary>
-    /// 현재 게임 씬 ID입니다.
+    /// 게임 씬 전환 FSM. Unity 기본 SceneManager 위에서 동작하며,
+    /// 씬별 컨트롤러(SceneControllerBase 파생)의 라이프사이클을 관리한다.
     /// </summary>
-    public GameSceneId CurrentScene => currentScene;
-
-    /// <summary>
-    /// 직전 게임 씬 ID입니다.
-    /// </summary>
-    public GameSceneId PreviousScene => previousScene;
-
-    /// <summary>
-    /// 현재 씬 전환 상태입니다.
-    /// </summary>
-    public GameSceneTransitionState TransitionState => transitionState;
-
-    /// <summary>
-    /// 마지막으로 로드 요청한 Unity 씬 이름입니다.
-    /// </summary>
-    public string LastRequestedSceneName => lastRequestedSceneName;
-
-    /// <summary>
-    /// 씬 매니저를 초기화합니다.
-    /// </summary>
-    public void Initialize(GameSceneId initialScene)
+    public sealed class GameSceneManager : MonoBehaviour
     {
-        // TODO:
-        // - 목표: 씬 매니저의 현재/이전 씬과 전환 상태를 초기화한다.
-        // - 의도: GameSystemManager 초기화 시 씬 FSM의 기준 상태를 명확히 한다.
-        // - 구현해야 할 것: currentScene, previousScene, transitionState, lastRequestedSceneName을 초기값으로 설정한다.
-        currentScene = initialScene;
-        previousScene = GameSceneId.None;
-        transitionState = GameSceneTransitionState.Idle;
-        lastRequestedSceneName = string.Empty;
-    }
+        /// <summary>현재 활성 씬 ID.</summary>
+        public SceneId CurrentSceneId { get; private set; }
 
-    /// <summary>
-    /// 지정한 게임 씬으로 전환합니다.
-    /// </summary>
-    public void LoadScene(GameSceneId sceneId)
-    {
-        // TODO:
-        // - 목표: GameSceneId를 Unity 씬 이름으로 변환해 씬을 로드한다.
-        // - 의도: UnityEngine.SceneManagement.SceneManager 직접 호출을 이 클래스 안으로 제한한다.
-        // - 구현해야 할 것: 씬 이름 검증, current/previous 상태 갱신, Loading/Loaded/Failed 상태 전환, UnitySceneManager.LoadScene 호출을 수행한다.
+        /// <summary>현재 활성 씬 컨트롤러(없으면 null).</summary>
+        public SceneControllerBase ActiveController { get; private set; }
 
-        string sceneName = GetUnitySceneName(sceneId);
+        /// <summary>전환 직전 발생. (from, to)</summary>
+        public event Action<SceneId, SceneId> OnSceneWillChange;
 
-        if (string.IsNullOrEmpty(sceneName))
+        /// <summary>전환 완료 후 발생. (from, to)</summary>
+        public event Action<SceneId, SceneId> OnSceneChanged;
+
+        /// <summary>
+        /// 임의 씬으로 전환을 요청한다.
+        /// </summary>
+        /// <param name="next">전환할 씬 ID.</param>
+        public void RequestScene(SceneId next)
         {
-            transitionState = GameSceneTransitionState.Failed;
-            Debug.LogWarning($"[GameSceneManager] Unknown scene id: {sceneId}");
-            return;
+            SceneId from = CurrentSceneId; //Wave0write
+            if (from == next && ActiveController != null) //Wave0write
+            { //Wave0write
+                ActiveController.OnEnter(); //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            OnSceneWillChange?.Invoke(from, next); //Wave0write
+            ActiveController?.OnExit(); //Wave0write
+            StartCoroutine(LoadSceneRoutine(next, from)); //Wave0write
         }
 
-        previousScene = currentScene;
-        currentScene = sceneId;
-        lastRequestedSceneName = sceneName;
-        transitionState = GameSceneTransitionState.Loading;
-
-        Debug.Log($"[GameSceneManager] LoadScene {sceneName}");
-        UnitySceneManager.LoadScene(sceneName);
-
-        transitionState = GameSceneTransitionState.Loaded;
-    }
-
-    /// <summary>
-    /// MainMenu 씬으로 이동합니다.
-    /// </summary>
-    public void LoadMainMenu()
-    {
-        // TODO:
-        // - 목표: MainMenu 씬 전환을 명시적 API로 제공한다.
-        // - 의도: 호출자가 GameSceneId를 직접 다루지 않아도 주요 씬으로 이동할 수 있게 한다.
-        // - 구현해야 할 것: LoadScene(GameSceneId.MainMenu)를 호출한다.
-        LoadScene(GameSceneId.MainMenu);
-    }
-
-    /// <summary>
-    /// Safe0 씬으로 이동합니다.
-    /// </summary>
-    public void LoadSafe0()
-    {
-        // TODO:
-        // - 목표: Safe0 씬 전환을 명시적 API로 제공한다.
-        // - 의도: Week 1 안전지대 이동 코드를 간단하게 호출하게 한다.
-        // - 구현해야 할 것: LoadScene(GameSceneId.Safe0)를 호출한다.
-        LoadScene(GameSceneId.Safe0);
-    }
-
-    /// <summary>
-    /// Combat 씬으로 이동합니다.
-    /// </summary>
-    public void LoadCombat()
-    {
-        // TODO:
-        // - 목표: Combat 씬 전환을 명시적 API로 제공한다.
-        // - 의도: 전투 진입 코드가 Unity 씬 이름 문자열에 직접 의존하지 않게 한다.
-        // - 구현해야 할 것: LoadScene(GameSceneId.Combat)을 호출한다.
-        LoadScene(GameSceneId.Combat);
-    }
-
-    /// <summary>
-    /// FloorMap 씬으로 이동합니다.
-    /// </summary>
-    public void LoadFloorNode()
-    {
-        // TODO:
-        // - 목표: FloorNode 선택 화면을 실제 FloorMap Unity 씬으로 로드한다.
-        // - 의도: 안전지대에서 던전 노드 맵으로 이동하는 경로를 GameSceneManager에 모은다.
-        // - 구현해야 할 것: LoadScene(GameSceneId.FloorNode)를 호출한다.
-        LoadScene(GameSceneId.FloorNode);
-    }
-
-    /// <summary>
-    /// 게임 씬 ID에 대응하는 Unity 씬 이름을 반환합니다.
-    /// </summary>
-    public string GetUnitySceneName(GameSceneId sceneId)
-    {
-        // TODO:
-        // - 목표: GameSceneId enum을 실제 Unity 씬 이름 문자열로 변환한다.
-        // - 의도: 씬 이름 오타와 Unity 기본 SceneManager 직접 의존을 줄인다.
-        // - 구현해야 할 것: MainMenu/Safe0/Combat/FloorNode 등 등록된 씬 ID를 문자열로 매핑하고 알 수 없는 값은 빈 문자열로 처리한다.
-        switch (sceneId)
+        /// <summary>메인 메뉴로 이동.</summary>
+        public void LoadMainMenu()
         {
-            case GameSceneId.MainMenu:
-                return "MainMenu";
-            case GameSceneId.Safe0:
-                return "Safe0";
-            case GameSceneId.Combat:
-                return "Combat";
-            case GameSceneId.FloorNode:
-                return "FloorMap";
-            default:
-                return string.Empty;
+            RequestScene(SceneId.MainMenu); //Wave0write
+        }
+
+        /// <summary>지정한 안전지대로 이동.</summary>
+        /// <param name="safeZoneIndex">0~5.</param>
+        public void LoadSafeZone(int safeZoneIndex)
+        {
+            if (safeZoneIndex < 0 || safeZoneIndex > 5) //Wave0write
+            { //Wave0write
+                Debug.LogWarning("[GameSceneManager] SafeZone index out of range: " + safeZoneIndex); //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            RequestScene((SceneId)((int)SceneId.Safe0 + safeZoneIndex)); //Wave0write
+        }
+
+        /// <summary>플로어 맵으로 이동.</summary>
+        public void LoadFloorMap()
+        {
+            RequestScene(SceneId.FloorMap); //Wave0write
+        }
+
+        /// <summary>전투 씬으로 이동.</summary>
+        public void LoadCombat()
+        {
+            RequestScene(SceneId.Combat); //Wave0write
+        }
+
+        /// <summary>
+        /// 씬 ID에서 Unity 씬 이름을 얻는다.
+        /// </summary>
+        private string SceneNameOf(SceneId id)
+        {
+            switch (id) //Wave0write
+            { //Wave0write
+                case SceneId.Boot: return "Boot"; //Wave0write
+                case SceneId.MainMenu: return "MainMenu"; //Wave0write
+                case SceneId.Safe0: return "Safe0"; //Wave0write
+                case SceneId.Safe1: return "Safe1"; //Wave0write
+                case SceneId.Safe2: return "Safe2"; //Wave0write
+                case SceneId.Safe3: return "Safe3"; //Wave0write
+                case SceneId.Safe4: return "Safe4"; //Wave0write
+                case SceneId.Safe5: return "Safe5"; //Wave0write
+                case SceneId.FloorMap: return "FloorMap"; //Wave0write
+                case SceneId.Combat: return "Combat"; //Wave0write
+                default: throw new ArgumentOutOfRangeException(nameof(id), id, "Unknown scene id"); //Wave0write
+            } //Wave0write
+        }
+
+        private IEnumerator LoadSceneRoutine(SceneId next, SceneId from) //Wave0write
+        { //Wave0write
+            string sceneName = SceneNameOf(next); //Wave0write
+            if (Application.CanStreamedLevelBeLoaded(sceneName)) //Wave0write
+            { //Wave0write
+                AsyncOperation op = SceneManager.LoadSceneAsync(sceneName); //Wave0write
+                while (op != null && !op.isDone) //Wave0write
+                { //Wave0write
+                    yield return null; //Wave0write
+                } //Wave0write
+            } //Wave0write
+            else //Wave0write
+            { //Wave0write
+                yield return null; //Wave0write
+            } //Wave0write
+
+            ActiveController = FindAnyObjectByType<SceneControllerBase>(); //Wave0write
+            if (ActiveController == null)
+            {
+                Debug.LogError("[GameSceneManager] SceneControllerBase missing in scene: " + sceneName);
+            }
+
+            CurrentSceneId = next; //Wave0write
+            ActiveController?.OnEnter(); //Wave0write
+            OnSceneChanged?.Invoke(from, next); //Wave0write
+        } //Wave0write
+
+        private void Update() //Wave0write
+        { //Wave0write
+            ActiveController?.OnSceneUpdate(); //Wave0write
+        } //Wave0write
+    }
+
+    /// <summary>씬 ID 열거.</summary>
+    public enum SceneId
+    {
+        /// <summary>부팅 씬(선택, 비어 있을 수 있음).</summary>
+        Boot,
+
+        /// <summary>메인 메뉴.</summary>
+        MainMenu,
+
+        /// <summary>안전지대 0 (시작/비석/묘비/최초 룬 선택).</summary>
+        Safe0,
+
+        /// <summary>안전지대 1 (주점/상점/길드/대장간/신전).</summary>
+        Safe1,
+
+        /// <summary>안전지대 2 (성소 - 침식 관리).</summary>
+        Safe2,
+
+        /// <summary>안전지대 3 (광산1).</summary>
+        Safe3,
+
+        /// <summary>안전지대 4 (광산2).</summary>
+        Safe4,
+
+        /// <summary>안전지대 5 (광산3).</summary>
+        Safe5,
+
+        /// <summary>플로어 맵 (노드 스크롤).</summary>
+        FloorMap,
+
+        /// <summary>전투 씬.</summary>
+        Combat,
+    }
+
+    /// <summary>
+    /// 모든 씬 컨트롤러의 베이스. GameSceneManagert가 라이프사이클을 호출한다.
+    /// </summary>
+    public abstract class SceneControllerBase : MonoBehaviour
+    {
+        /// <summary>씬 진입 직후 호출.</summary>
+        public abstract void OnEnter();
+
+        /// <summary>씬 이탈 직전 호출.</summary>
+        public abstract void OnExit();
+
+        /// <summary>매 프레임 호출(필요한 컨트롤러만 override).</summary>
+        public virtual void OnSceneUpdate()
+        {
+            // 동작 요약: 기본 구현 없음.
         }
     }
 }
-
-/// <summary>
-/// 게임에서 직접 관리하는 씬 ID입니다.
-/// </summary>
-public enum GameSceneId
-{
-    None,
-    MainMenu,
-    Safe0,
-    Combat,
-    FloorNode
-}
-
-/// <summary>
-/// 씬 전환 임시 상태입니다.
-/// </summary>
-public enum GameSceneTransitionState
-{
-    Idle,
-    Loading,
-    Loaded,
-    Failed
-}
-
-#pragma warning restore CS0649

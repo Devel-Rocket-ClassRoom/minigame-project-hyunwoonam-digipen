@@ -1,140 +1,97 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using UnitySceneManager = UnityEngine.SceneManagement.SceneManager;
 
-/// <summary>
-/// MainMenu 씬의 New Game / Continue / Quit 버튼을 런타임에 GameSystemManager에 연결합니다.
-/// </summary>
-/// <remarks>
-/// 이 컨트롤러는 SafeZoneController와 동일한 패턴을 사용합니다.
-/// MainMenu 씬에 GameSystemManager 컴포넌트를 직접 두고 인스펙터 OnClick으로 연결하면
-/// DontDestroyOnLoad와 Singleton 중복 인스턴스 검사가 충돌하여 씬 재로드 시 참조가 깨집니다.
-/// 이를 피하기 위해 버튼을 이름으로 찾아 onClick에 GameSystemManager.Instance 호출을 직접 등록합니다.
-/// </remarks>
-public class MainMenuController : MonoBehaviour
+namespace Tempt
 {
-    private const string MainMenuSceneName = "MainMenu";
-    private const string NewGameButtonName = "NewGameButton";
-    private const string ContinueButtonName = "ContinueButton";
-    private const string QuitButtonName = "QuitButton";
-
-    private Button newGameButton;
-    private Button continueButton;
-    private Button quitButton;
-
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    private static void RegisterSceneLoaded()
+    /// <summary>
+    /// 메인 메뉴 컨트롤러. New Game / Continue / Option / Exit + 확인 팝업.
+    /// </summary>
+    public sealed class MainMenuController : SceneControllerBase
     {
-        UnitySceneManager.sceneLoaded -= OnSceneLoaded;
-        UnitySceneManager.sceneLoaded += OnSceneLoaded;
-        EnsureController(UnitySceneManager.GetActiveScene());
-    }
+        /// <summary>New Game 확인 팝업.</summary>
+        public NewGameConfirmPopup NewGameConfirm;
 
-    private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        EnsureController(scene);
-    }
+        /// <summary>옵션 페이지(UIManagert와 협업).</summary>
+        public OptionPageHost OptionHost;
 
-    private static void EnsureController(Scene scene)
-    {
-        if (scene.name != MainMenuSceneName)
+        [SerializeField] private Button newGameButton;
+        [SerializeField] private Button continueButton;
+        [SerializeField] private Button optionButton;
+        [SerializeField] private Button exitButton;
+
+        /// <inheritdoc/>
+        public override void OnEnter()
         {
-            return;
+            if (!ValidateButtonRefs())
+            {
+                return;
+            }
+
+            continueButton.interactable = GameSystemManager.Instance.Save.HasContinue();
+            newGameButton.onClick.AddListener(OnClickNewGame);
+            continueButton.onClick.AddListener(OnClickContinue);
+            optionButton.onClick.AddListener(OnClickOption);
+            exitButton.onClick.AddListener(OnClickExit);
         }
 
-        if (FindAnyObjectByType<MainMenuController>() != null)
+        /// <inheritdoc/>
+        public override void OnExit()
         {
-            return;
+            if (newGameButton != null) newGameButton.onClick.RemoveListener(OnClickNewGame);
+            if (continueButton != null) continueButton.onClick.RemoveListener(OnClickContinue);
+            if (optionButton != null) optionButton.onClick.RemoveListener(OnClickOption);
+            if (exitButton != null) exitButton.onClick.RemoveListener(OnClickExit);
         }
 
-        GameObject controller = new GameObject("MainMenuController");
-        controller.AddComponent<MainMenuController>();
-    }
-
-    private void Start()
-    {
-        BindNewGameButton();
-        BindContinueButton();
-        BindQuitButton();
-    }
-
-    private void BindNewGameButton()
-    {
-        newGameButton = FindButton(NewGameButtonName);
-        if (newGameButton == null)
+        /// <summary>New Game 클릭.</summary>
+        public void OnClickNewGame()
         {
-            return;
+            GameSystemManager gsm = GameSystemManager.Instance; //Wave0write
+            if (gsm.Save.HasContinue()) //Wave0write
+            { //Wave0write
+                gsm.Save.ClearContinue(); //Wave0write
+            } //Wave0write
+
+            gsm.StartNewGame(); //Wave0write
         }
 
-        newGameButton.onClick.RemoveListener(OnNewGameClicked);
-        newGameButton.onClick.AddListener(OnNewGameClicked);
-        Debug.Log("[MainMenuController] NewGameButton bound to StartNewGame.");
-    }
-
-    private void BindContinueButton()
-    {
-        continueButton = FindButton(ContinueButtonName);
-        if (continueButton == null)
+        /// <summary>Continue 클릭.</summary>
+        public void OnClickContinue()
         {
-            return;
+            GameSystemManager.Instance.ContinueGame(); //Wave0write
         }
 
-        continueButton.onClick.RemoveListener(OnContinueClicked);
-        continueButton.onClick.AddListener(OnContinueClicked);
-        Debug.Log("[MainMenuController] ContinueButton bound to ContinueGame.");
-    }
-
-    private void BindQuitButton()
-    {
-        quitButton = FindButton(QuitButtonName);
-        if (quitButton == null)
+        /// <summary>Option 클릭.</summary>
+        public void OnClickOption()
         {
-            return;
+            OptionHost?.Open(); //Wave0write
         }
 
-        quitButton.onClick.RemoveListener(OnQuitClicked);
-        quitButton.onClick.AddListener(OnQuitClicked);
-        Debug.Log("[MainMenuController] QuitButton bound to Application.Quit.");
-    }
-
-    private Button FindButton(string buttonName)
-    {
-        GameObject buttonObject = GameObject.Find(buttonName);
-        if (buttonObject == null)
+        /// <summary>Exit 클릭.</summary>
+        public void OnClickExit()
         {
-            Debug.LogWarning($"[MainMenuController] MainMenu button was not found: {buttonName}");
-            return null;
+            GameSystemManager.Instance.QuitGame(); //Wave0write
         }
 
-        Button button = buttonObject.GetComponent<Button>();
-        if (button == null)
+        private bool ValidateButtonRefs()
         {
-            Debug.LogWarning(
-                $"[MainMenuController] MainMenu object has no Button component: {buttonName}"
-            );
-            return null;
+            if (newGameButton != null && continueButton != null && optionButton != null && exitButton != null)
+            {
+                return true;
+            }
+
+            Debug.LogError("[MainMenuController] 버튼 참조가 씬에 직접 할당되어 있지 않습니다.");
+            return false;
         }
-
-        return button;
     }
 
-    private void OnNewGameClicked()
+    /// <summary>옵션 페이지를 메인 메뉴에서 띄울 때 사용하는 어댑터.</summary>
+    public sealed class OptionPageHost
     {
-        GameSystemManager.Instance.StartNewGame();
-    }
-
-    private void OnContinueClicked()
-    {
-        GameSystemManager.Instance.ContinueGame();
-    }
-
-    private void OnQuitClicked()
-    {
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#else
-        Application.Quit();
-#endif
+        /// <summary>옵션 열기.</summary>
+        public void Open()
+        {
+        }
     }
 }
+

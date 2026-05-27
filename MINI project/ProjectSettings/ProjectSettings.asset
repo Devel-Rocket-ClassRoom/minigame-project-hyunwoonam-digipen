@@ -889,11 +889,11 @@ PlayerSettings:
   captureStartupLogs: {}
   activeInputHandler: 2
   windowsGamepadBackendHint: 0
-  cloudProjectId: f91cc58f-ac5f-4fdb-a844-e1ab21d235e0
+  cloudProjectId: 95f570d1-a580-4f1c-a459-7c7614259660
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
   projectName: MINI project
-  organizationId: newgmn1231
+  organizationId: tranate1231
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
   hmiLoadingImage: {fileID: 0}
