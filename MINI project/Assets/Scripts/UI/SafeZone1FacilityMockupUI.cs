@@ -39,6 +39,16 @@ namespace Tempt
             public bool IsEquipment => EquipmentItem != null;
         }
 
+        private sealed class SkillRowView
+        {
+            public GameObject Root;
+            public Button Button;
+            public Graphic Background;
+            public Color BaseColor;
+            public TextMeshProUGUI Label;
+            public Color LabelBaseColor;
+        }
+
         private static readonly string[] Facilities = { "TAVERN", "SHOP", "GUILD", "FORGE", "SHRINE" };
         private const int Safe1ShopSellPrice = 1;
 
@@ -51,8 +61,11 @@ namespace Tempt
         private readonly List<ShopRowView> shopSellRows = new List<ShopRowView>();
         private readonly List<TextMeshProUGUI> shopBuyDetailLines = new List<TextMeshProUGUI>();
         private readonly List<TextMeshProUGUI> shopSellDetailLines = new List<TextMeshProUGUI>();
+        private readonly List<SkillRowView> guildSkillRows = new List<SkillRowView>();
+        private readonly List<TextMeshProUGUI> guildSkillDetailLines = new List<TextMeshProUGUI>();
 
         private GameObject mainFacilityPanel;
+        private Button enterFloorMapButton;
         private Transform shopBuyRowsRoot;
         private Transform shopSellRowsRoot;
         private Transform shopBuyDetailBody;
@@ -61,9 +74,16 @@ namespace Tempt
         private Button shopSellButton;
         private TextMeshProUGUI shopPurchaseButtonLabel;
         private TextMeshProUGUI shopSellButtonLabel;
+        private Transform guildSkillRowsRoot;
+        private Transform guildSkillDetailBody;
+        private Button guildPrimaryButton;
+        private Button guildSlot2Button;
+        private TextMeshProUGUI guildPrimaryButtonLabel;
+        private TextMeshProUGUI guildSlot2ButtonLabel;
         private ShopMode currentShopMode = ShopMode.Buy;
         private ShopStockEntry selectedBuyStock;
         private ShopSellEntry selectedSellEntry;
+        private int selectedGuildSkillId;
 
         private Color activeText = new Color(0.94f, 0.94f, 0.94f, 1f);
         private Color inactiveText = new Color(0.46f, 0.46f, 0.52f, 1f);
@@ -161,6 +181,11 @@ namespace Tempt
                 currentShopMode = index == 1 ? ShopMode.Sell : ShopMode.Buy;
                 RefreshShopPanel();
             }
+
+            if (facility == "GUILD" && index == 2)
+            {
+                RefreshGuildSkillPanel();
+            }
         }
 
         private void CacheHierarchy()
@@ -173,6 +198,8 @@ namespace Tempt
 
             Transform mainPanel = transform.Find("MainFacilityPanel");
             mainFacilityPanel = mainPanel != null ? mainPanel.gameObject : null;
+            Transform enterFloorMap = transform.Find("BottomNavigationBar/EnterFloorMapButton");
+            enterFloorMapButton = enterFloorMap != null ? enterFloorMap.GetComponent<Button>() : null;
 
             foreach (string facility in Facilities)
             {
@@ -193,6 +220,7 @@ namespace Tempt
             }
 
             CacheShopHierarchy();
+            CacheGuildHierarchy();
         }
 
         private void CacheShopHierarchy()
@@ -242,8 +270,47 @@ namespace Tempt
             }
         }
 
+        private void CacheGuildHierarchy()
+        {
+            guildSkillRows.Clear();
+            guildSkillDetailLines.Clear();
+            guildSkillRowsRoot = null;
+            guildSkillDetailBody = null;
+            guildPrimaryButton = null;
+            guildPrimaryButtonLabel = null;
+            guildSlot2Button = null;
+            guildSlot2ButtonLabel = null;
+
+            if (!facilityGroups.TryGetValue("GUILD", out GameObject guildGroup))
+            {
+                return;
+            }
+
+            Transform root = guildGroup.transform;
+            guildSkillRowsRoot = root.Find("MiddleContentArea/Content_SKILLS/LeftColumn/SKILL_SHOP_Section/Rows");
+            guildSkillDetailBody = root.Find("MiddleContentArea/Content_SKILLS/RightColumn/SKILL_DETAIL_Section/Body");
+
+            CacheGuildRows(guildSkillRowsRoot, guildSkillRows);
+            CacheDetailLines(guildSkillDetailBody, guildSkillDetailLines);
+
+            Transform primary = FindDescendant(guildSkillDetailBody, "PrimaryButton_PURCHASE_SKILL");
+            if (primary != null)
+            {
+                guildPrimaryButton = primary.GetComponent<Button>();
+                guildPrimaryButtonLabel = primary.GetComponentInChildren<TextMeshProUGUI>(true);
+            }
+
+            EnsureGuildSlot2Button();
+        }
+
         private void WireButtons()
         {
+            if (enterFloorMapButton != null)
+            {
+                enterFloorMapButton.onClick.RemoveAllListeners();
+                enterFloorMapButton.onClick.AddListener(EnterFloorMap);
+            }
+
             foreach (string facility in Facilities)
             {
                 if (facilityTabs.TryGetValue(facility, out Button tab))
@@ -279,6 +346,17 @@ namespace Tempt
             }
         }
 
+        private static void EnterFloorMap()
+        {
+            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.Scenes == null)
+            {
+                Debug.LogError("[SafeZone1FacilityMockupUI] GameSystemManager.Scenes 참조가 없습니다.");
+                return;
+            }
+
+            gsm.LoadFloorMapForRechallengeFromSafe(1);
+        }
+
         private void RefreshShopPanel()
         {
             if (!TryGetRunData(out GameRunState run, out DataManager data))
@@ -296,6 +374,88 @@ namespace Tempt
             {
                 RefreshBuyList(run, data);
             }
+        }
+
+        private void RefreshGuildSkillPanel()
+        {
+            if (!TryGetRunData(out GameRunState run, out DataManager data))
+            {
+                return;
+            }
+
+            List<SkillData> skills = BuildGuildSkillList(run, data);
+            EnsureGuildRowCount(skills.Count);
+
+            bool selectedValid = selectedGuildSkillId != 0 && skills.Exists(skill => skill.Id == selectedGuildSkillId);
+            for (int i = 0; i < guildSkillRows.Count; i++)
+            {
+                SkillRowView row = guildSkillRows[i];
+                if (i >= skills.Count)
+                {
+                    row.Root.SetActive(false);
+                    continue;
+                }
+
+                SkillData skill = skills[i];
+                bool purchased = run.Player?.OwnedSkillIds != null && run.Player.OwnedSkillIds.Contains(skill.Id) && skill.AcquireType == AcquireType.Shop;
+                SetGuildRow(row, skill, BuildGuildSkillRowSuffix(skill, run, data), selectedValid && selectedGuildSkillId == skill.Id, purchased);
+
+                row.Button.onClick.RemoveAllListeners();
+                int capturedSkillId = skill.Id;
+                row.Button.onClick.AddListener(() => HandleGuildSkillSelected(capturedSkillId));
+            }
+
+            if (selectedValid)
+            {
+                ShowGuildSkillDetail(selectedGuildSkillId, run, data);
+            }
+            else
+            {
+                ClearGuildSkillDetail();
+            }
+        }
+
+        private static List<SkillData> BuildGuildSkillList(GameRunState run, DataManager data)
+        {
+            var skills = new List<SkillData>();
+            if (data?.Skills == null)
+            {
+                return skills;
+            }
+
+            foreach (SkillData skill in data.Skills.Values)
+            {
+                if (skill == null || skill.SkillType != SkillType.Active || skill.AcquireType == AcquireType.MonsterOnly)
+                {
+                    continue;
+                }
+
+                bool owned = run.Player?.OwnedSkillIds != null && run.Player.OwnedSkillIds.Contains(skill.Id);
+                if (skill.AcquireType == AcquireType.Shop || owned)
+                {
+                    skills.Add(skill);
+                }
+            }
+
+            skills.Sort((a, b) => a.Id.CompareTo(b.Id));
+            return skills;
+        }
+
+        private static string BuildGuildSkillRowSuffix(SkillData skill, GameRunState run, DataManager data)
+        {
+            bool owned = run.Player?.OwnedSkillIds != null && run.Player.OwnedSkillIds.Contains(skill.Id);
+            if (IsSkillEquipped(run, skill.Id))
+            {
+                return "EQUIPPED";
+            }
+
+            if (owned)
+            {
+                return "OWNED";
+            }
+
+            int price = Guild.GetSkillBuyPrice(skill.Id, run, data);
+            return price > 0 ? price + " G" : "LOCKED";
         }
 
         private void RefreshBuyList(GameRunState run, DataManager data)
@@ -450,6 +610,18 @@ namespace Tempt
             RefreshSellList(run, data);
         }
 
+        private void HandleGuildSkillSelected(int skillId)
+        {
+            if (!TryGetRunData(out GameRunState run, out DataManager data))
+            {
+                return;
+            }
+
+            selectedGuildSkillId = skillId;
+            RefreshGuildSkillPanel();
+            ShowGuildSkillDetail(skillId, run, data);
+        }
+
         private void ShowBuyDetail(ShopStockEntry stock, GameRunState run, DataManager data)
         {
             if (stock == null || !data.Items.TryGetValue(stock.ItemId, out ItemData item))
@@ -508,6 +680,39 @@ namespace Tempt
             }
         }
 
+        private void ShowGuildSkillDetail(int skillId, GameRunState run, DataManager data)
+        {
+            if (!data.Skills.TryGetValue(skillId, out SkillData skill))
+            {
+                ClearGuildSkillDetail();
+                return;
+            }
+
+            selectedGuildSkillId = skillId;
+            SetDetailBody(guildSkillDetailBody, true);
+            SetDetailLines(
+                guildSkillDetailLines,
+                skill.NameKey,
+                skill.SkillType + " / " + skill.AcquireType,
+                BuildSkillEffectText(skill),
+                "Slots",
+                BuildActiveSlotText(run, data));
+
+            bool owned = run.Player?.OwnedSkillIds != null && run.Player.OwnedSkillIds.Contains(skillId);
+            bool canEquip = owned;
+            bool buyable = skill.AcquireType == AcquireType.Shop && !owned;
+
+            if (buyable)
+            {
+                ConfigureGuildButton(guildPrimaryButton, guildPrimaryButtonLabel, "PURCHASE", Guild.CanBuy(skillId, run, data), () => HandleGuildPurchaseClicked(skillId));
+                ConfigureGuildButton(guildSlot2Button, guildSlot2ButtonLabel, string.Empty, false, null);
+                return;
+            }
+
+            ConfigureGuildButton(guildPrimaryButton, guildPrimaryButtonLabel, "SLOT 1", canEquip, () => HandleGuildEquipClicked(0, skillId));
+            ConfigureGuildButton(guildSlot2Button, guildSlot2ButtonLabel, "SLOT 2", canEquip, () => HandleGuildEquipClicked(1, skillId));
+        }
+
         private void HandlePurchaseClicked()
         {
             if (selectedBuyStock == null || !TryGetRunData(out GameRunState run, out DataManager data))
@@ -540,6 +745,34 @@ namespace Tempt
             }
         }
 
+        private void HandleGuildPurchaseClicked(int skillId)
+        {
+            if (!TryGetRunData(out GameRunState run, out DataManager data))
+            {
+                return;
+            }
+
+            if (Guild.TryBuySkill(skillId, run, data))
+            {
+                SaveAfterShopTransaction();
+                RefreshGuildSkillPanel();
+            }
+        }
+
+        private void HandleGuildEquipClicked(int slotIndex, int skillId)
+        {
+            if (!TryGetRunData(out GameRunState run, out DataManager data))
+            {
+                return;
+            }
+
+            if (SkillSwap.TrySetSlot(slotIndex, skillId, run, data))
+            {
+                SaveAfterShopTransaction();
+                RefreshGuildSkillPanel();
+            }
+        }
+
         private void ClearShopDetails()
         {
             ClearBuyDetail();
@@ -566,6 +799,14 @@ namespace Tempt
                 shopSellButton.onClick.RemoveAllListeners();
                 shopSellButton.interactable = false;
             }
+        }
+
+        private void ClearGuildSkillDetail()
+        {
+            selectedGuildSkillId = 0;
+            SetDetailBody(guildSkillDetailBody, false);
+            ConfigureGuildButton(guildPrimaryButton, guildPrimaryButtonLabel, string.Empty, false, null);
+            ConfigureGuildButton(guildSlot2Button, guildSlot2ButtonLabel, string.Empty, false, null);
         }
 
         private static void EnsureShopStock(GameRunState run)
@@ -617,9 +858,9 @@ namespace Tempt
         {
             run = null;
             data = null;
-            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.CurrentRun?.Player?.Inventory == null || gsm.Data?.Items == null)
+            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.CurrentRun?.Player?.Inventory == null || gsm.Data?.Items == null || gsm.Data?.Skills == null)
             {
-                Debug.LogError("[SafeZone1FacilityMockupUI] GameSystemManager / CurrentRun.Player.Inventory / Data.Items 참조가 없습니다.");
+                Debug.LogError("[SafeZone1FacilityMockupUI] GameSystemManager / CurrentRun.Player.Inventory / Data.Items / Data.Skills 참조가 없습니다.");
                 return false;
             }
 
@@ -675,6 +916,52 @@ namespace Tempt
             };
         }
 
+        private static void CacheGuildRows(Transform rowsRoot, List<SkillRowView> rows)
+        {
+            if (rowsRoot == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < rowsRoot.childCount; i++)
+            {
+                rows.Add(CreateGuildRowView(rowsRoot.GetChild(i)));
+            }
+        }
+
+        private static SkillRowView CreateGuildRowView(Transform row)
+        {
+            Graphic background = row.GetComponent<Graphic>();
+            if (background == null)
+            {
+                Image image = row.gameObject.AddComponent<Image>();
+                image.color = new Color(0f, 0f, 0f, 0.01f);
+                image.raycastTarget = true;
+                background = image;
+            }
+
+            background.raycastTarget = true;
+
+            Button button = row.GetComponent<Button>();
+            if (button == null)
+            {
+                button = row.gameObject.AddComponent<Button>();
+            }
+
+            button.targetGraphic = background;
+
+            TextMeshProUGUI label = row.GetComponentInChildren<TextMeshProUGUI>(true);
+            return new SkillRowView
+            {
+                Root = row.gameObject,
+                Button = button,
+                Background = background,
+                BaseColor = background.color,
+                Label = label,
+                LabelBaseColor = label != null ? label.color : Color.white,
+            };
+        }
+
         private static void EnsureRowCount(List<ShopRowView> rows, Transform rowsRoot, int count)
         {
             if (rowsRoot == null || rows.Count == 0)
@@ -689,6 +976,47 @@ namespace Tempt
                 clone.name = template.name + "_Generated_" + rows.Count;
                 rows.Add(CreateShopRowView(clone.transform));
             }
+        }
+
+        private void EnsureGuildRowCount(int count)
+        {
+            if (guildSkillRowsRoot == null || guildSkillRows.Count == 0)
+            {
+                return;
+            }
+
+            GameObject template = guildSkillRows[0].Root;
+            while (guildSkillRows.Count < count)
+            {
+                GameObject clone = Instantiate(template, guildSkillRowsRoot);
+                clone.name = template.name + "_Generated_" + guildSkillRows.Count;
+                guildSkillRows.Add(CreateGuildRowView(clone.transform));
+            }
+        }
+
+        private void EnsureGuildSlot2Button()
+        {
+            if (guildPrimaryButton == null || guildSlot2Button != null)
+            {
+                return;
+            }
+
+            GameObject clone = Instantiate(guildPrimaryButton.gameObject, guildPrimaryButton.transform.parent);
+            clone.name = "PrimaryButton_SLOT_2";
+            guildSlot2Button = clone.GetComponent<Button>();
+            guildSlot2ButtonLabel = clone.GetComponentInChildren<TextMeshProUGUI>(true);
+
+            RectTransform primaryRect = guildPrimaryButton.GetComponent<RectTransform>();
+            RectTransform slot2Rect = clone.GetComponent<RectTransform>();
+            if (primaryRect != null && slot2Rect != null)
+            {
+                primaryRect.sizeDelta = new Vector2(primaryRect.sizeDelta.x * 0.48f, primaryRect.sizeDelta.y);
+                slot2Rect.sizeDelta = primaryRect.sizeDelta;
+                primaryRect.anchoredPosition += new Vector2(-primaryRect.sizeDelta.x * 0.53f, 0f);
+                slot2Rect.anchoredPosition = primaryRect.anchoredPosition + new Vector2(primaryRect.sizeDelta.x * 1.12f, 0f);
+            }
+
+            ConfigureGuildButton(guildSlot2Button, guildSlot2ButtonLabel, string.Empty, false, null);
         }
 
         private static void CacheDetailLines(Transform body, List<TextMeshProUGUI> lines)
@@ -812,6 +1140,21 @@ namespace Tempt
             SetRowSelected(row, selected);
         }
 
+        private void SetGuildRow(SkillRowView row, SkillData skill, string suffix, bool selected, bool purchased)
+        {
+            row.Root.SetActive(true);
+            if (row.Label != null)
+            {
+                row.Label.text = skill.NameKey + "  " + suffix;
+                row.Label.color = purchased ? Color.red : row.LabelBaseColor;
+            }
+
+            if (row.Background != null)
+            {
+                row.Background.color = selected ? selectedShopRow : row.BaseColor;
+            }
+        }
+
         private void SetRowSelected(ShopRowView row, bool selected)
         {
             if (row?.Background != null)
@@ -835,6 +1178,62 @@ namespace Tempt
             if (lines.Count > 2) lines[2].text = description;
             if (lines.Count > 3) lines[3].text = priceLabel;
             if (lines.Count > 4) lines[4].text = price;
+        }
+
+        private static void ConfigureGuildButton(Button button, TextMeshProUGUI label, string text, bool interactable, UnityEngine.Events.UnityAction action)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            button.gameObject.SetActive(!string.IsNullOrEmpty(text));
+            button.interactable = interactable && action != null;
+            button.onClick.RemoveAllListeners();
+            if (interactable && action != null)
+            {
+                button.onClick.AddListener(action);
+            }
+
+            if (label != null)
+            {
+                label.text = text ?? string.Empty;
+            }
+        }
+
+        private static bool IsSkillEquipped(GameRunState run, int skillId)
+        {
+            int[] slots = run?.Player?.ActiveSlotSkillIds;
+            return slots != null && ((slots.Length > 0 && slots[0] == skillId) || (slots.Length > 1 && slots[1] == skillId));
+        }
+
+        private static string BuildSkillEffectText(SkillData skill)
+        {
+            if (skill.DamageScale > 0f) return "Damage x" + skill.DamageScale + " / MP " + skill.MpCost;
+            if (skill.HealScale > 0f) return "Heal x" + skill.HealScale + " / MP " + skill.MpCost;
+            if (skill.ShieldScale > 0f) return "Shield x" + skill.ShieldScale + " / MP " + skill.MpCost;
+            return "MP " + skill.MpCost;
+        }
+
+        private static string BuildActiveSlotText(GameRunState run, DataManager data)
+        {
+            int[] slots = run?.Player?.ActiveSlotSkillIds;
+            if (slots == null || slots.Length != 2)
+            {
+                return "Slot 1: Empty / Slot 2: Empty";
+            }
+
+            return "Slot 1: " + SkillName(slots[0], data) + " / Slot 2: " + SkillName(slots[1], data);
+        }
+
+        private static string SkillName(int skillId, DataManager data)
+        {
+            if (skillId == 0)
+            {
+                return "Empty";
+            }
+
+            return data.Skills.TryGetValue(skillId, out SkillData skill) ? skill.NameKey : "Missing " + skillId;
         }
 
         private static List<Button> FindButtons(Transform row)
@@ -872,7 +1271,9 @@ namespace Tempt
 
         private static int DefaultSubFunctionIndex(string facility)
         {
-            return facility == "TAVERN" ? 1 : 0;
+            if (facility == "TAVERN") return 1;
+            if (facility == "GUILD") return 2;
+            return 0;
         }
 
         private static List<GameObject> FindContentPanels(Transform area)

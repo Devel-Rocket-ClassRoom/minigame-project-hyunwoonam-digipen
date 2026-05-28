@@ -17,6 +17,18 @@ namespace Tempt
         /// <summary>현재 재도전 모드(상위 안전지대 도달 후 아래층 재방문).</summary>
         public bool IsRechallengeMode;
 
+        /// <summary>재도전 모드에서 방문 가능한 마지막 층.</summary>
+        public int RechallengeMaxFloor;
+
+        /// <summary>재도전 플로어맵을 연 안전지대 인덱스.</summary>
+        public int RechallengeReturnSafeIndex;
+
+        /// <summary>이번 플로어맵 진입에서 해금된 안전지대 노드 이동을 허용할지 여부.</summary>
+        public bool CanEnterSafeZonesFromMap;
+
+        /// <summary>플로어맵을 연 안전지대 인덱스.</summary>
+        public int FloorMapSourceSafeIndex;
+
         [SerializeField] private RectTransform nodeContainer;
         [SerializeField] private RectTransform connectionContainer;
         [SerializeField] private FloorNodeUI nodeTemplate;
@@ -37,7 +49,11 @@ namespace Tempt
         {
             GameSystemManager gsm = GameSystemManager.Instance; //Wave0write
             Map = gsm.CurrentRun?.FloorMap; //Wave0write
-            IsRechallengeMode = false; //Wave0write
+            IsRechallengeMode = gsm.TryConsumeFloorMapRechallenge(out int maxFloor, out int returnSafeIndex); //Wave0write
+            RechallengeMaxFloor = maxFloor; //Wave0write
+            RechallengeReturnSafeIndex = returnSafeIndex; //Wave0write
+            CanEnterSafeZonesFromMap = gsm.TryConsumeFloorMapSafeTravel(out int sourceSafeIndex); //Wave0write
+            FloorMapSourceSafeIndex = sourceSafeIndex; //Wave0write
             if (Map == null)
             {
                 Debug.LogError("[FloorMapController] CurrentRun.FloorMap 이 없습니다.");
@@ -58,6 +74,8 @@ namespace Tempt
         {
             ClearRenderedMap();
             Map = null; //Wave0write
+            CanEnterSafeZonesFromMap = false; //Wave0write
+            FloorMapSourceSafeIndex = 0; //Wave0write
         }
 
         /// <summary>
@@ -72,16 +90,22 @@ namespace Tempt
 
             if (node.IsSafeZone) //Wave0write
             { //Wave0write
+                if (IsSafeZoneSelectable(node)) //Wave0write
+                { //Wave0write
+                    GameSystemManager.Instance.EnterSafeZoneFromFloorMap(node.StageIndex); //Wave0write
+                } //Wave0write
                 return; //Wave0write
             } //Wave0write
 
-            bool selectable = node.Floor == Map.NextSelectableFloor || (IsRechallengeMode && node.Floor < Map.NextSelectableFloor); //Wave0write
+            bool isRechallengeNode = IsRechallengeNode(node); //Wave0write
+            bool isProgressionNode = IsProgressionNodeSelectable(node); //Wave0write
+            bool selectable = isRechallengeNode || isProgressionNode; //Wave0write
             if (!selectable || (!IsRechallengeMode && node.IsCleared)) //Wave0write
             { //Wave0write
                 return; //Wave0write
             } //Wave0write
 
-            GameSystemManager.Instance.StartCombatNode(node, IsRechallengeMode); //Wave0write
+            GameSystemManager.Instance.StartCombatNode(node, isRechallengeNode); //Wave0write
         }
 
         /// <summary>
@@ -197,7 +221,7 @@ namespace Tempt
 
             if (headerLabel != null)
             {
-                headerLabel.text = "FLOOR MAP";
+                headerLabel.text = IsRechallengeMode ? "FLOOR MAP - RECHALLENGE" : "FLOOR MAP";
             }
         }
 
@@ -247,11 +271,46 @@ namespace Tempt
 
             if (node.IsSafeZone)
             {
-                return false;
+                return IsSafeZoneSelectable(node);
             }
 
-            bool selectable = node.Floor == Map.NextSelectableFloor || (IsRechallengeMode && node.Floor < Map.NextSelectableFloor);
-            return selectable && (IsRechallengeMode || !node.IsCleared);
+            return IsRechallengeNode(node) || IsProgressionNodeSelectable(node);
+        }
+
+        private bool IsProgressionNodeSelectable(FloorNode node) //Wave0write
+        { //Wave0write
+            if (node == null || node.IsSafeZone || node.IsCleared || node.Floor != Map.NextSelectableFloor) //Wave0write
+            { //Wave0write
+                return false; //Wave0write
+            } //Wave0write
+
+            // build2 temporary: Safe1에서 다음 단계 진입은 보류하고 아래 단계 재도전/안전지대 이동만 검증한다.
+            if (IsRechallengeMode && RechallengeReturnSafeIndex == 1 && node.Floor > RechallengeMaxFloor) //Wave0write
+            { //Wave0write
+                return false; //Wave0write
+            } //Wave0write
+
+            return true; //Wave0write
+        } //Wave0write
+
+        private bool IsSafeZoneSelectable(FloorNode node) //Wave0write
+        { //Wave0write
+            if (node == null || !node.IsSafeZone) //Wave0write
+            { //Wave0write
+                return false; //Wave0write
+            } //Wave0write
+
+            GameRunState run = GameSystemManager.Instance.CurrentRun; //Wave0write
+            return CanEnterSafeZonesFromMap && run?.SafeUnlocks != null && run.SafeUnlocks.IsUnlocked(node.StageIndex); //Wave0write
+        } //Wave0write
+
+        private bool IsRechallengeNode(FloorNode node)
+        {
+            return IsRechallengeMode
+                && node != null
+                && !node.IsSafeZone
+                && node.Floor > 0
+                && node.Floor <= RechallengeMaxFloor;
         }
 
         private void SpawnConnection(Vector2 from, Vector2 to)

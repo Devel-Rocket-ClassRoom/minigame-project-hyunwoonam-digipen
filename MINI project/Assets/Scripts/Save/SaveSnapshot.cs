@@ -198,6 +198,8 @@ namespace Tempt
                 Equipment = FromEquipment(player.Equipment), //Wave0write
                 ConsumableSlots = player.Consumables != null ? new List<int>(player.Consumables.SlotItemIds) : new List<int> { 0, 0, 0, 0 }, //Wave0write
                 Locker = FromLocker(player.Locker), //Wave0write
+                OwnedSkillIds = player.OwnedSkillIds != null ? new List<int>(player.OwnedSkillIds) : new List<int>(), //Wave0write
+                ActiveSlotSkillIds = player.ActiveSlotSkillIds != null ? new List<int>(player.ActiveSlotSkillIds) : new List<int> { 0, 0 }, //Wave0write
             }; //Wave0write
         } //Wave0write
 
@@ -219,6 +221,8 @@ namespace Tempt
                 Equipment = ToEquipment(snapshot.Equipment, data), //Wave0write
                 Consumables = new ConsumableSlots(), //Wave0write
                 Locker = ToLocker(snapshot.Locker, data), //Wave0write
+                OwnedSkillIds = snapshot.OwnedSkillIds != null ? new HashSet<int>(snapshot.OwnedSkillIds) : new HashSet<int>(), //Wave0write
+                ActiveSlotSkillIds = ToActiveSlotSkillIds(snapshot.ActiveSlotSkillIds), //Wave0write
             }; //Wave0write
 
             player.Rune = new PlayerRuneState //Wave0write
@@ -238,6 +242,22 @@ namespace Tempt
             } //Wave0write
 
             return player; //Wave0write
+        } //Wave0write
+
+        private static int[] ToActiveSlotSkillIds(List<int> values) //Wave0write
+        { //Wave0write
+            var result = new int[2]; //Wave0write
+            if (values == null) //Wave0write
+            { //Wave0write
+                return result; //Wave0write
+            } //Wave0write
+
+            for (int i = 0; i < result.Length && i < values.Count; i++) //Wave0write
+            { //Wave0write
+                result[i] = values[i]; //Wave0write
+            } //Wave0write
+
+            return result; //Wave0write
         } //Wave0write
 
         private static StatBlockSnapshot FromStats(StatBlock stats) //Wave0write
@@ -637,6 +657,12 @@ namespace Tempt
 
         /// <summary>보관함(주점 구매 후 활성).</summary>
         public LockerSnapshot Locker;
+
+        /// <summary>길드에서 구매/획득한 Active 스킬 ID 집합.</summary>
+        public List<int> OwnedSkillIds;
+
+        /// <summary>활성 스킬 슬롯 2칸. 0 = 비어있음.</summary>
+        public List<int> ActiveSlotSkillIds;
     }
 
     /// <summary>동료 명부 직렬화.</summary>

@@ -32,6 +32,18 @@ namespace Tempt
         /// <summary>현재 전투 진입 컨텍스트 (전투 중 아니면 null).</summary>
         public CombatContext CombatContext { get; private set; }
 
+        // Guid3 §9.E 2026-05-27: 길드/인벤토리/스탯 화면 등 전투 외 시점에서도
+        // Player MonoBehaviour 의 권위 출처가 필요. CombatController.OnEnter 가 set, OnExit 가 null.
+        // 전투 외에서 Player MonoBehaviour 가 없으면 null 일 수 있다(Guid3 §10 W-G3-1 보류).
+        /// <summary>현재 활성 Player MonoBehaviour. 전투 외에서는 null 일 수 있다.</summary>
+        public Player ActivePlayer { get; set; }
+
+        private bool floorMapRechallengeRequested;
+        private int floorMapRechallengeMaxFloor;
+        private int floorMapRechallengeReturnSafeIndex;
+        private bool floorMapSafeTravelRequested;
+        private int floorMapSafeTravelSourceSafeIndex;
+
         /// <summary>
         /// 게임 부팅 시 호출. 하위 시스템 초기화 순서를 강제한다.
         /// </summary>
@@ -276,29 +288,162 @@ namespace Tempt
 
             NormalizeCombatNodeMonsterCount(node); //Wave0write
 
-            bool selectable = node.Floor == CurrentRun.FloorMap.NextSelectableFloor || (isRechallenget && node.Floor < CurrentRun.FloorMap.NextSelectableFloor); //Wave0write
+            int rechallengeMaxFloor = floorMapRechallengeMaxFloor; //Wave0write
+            int rechallengeReturnSafeIndex = floorMapRechallengeReturnSafeIndex; //Wave0write
+            bool rechallengeSelectable = isRechallenget && node.Floor > 0 && node.Floor <= rechallengeMaxFloor; //Wave0write
+            bool selectable = isRechallenget ? rechallengeSelectable : node.Floor == CurrentRun.FloorMap.NextSelectableFloor; //Wave0write
             if (!selectable || (!isRechallenget && node.IsCleared)) //Wave0write
             { //Wave0write
                 return; //Wave0write
             } //Wave0write
 
-            CurrentRun.CurrentDay += 1; //Wave0write
+            AdvanceRunDay(); //Wave0write
             CurrentRun.CurrentFloor = node.Floor; //Wave0write
             CurrentRun.HighestFloor = System.Math.Max(CurrentRun.HighestFloor, node.Floor); //Wave0write
-            Erosion?.AdvanceDay(CurrentRun.CurrentDay); //Wave0write
 
             CombatContext = new CombatContext //Wave0write
             { //Wave0write
                 Node = node, //Wave0write
                 IsBossNode = node.IsBoss, //Wave0write
                 IsRechallenge = isRechallenget, //Wave0write
+                RechallengeReturnSafeIndex = isRechallenget ? rechallengeReturnSafeIndex : 0, //Wave0write
                 ErosionMultiplier = Erosion != null ? Erosion.ComputeMonsterMultiplier(node.StageIndex) : 1f, //Wave0write
             }; //Wave0write
+
+            ClearFloorMapRechallengeState(); //Wave0write
 
             Save?.SaveSnapshot(); //Wave0write
             Scenes.LoadCombat(); //Wave0write
 
         }
+
+        /// <summary>안전지대에서 안전지대 이동 가능 상태로 플로어맵을 연다.</summary>
+        public void LoadFloorMapFromSafe(int safeIndex)
+        {
+            ArmFloorMapSafeTravel(safeIndex);
+            floorMapRechallengeRequested = false;
+            floorMapRechallengeMaxFloor = 0;
+            floorMapRechallengeReturnSafeIndex = 0;
+            Scenes.LoadFloorMap();
+        }
+
+        /// <summary>안전지대에서 아래 단계 재도전용 플로어맵을 연다.</summary>
+        public void LoadFloorMapForRechallengeFromSafe(int safeIndex)
+        {
+            ArmFloorMapSafeTravel(safeIndex);
+            floorMapRechallengeRequested = true;
+            floorMapRechallengeMaxFloor = ResolveRechallengeMaxFloor(safeIndex);
+            floorMapRechallengeReturnSafeIndex = System.Math.Max(0, System.Math.Min(5, safeIndex));
+            Scenes.LoadFloorMap();
+        }
+
+        /// <summary>플로어맵 컨트롤러가 안전지대 이동 가능 요청을 1회 소비한다.</summary>
+        public bool TryConsumeFloorMapSafeTravel(out int sourceSafeIndex)
+        {
+            sourceSafeIndex = floorMapSafeTravelRequested ? floorMapSafeTravelSourceSafeIndex : 0;
+            bool requested = floorMapSafeTravelRequested;
+            floorMapSafeTravelRequested = false;
+            return requested;
+        }
+
+        /// <summary>플로어맵 컨트롤러가 재도전 표시 요청을 1회 소비한다.</summary>
+        public bool TryConsumeFloorMapRechallenge(out int maxFloor, out int returnSafeIndex)
+        {
+            maxFloor = floorMapRechallengeRequested ? floorMapRechallengeMaxFloor : 0;
+            returnSafeIndex = floorMapRechallengeRequested ? floorMapRechallengeReturnSafeIndex : 0;
+            bool requested = floorMapRechallengeRequested && maxFloor > 0;
+            floorMapRechallengeRequested = false;
+            return requested;
+        }
+
+        public bool TryConsumeFloorMapRechallenge(out int maxFloor)
+        {
+            return TryConsumeFloorMapRechallenge(out maxFloor, out _);
+        }
+
+        /// <summary>플로어맵의 안전지대 노드에서 안전지대로 이동한다. 안전지대 간 이동은 날짜를 증가시키지 않는다.</summary>
+        public void EnterSafeZoneFromFloorMap(int safeIndex) //Wave0write
+        { //Wave0write
+            if (CurrentRun?.SafeUnlocks == null || Scenes == null) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            if (safeIndex < 0 || safeIndex > 5 || !CurrentRun.SafeUnlocks.IsUnlocked(safeIndex)) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            CurrentRun.CurrentFloor = ResolveSafeZoneFloor(safeIndex); //Wave0write
+            Save?.SaveSnapshot(); //Wave0write
+            ClearFloorMapRechallengeState(); //Wave0write
+            Scenes.LoadSafeZone(safeIndex); //Wave0write
+        } //Wave0write
+
+        private void ClearFloorMapRechallengeState()
+        {
+            floorMapRechallengeRequested = false;
+            floorMapRechallengeMaxFloor = 0;
+            floorMapRechallengeReturnSafeIndex = 0;
+            floorMapSafeTravelRequested = false;
+            floorMapSafeTravelSourceSafeIndex = 0;
+        }
+
+        private void ArmFloorMapSafeTravel(int safeIndex)
+        {
+            floorMapSafeTravelRequested = true;
+            floorMapSafeTravelSourceSafeIndex = System.Math.Max(0, System.Math.Min(5, safeIndex));
+        }
+
+        private int ResolveRechallengeMaxFloor(int safeIndex)
+        {
+            if (Data?.World?.Stages != null)
+            {
+                for (int i = 0; i < Data.World.Stages.Count; i++)
+                {
+                    StageDef stage = Data.World.Stages[i];
+                    if (stage != null && stage.UnlocksSafeZoneIndex == safeIndex)
+                    {
+                        return stage.BossFloor;
+                    }
+                }
+            }
+
+            return safeIndex <= 1 ? 3 : 0;
+        }
+
+        private void AdvanceRunDay() //Wave0write
+        { //Wave0write
+            if (CurrentRun == null) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            CurrentRun.CurrentDay += 1; //Wave0write
+            Erosion?.AdvanceDay(CurrentRun.CurrentDay); //Wave0write
+        } //Wave0write
+
+        private void AdvanceDayForBossSafeEntry() //Wave0write
+        { //Wave0write
+            AdvanceRunDay(); //Wave0write
+        } //Wave0write
+
+        private int ResolveSafeZoneFloor(int safeIndex) //Wave0write
+        { //Wave0write
+            if (Data?.World?.SafeZones != null) //Wave0write
+            { //Wave0write
+                for (int i = 0; i < Data.World.SafeZones.Count; i++) //Wave0write
+                { //Wave0write
+                    SafeZoneDef safeZone = Data.World.SafeZones[i]; //Wave0write
+                    if (safeZone != null && safeZone.Index == safeIndex) //Wave0write
+                    { //Wave0write
+                        return safeZone.FloorNumber; //Wave0write
+                    } //Wave0write
+                } //Wave0write
+            } //Wave0write
+
+            return 0; //Wave0write
+        } //Wave0write
 
         private static void NormalizeCombatNodeMonsterCount(FloorNode node) //Wave0write
         { //Wave0write
@@ -378,6 +523,7 @@ namespace Tempt
                 Save?.ClearContinue(); //Wave0write
                 CurrentRun = null; //Wave0write
                 CombatContext = null; //Wave0write
+                ShowGameOverOverlay(); //Wave0write
                 Scenes.LoadMainMenu(); //Wave0write
                 return; //Wave0write
             } //Wave0write
@@ -533,7 +679,8 @@ namespace Tempt
             FloorNode node = CombatContext?.Node; //Wave0write
             bool isBoss = CombatContext != null && CombatContext.IsBossNode; //Wave0write
             bool isRechallenge = CombatContext != null && CombatContext.IsRechallenge; //Wave0write
-            if (node != null && !isRechallenge) //Wave0write
+            int rechallengeReturnSafeIndex = CombatContext != null ? CombatContext.RechallengeReturnSafeIndex : 0; //Wave0write
+            if (node != null) //Wave0write
             { //Wave0write
                 CurrentRun.FloorMap.MarkCleared(node.NodeId); //Wave0write
             } //Wave0write
@@ -555,18 +702,32 @@ namespace Tempt
                     Erosion?.Activate(); //Wave0write
                 } //Wave0write
 
+                AdvanceDayForBossSafeEntry(); //Wave0write
+                CurrentRun.CurrentFloor = ResolveSafeZoneFloor(safeIndex); //Wave0write
                 Save?.SaveSnapshot(); //Wave0write
                 Scenes.LoadSafeZone(safeIndex); //Wave0write
             } //Wave0write
             else if (isRechallenge && node != null) //Wave0write
             { //Wave0write
                 Save?.SaveSnapshot(); //Wave0write
-                Scenes.LoadSafeZone(System.Math.Max(0, node.StageIndex - 1)); //Wave0write
+                Scenes.LoadSafeZone(System.Math.Max(0, System.Math.Min(5, rechallengeReturnSafeIndex))); //Wave0write
             } //Wave0write
             else //Wave0write
             { //Wave0write
                 Save?.SaveSnapshot(); //Wave0write
                 Scenes.LoadFloorMap(); //Wave0write
+            } //Wave0write
+        } //Wave0write
+
+        private static void ShowGameOverOverlay() //Wave0write
+        { //Wave0write
+            if (GlobalOverlayController.TryGetInstance(out GlobalOverlayController overlay)) //Wave0write
+            { //Wave0write
+                overlay.ShowGameOver(); //Wave0write
+            } //Wave0write
+            else //Wave0write
+            { //Wave0write
+                Debug.LogError("[GameSystemManager] GlobalOverlayController 를 찾을 수 없어 GameOver 패널을 표시할 수 없습니다."); //Wave0write
             } //Wave0write
         } //Wave0write
     }
@@ -626,6 +787,9 @@ namespace Tempt
 
         /// <summary>재도전 모드 여부.</summary>
         public bool IsRechallenge;
+
+        /// <summary>재도전 전투 종료 후 복귀할 안전지대 인덱스.</summary>
+        public int RechallengeReturnSafeIndex;
 
         /// <summary>침식 보정 배수(현재 단계 침식률 기준).</summary>
         public float ErosionMultiplier;

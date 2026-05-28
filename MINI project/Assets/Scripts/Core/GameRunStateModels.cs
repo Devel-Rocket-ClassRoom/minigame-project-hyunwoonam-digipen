@@ -42,6 +42,16 @@ namespace Tempt
 
         /// <summary>보관함.</summary>
         public LockerState Locker;
+
+        // Guid3 §9.A 2026-05-27: 길드 시스템을 위한 보유 스킬 풀 / 슬롯 매핑.
+        // - OwnedSkillIds: 플레이어가 보유한 Active 스킬 ID 집합. Passive 스킬은 룬이 권위라 포함하지 않는다.
+        // - ActiveSlotSkillIds: 두 슬롯의 SkillId. 0 은 빈 슬롯.
+        // 직렬화는 SaveSnapshot 의 PlayerSnapshot 에서 List<int> 로 변환한다(HashSet 은 JsonUtility 미지원).
+        /// <summary>보유한 Active 스킬 풀(길드 구매 누적).</summary>
+        public System.Collections.Generic.HashSet<int> OwnedSkillIds = new System.Collections.Generic.HashSet<int>();
+
+        /// <summary>활성 슬롯 2칸의 SkillId 매핑. 0 = 빈 슬롯.</summary>
+        public int[] ActiveSlotSkillIds = new int[2];
     }
 
     /// <summary>
