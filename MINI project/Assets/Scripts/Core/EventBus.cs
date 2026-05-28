@@ -20,8 +20,20 @@ namespace Tempt
         /// <summary>안전지대 잠금 변화. (safeZoneIndex, locked)</summary>
         public event Action<int, bool> OnSafeZoneLockChanged;
 
+        /// <summary>단계 침식률 100% 도달. (stageIndex)</summary>
+        public event Action<int> OnStageFullyEroded;
+
+        /// <summary>모든 단계 침식 완료.</summary>
+        public event Action OnAllStagesEroded;
+
+        /// <summary>침식 시스템 활성화.</summary>
+        public event Action OnErosionActivated;
+
         /// <summary>골드 변동. (newGold)</summary>
         public event Action<int> OnGoldChanged;
+
+        /// <summary>게임 내 일자 변경. (newDay)</summary>
+        public event Action<int> OnDayChanged;
 
         /// <summary>마석 변동. (newManaStone)</summary>
         public event Action<int> OnManaStoneChanged;
@@ -74,12 +86,36 @@ namespace Tempt
             OnSafeZoneLockChanged?.Invoke(idx, locked); //Wave0write
         }
 
+        // Guid4 §8.A 2026-05-29: 단계 100% 도달 통지.
+        public void RaiseStageFullyEroded(int stage)
+        {
+            OnStageFullyEroded?.Invoke(stage);
+        }
+
+        // Guid4 §8.B 2026-05-29: 모든 단계 침식 완료 통지.
+        public void RaiseAllStagesEroded()
+        {
+            OnAllStagesEroded?.Invoke();
+        }
+
+        // Guid4 §8.C 2026-05-29: 침식 시스템 활성화 통지.
+        public void RaiseErosionActivated()
+        {
+            OnErosionActivated?.Invoke();
+        }
+
         /// <summary>골드 변동 발행.</summary>
         public void RaiseGoldChanged(int v)
         {
             // 동작 요약: OnGoldChanged?.Invoke(v).
             //TODO: OnGoldChanged?.Invoke(v);
             OnGoldChanged?.Invoke(v); //Wave0write
+        }
+
+        // Guid4 §9.K 2026-05-29: SafeZone DayText 갱신용 일자 변경 발행.
+        public void RaiseDayChanged(int day)
+        {
+            OnDayChanged?.Invoke(day);
         }
 
         /// <summary>마석 변동 발행.</summary>

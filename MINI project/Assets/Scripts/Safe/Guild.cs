@@ -125,20 +125,10 @@ namespace Tempt
                 return false;
             }
 
-            int stageIndex = StageIndexFromFloor(run.CurrentFloor);
+            int stageIndex = StageIndexResolver.FromFloor(run.CurrentFloor, data.World);
             float erosionRate = run.Erosion != null ? run.Erosion.GetRate(stageIndex) : 0f;
             inflation = data.ComputeInflation(stageIndex, erosionRate);
             return true;
-        }
-
-        private static int StageIndexFromFloor(int floor)
-        {
-            if (floor <= 3) return 1;
-            if (floor <= 11) return 2;
-            if (floor <= 19) return 3;
-            if (floor <= 29) return 4;
-            if (floor <= 39) return 5;
-            return 6;
         }
 
         private static void RaiseChanged(GameRunState run)

@@ -354,7 +354,7 @@ namespace Tempt
                 return;
             }
 
-            gsm.LoadFloorMapForRechallengeFromSafe(1);
+            gsm.LoadFloorMapFromSafe(1);
         }
 
         private void RefreshShopPanel()

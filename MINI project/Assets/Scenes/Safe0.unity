@@ -718,6 +718,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Tempt.Safe0Controller
   SafeIndex: 0
+  dayLabel: {fileID: 1677512281}
   mockupUI: {fileID: 715523483}
 --- !u!4 &66704311
 Transform:

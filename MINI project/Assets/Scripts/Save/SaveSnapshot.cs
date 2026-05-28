@@ -487,7 +487,13 @@ namespace Tempt
 
         private static ErosionSnapshot FromErosion(ErosionStateModel model) //Wave0write
         { //Wave0write
-            var snapshot = new ErosionSnapshot { StageRates = new List<float>(), ErosionStarted = model != null && model.IsActivated, StageSafeLocked = new List<bool>() }; //Wave0write
+            var snapshot = new ErosionSnapshot //Wave0write
+            { //Wave0write
+                StageRates = new List<float>(), //Wave0write
+                ErosionStarted = model != null && model.IsActivated, //Wave0write
+                CurrentEroddingStage = model != null ? model.CurrentEroddingStage : 1, //Wave0write
+                StageSafeLocked = new List<bool>(), //Wave0write
+            }; //Wave0write
             for (int i = 1; i <= 6; i++) //Wave0write
             { //Wave0write
                 float rate = model != null ? model.GetRate(i) : 0f; //Wave0write
@@ -500,17 +506,22 @@ namespace Tempt
 
         private static ErosionStateModel ToErosion(ErosionSnapshot snapshot) //Wave0write
         { //Wave0write
-            var model = new ErosionStateModel { IsActivated = snapshot != null && snapshot.ErosionStarted, CurrentEroddingStage = 1 }; //Wave0write
-            bool foundCurrentStage = false; //Wave0write
+            int currentStage = snapshot != null ? snapshot.CurrentEroddingStage : 1; //Wave0write
+            var model = new ErosionStateModel { IsActivated = snapshot != null && snapshot.ErosionStarted, CurrentEroddingStage = System.Math.Max(1, System.Math.Min(6, currentStage)) }; //Wave0write
+            bool allStagesFullyEroded = true; //Wave0write
             for (int i = 1; i <= 6; i++) //Wave0write
             { //Wave0write
                 int listIndex = i - 1; //Wave0write
                 model.StageRates[i] = snapshot?.StageRates != null && listIndex < snapshot.StageRates.Count ? snapshot.StageRates[listIndex] : 0f; //Wave0write
-                if (!foundCurrentStage && model.StageRates[i] < 100f) //Wave0write
+                if (model.StageRates[i] < 100f) //Wave0write
                 { //Wave0write
-                    model.CurrentEroddingStage = i; //Wave0write
-                    foundCurrentStage = true; //Wave0write
+                    allStagesFullyEroded = false; //Wave0write
                 } //Wave0write
+            } //Wave0write
+
+            if (allStagesFullyEroded) //Wave0write
+            { //Wave0write
+                model.CurrentEroddingStage = 6; //Wave0write
             } //Wave0write
 
             return model; //Wave0write
@@ -896,6 +907,11 @@ namespace Tempt
         /// 침식 활성화 여부. Safe2 도달 전까지는 false.
         /// </summary>
         public bool ErosionStarted;
+
+        /// <summary>
+        /// 현재 침식이 누적되는 단계(1~6).
+        /// </summary>
+        public int CurrentEroddingStage;
 
         /// <summary>
         /// 각 단계의 안전지대 침식 잠금 여부(침식률 100%에 도달 시 true).

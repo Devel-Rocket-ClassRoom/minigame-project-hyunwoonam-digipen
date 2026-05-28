@@ -70,7 +70,7 @@ namespace Tempt
             Player = CreateRuntimePlayer(gsm.CurrentRun.Player);
             Companions = CreateRuntimeCompanions(gsm.CurrentRun.Roster);
 
-            Spawner.SpawnFromNode(ctx.Node, ctx.ErosionMultiplier, runtimeRoot, BuildEnemyPositions(ctx.Node));
+            Spawner.SpawnFromNode(ctx.Node, runtimeRoot, BuildEnemyPositions(ctx.Node));
             Monsters = Spawner.SpawnedT ?? new List<MonsterBase>();
             for (int i = 0; i < Monsters.Count; i++)
             {

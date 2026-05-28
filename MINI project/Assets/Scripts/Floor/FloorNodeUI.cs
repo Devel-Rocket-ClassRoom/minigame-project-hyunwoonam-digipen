@@ -18,9 +18,15 @@ namespace Tempt
         private FloorNode node;
         private Action<int> onClicked;
         private Outline outline;
+        private bool safeLocked;
+        private float erosionRate;
 
         /// <summary>RectTransform 캐시.</summary>
         public RectTransform RectTransform => (RectTransform)transform;
+
+        public int StageIndex => node != null ? node.StageIndex : 0;
+
+        public bool IsSafeZone => node != null && node.IsSafeZone;
 
         /// <summary>
         /// 노드 데이터와 클릭 콜백을 연결한다.
@@ -108,6 +114,22 @@ namespace Tempt
             }
         }
 
+        public void SetErosionRate(float rate)
+        {
+            erosionRate = Mathf.Clamp(rate, 0f, 100f);
+            RefreshDetailOnly();
+        }
+
+        public void SetSafeLocked(bool locked)
+        {
+            safeLocked = locked;
+            RefreshDetailOnly();
+            if (background != null && node != null && node.IsSafeZone && locked)
+            {
+                background.color = new Color(0.12f, 0.07f, 0.13f, 0.95f);
+            }
+        }
+
         private void Refresh()
         {
             if (node == null)
@@ -129,7 +151,7 @@ namespace Tempt
 
             if (detailLabel != null)
             {
-                detailLabel.text = node.IsSafeZone ? "SAFE ZONE" : node.IsCleared ? "CLEARED" : string.Empty;
+                detailLabel.text = node.IsSafeZone ? SafeDetailText(false) : node.IsCleared ? "CLEARED" : ErosionDetailText();
             }
         }
 
@@ -142,7 +164,7 @@ namespace Tempt
 
             if (node.IsSafeZone)
             {
-                return interactable ? "ENTER" : "SAFE ZONE";
+                return interactable ? SafeDetailText(true) : SafeDetailText(false);
             }
 
             if (node.IsCleared)
@@ -151,6 +173,35 @@ namespace Tempt
             }
 
             return interactable ? "READY" : string.Empty;
+        }
+
+        private string SafeDetailText(bool interactable)
+        {
+            if (safeLocked)
+            {
+                return $"LOCKED STAGE {node.StageIndex} {erosionRate:0.#}%";
+            }
+
+            return interactable ? $"ENTER STAGE {node.StageIndex} {erosionRate:0.#}%" : $"STAGE {node.StageIndex} {erosionRate:0.#}%";
+        }
+
+        private string ErosionDetailText()
+        {
+            return string.Empty;
+        }
+
+        private void RefreshDetailOnly()
+        {
+            if (detailLabel == null || node == null)
+            {
+                return;
+            }
+
+            detailLabel.text = node.IsSafeZone
+                ? SafeDetailText(button != null && button.interactable)
+                : node.IsCleared
+                    ? "CLEARED"
+                    : ErosionDetailText();
         }
 
         private void CacheVisuals()

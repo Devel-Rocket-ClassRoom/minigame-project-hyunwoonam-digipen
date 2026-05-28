@@ -1,5 +1,9 @@
 namespace Tempt
 {
+    using TMPro;
+    using UnityEngine;
+    using UnityEngine.UI;
+
     /// <summary>
     /// 안전지대 씬 컨트롤러 공통 베이스.
     /// 단일 씬 재사용이 아닌 6개 분리(Safe0~5)이므로 베이스에는 공통 기능만 둔다.
@@ -11,6 +15,9 @@ namespace Tempt
 
         /// <summary>이 안전지대 정의(WorldData.SafeZones[SafeIndex]).</summary>
         public SafeZoneDef Definition;
+
+        [SerializeField] private TextMeshProUGUI dayLabel;
+        [SerializeField] private Button enterFloorMapButton;
 
         /// <inheritdoc/>
         public override void OnEnter()
@@ -48,6 +55,9 @@ namespace Tempt
             } //Wave0write
 
             Definition = gsm.Data?.World?.SafeZones != null && SafeIndex >= 0 && SafeIndex < gsm.Data.World.SafeZones.Count ? gsm.Data.World.SafeZones[SafeIndex] : null; //Wave0write
+            SubscribeDayChanged(gsm.Events); //Wave0write
+            UpdateDayText(run.CurrentDay); //Wave0write
+            WireEnterFloorMapButton(); //Wave0write
             gsm.Save?.SaveSnapshot(); //Wave0write
             SetupZoneFeatures();
         }
@@ -56,6 +66,11 @@ namespace Tempt
         public override void OnExit()
         {
             // 동작 요약: 정리.
+            UnwireEnterFloorMapButton();
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                UnsubscribeDayChanged(gsm.Events);
+            }
         }
 
         /// <summary>
@@ -73,6 +88,58 @@ namespace Tempt
             // - GameSystemManager.Instance.Scenes.LoadFloorMap().
             //TODO: GameSystemManager.Instance.Scenes.LoadFloorMap();
             GameSystemManager.Instance.LoadFloorMapFromSafe(SafeIndex); //Wave0write
+        }
+
+        private void SubscribeDayChanged(EventBus events)
+        {
+            if (events == null)
+            {
+                return;
+            }
+
+            events.OnDayChanged -= UpdateDayText;
+            events.OnDayChanged += UpdateDayText;
+        }
+
+        private void UnsubscribeDayChanged(EventBus events)
+        {
+            if (events == null)
+            {
+                return;
+            }
+
+            events.OnDayChanged -= UpdateDayText;
+        }
+
+        private void UpdateDayText(int day)
+        {
+            if (dayLabel == null)
+            {
+                return;
+            }
+
+            dayLabel.text = "Day " + day;
+        }
+
+        private void WireEnterFloorMapButton()
+        {
+            if (enterFloorMapButton == null)
+            {
+                return;
+            }
+
+            enterFloorMapButton.onClick.RemoveListener(DepartToFloorMap);
+            enterFloorMapButton.onClick.AddListener(DepartToFloorMap);
+        }
+
+        private void UnwireEnterFloorMapButton()
+        {
+            if (enterFloorMapButton == null)
+            {
+                return;
+            }
+
+            enterFloorMapButton.onClick.RemoveListener(DepartToFloorMap);
         }
     }
 }
