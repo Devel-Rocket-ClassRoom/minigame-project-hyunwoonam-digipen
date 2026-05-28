@@ -48,6 +48,35 @@ namespace Tempt
             if (gsm != null) //Wave0write
             { //Wave0write
                 SyncPassivesFromRunes(gsm.Data); //Wave0write
+                if (gsm.CurrentRun?.Player != null) //Wave0write
+                { //Wave0write
+                    PlayerState state = gsm.CurrentRun.Player; //Wave0write
+                    state.StartingClass = pickedClass; //Wave0write
+                    state.Rune = Rune; //Wave0write
+                    if (state.OwnedSkillIds == null) //Wave0write
+                    { //Wave0write
+                        state.OwnedSkillIds = new System.Collections.Generic.HashSet<int>(); //Wave0write
+                    } //Wave0write
+                    if (state.ActiveSlotSkillIds == null || state.ActiveSlotSkillIds.Length != 2) //Wave0write
+                    { //Wave0write
+                        state.ActiveSlotSkillIds = new int[2]; //Wave0write
+                    } //Wave0write
+
+                    state.ActiveSlotSkillIds[0] = 0; //Wave0write
+                    state.ActiveSlotSkillIds[1] = 0; //Wave0write
+                    int[] starters = gsm.Data.GetStartingSkillIds(pickedClass); //Wave0write
+                    for (int i = 0; i < starters.Length && i < state.ActiveSlotSkillIds.Length; i++) //Wave0write
+                    { //Wave0write
+                        int skillId = starters[i]; //Wave0write
+                        state.ActiveSlotSkillIds[i] = skillId; //Wave0write
+                        if (skillId != 0) //Wave0write
+                        { //Wave0write
+                            state.OwnedSkillIds.Add(skillId); //Wave0write
+                        } //Wave0write
+                    } //Wave0write
+
+                    gsm.Events?.RaiseSkillsChanged(); //Wave0write
+                } //Wave0write
             } //Wave0write
             RecalcBonusStats(); //Wave0write
         }
@@ -166,18 +195,52 @@ namespace Tempt
 
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm)) //Wave0write
             { //Wave0write
-                if (gsm.Data.Skills.TryGetValue(1, out SkillData attackSkill)) //Wave0write
-                { //Wave0write
-                    ActiveSkills[0] = new Skill(attackSkill); //Wave0write
-                } //Wave0write
-                if (gsm.Data.Skills.TryGetValue(2, out SkillData areaSkill)) //Wave0write
-                { //Wave0write
-                    ActiveSkills[1] = new Skill(areaSkill); //Wave0write
-                } //Wave0write
+                BindActiveSlotsFromState(state, gsm.Data); //Wave0write
                 SyncPassivesFromRunes(gsm.Data); //Wave0write
+            } //Wave0write
+            else //Wave0write
+            { //Wave0write
+                UnityEngine.Debug.LogError("[Player.BindState] GameSystemManager 참조가 없어 ActiveSkills 를 바인딩할 수 없습니다."); //Wave0write
             } //Wave0write
 
             RecalcBonusStats(); //Wave0write
+        } //Wave0write
+
+        private void BindActiveSlotsFromState(PlayerState state, DataManager data) //Wave0write
+        { //Wave0write
+            if (state?.ActiveSlotSkillIds == null || state.ActiveSlotSkillIds.Length != 2) //Wave0write
+            { //Wave0write
+                UnityEngine.Debug.LogError("[Player.BindState] PlayerState.ActiveSlotSkillIds 가 없거나 길이가 2가 아닙니다."); //Wave0write
+                ActiveSkills[0] = null; //Wave0write
+                ActiveSkills[1] = null; //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            if (data?.Skills == null) //Wave0write
+            { //Wave0write
+                UnityEngine.Debug.LogError("[Player.BindState] DataManager.Skills 참조가 없습니다."); //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            for (int slot = 0; slot < ActiveSkills.Length; slot++) //Wave0write
+            { //Wave0write
+                int skillId = state.ActiveSlotSkillIds[slot]; //Wave0write
+                if (skillId == 0) //Wave0write
+                { //Wave0write
+                    ActiveSkills[slot] = null; //Wave0write
+                    continue; //Wave0write
+                } //Wave0write
+
+                if (data.Skills.TryGetValue(skillId, out SkillData skillData)) //Wave0write
+                { //Wave0write
+                    ActiveSkills[slot] = new Skill(skillData); //Wave0write
+                } //Wave0write
+                else //Wave0write
+                { //Wave0write
+                    UnityEngine.Debug.LogError("[Player.BindState] ActiveSlotSkillIds[" + slot + "] 데이터 없음: " + skillId); //Wave0write
+                    ActiveSkills[slot] = null; //Wave0write
+                } //Wave0write
+            } //Wave0write
         } //Wave0write
 
         // Wave0refactor 2026-05-27: BUG-2 수정.

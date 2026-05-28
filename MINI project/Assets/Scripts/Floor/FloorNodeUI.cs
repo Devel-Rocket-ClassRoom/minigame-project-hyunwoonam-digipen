@@ -147,7 +147,7 @@ namespace Tempt
 
             if (node.IsCleared)
             {
-                return "CLEARED";
+                return interactable ? "RETRY" : "CLEARED";
             }
 
             return interactable ? "READY" : string.Empty;

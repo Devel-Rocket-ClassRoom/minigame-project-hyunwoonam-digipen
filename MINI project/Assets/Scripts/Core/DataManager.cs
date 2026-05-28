@@ -249,7 +249,7 @@ namespace Tempt
                 NameKey = nameKey, //Wave0write
                 IsBoss = isBoss, //Wave0write
                 Difficulty = difficulty, //Wave0write
-                MaxHP = hp, //Wave0write
+                MaxHP = 1, //Wave0write
                 MaxMP = mp, //Wave0write
                 ATK = atk, //Wave0write
                 DEF = def, //Wave0write
@@ -264,8 +264,8 @@ namespace Tempt
             }; //Wave0write
         } //Wave0write
 
-        // Guid3 §9.F.2 2026-05-27: AcquireType.Shop 인 스킬 2개(SkillId 4, 5) 추가.
-        // 길드 구매 시나리오 검증을 위한 최소 풀.
+        // Guid3 §9.F.2 2026-05-27: AcquireType.Shop 인 스킬 4개(SkillId 4~7) 추가.
+        // 길드 구매 시나리오 검증을 위한 단일/범위 공격 풀.
         private static Dictionary<int, SkillData> BuildFallbackSkills() //Wave0write
         { //Wave0write
             return new Dictionary<int, SkillData> //Wave0write
@@ -273,8 +273,10 @@ namespace Tempt
                 [1] = new SkillData { Id = 1, NameKey = "skill.slash", SkillType = SkillType.Active, AcquireType = AcquireType.Default, MpCost = 0, DamageScale = 1.2f, TargetType = SkillTargetType.EnemySingle, ActionDuration = 0.35f }, //Wave0write
                 [2] = new SkillData { Id = 2, NameKey = "skill.fire", SkillType = SkillType.Active, AcquireType = AcquireType.Default, MpCost = 4, DamageScale = 0.85f, TargetType = SkillTargetType.EnemyAll, ActionDuration = 0.5f, CooldownRounds = 1 }, //Wave0write
                 [3] = new SkillData { Id = 3, NameKey = "skill.heal", SkillType = SkillType.Active, AcquireType = AcquireType.Default, MpCost = 3, HealScale = 1.1f, TargetType = SkillTargetType.AllySingle, ActionDuration = 0.45f }, //Wave0write
-                [4] = new SkillData { Id = 4, NameKey = "skill.power_strike", SkillType = SkillType.Active, AcquireType = AcquireType.Shop, PurchasePrice = 80, MpCost = 6, DamageScale = 1.8f, TargetType = SkillTargetType.EnemySingle, ActionDuration = 0.45f, CooldownRounds = 2 },
-                [5] = new SkillData { Id = 5, NameKey = "skill.guard", SkillType = SkillType.Active, AcquireType = AcquireType.Shop, PurchasePrice = 60, MpCost = 4, ShieldScale = 1.5f, TargetType = SkillTargetType.Self, ActionDuration = 0.35f, CooldownRounds = 1 },
+                [4] = new SkillData { Id = 4, NameKey = "skill.power_strike", SkillType = SkillType.Active, AcquireType = AcquireType.Shop, PurchasePrice = 1, MpCost = 5, DamageScale = 2.0f, TargetType = SkillTargetType.EnemySingle, ActionDuration = 0.45f, CooldownRounds = 1 },
+                [5] = new SkillData { Id = 5, NameKey = "skill.cleave", SkillType = SkillType.Active, AcquireType = AcquireType.Shop, PurchasePrice = 1, MpCost = 5, DamageScale = 1.25f, TargetType = SkillTargetType.EnemyAll, ActionDuration = 0.5f, CooldownRounds = 1 },
+                [6] = new SkillData { Id = 6, NameKey = "skill.execution", SkillType = SkillType.Active, AcquireType = AcquireType.Shop, PurchasePrice = 2, MpCost = 8, DamageScale = 2.8f, TargetType = SkillTargetType.EnemySingle, ActionDuration = 0.55f, CooldownRounds = 2 },
+                [7] = new SkillData { Id = 7, NameKey = "skill.flame_burst", SkillType = SkillType.Active, AcquireType = AcquireType.Shop, PurchasePrice = 2, MpCost = 7, DamageScale = 1.7f, TargetType = SkillTargetType.EnemyAll, ActionDuration = 0.6f, CooldownRounds = 2 },
                 [900] = new SkillData { Id = 900, NameKey = "skill.bite", SkillType = SkillType.Active, AcquireType = AcquireType.MonsterOnly, MpCost = 0, DamageScale = 1.05f, TargetType = SkillTargetType.EnemySingle, ActionDuration = 0.35f }, //Wave0write
             }; //Wave0write
         } //Wave0write

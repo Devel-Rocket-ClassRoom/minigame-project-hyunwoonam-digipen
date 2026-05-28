@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace Tempt
@@ -52,39 +53,255 @@ namespace Tempt
 
         private void Awake()
         {
-            // 본문 의사코드: Guid3 §8.3 Awake.
-            // if (!ValidateReferences()) { Debug.LogError(...); enabled = false; return; }
-            // WireStaticButtons();
-            // root.SetActive(false);
+            if (!ValidateReferences())
+            {
+                enabled = false;
+                return;
+            }
+
+            WireStaticButtons();
+            root.SetActive(false);
         }
 
         /// <summary>화면 열기 + 이벤트 구독 + Refresh.</summary>
         public void OnOpen()
         {
-            // 본문 의사코드: Guid3 §8.3 OnOpen.
+            if (!enabled)
+            {
+                return;
+            }
+
+            root.SetActive(true);
+            SubscribeEvents();
+            SetTab(GuildTab.Buy);
+            Refresh();
         }
 
         /// <summary>이벤트 해제 + 화면 닫기.</summary>
         public void OnClose()
         {
-            // 본문 의사코드: Guid3 §8.3 OnClose.
+            UnsubscribeEvents();
+            infoPanel.Hide();
+            if (root != null)
+            {
+                root.SetActive(false);
+            }
         }
 
         /// <summary>현재 PlayerState / DataManager 상태로 두 탭의 리스트와 슬롯 라벨을 새로 그린다.</summary>
         public void Refresh()
         {
-            // 본문 의사코드: Guid3 §8.3 Refresh.
-            // - RebuildBuyList(run, data).
-            // - RebuildSlotPanel(run, data).
-            // - OnGoldChanged(run.Gold).
+            if (!TryGetRunData(out GameRunState run, out DataManager data))
+            {
+                return;
+            }
+
+            RebuildBuyList(run, data);
+            RebuildSlotPanel(run, data);
+            OnGoldChanged(run.Gold);
         }
 
         private bool ValidateReferences()
         {
-            // 본문 의사코드: Guid2 §3 ValidateReferences 표준 패턴.
-            // root, 두 탭 버튼, 두 패널, buy/slot 의 리스트 루트와 prefab, 슬롯 버튼 4개,
-            // 슬롯 라벨 2개, goldLabel, infoPanel 모두 검사.
-            return false;
+            bool valid = root != null
+                && buyTabButton != null
+                && slotTabButton != null
+                && buyPanel != null
+                && slotPanel != null
+                && buyListRoot != null
+                && skillEntryPrefab != null
+                && ownedListRoot != null
+                && slot1Button != null
+                && slot2Button != null
+                && slot1Label != null
+                && slot2Label != null
+                && slot1ClearButton != null
+                && slot2ClearButton != null
+                && goldLabel != null
+                && infoPanel != null;
+            if (!valid)
+            {
+                Debug.LogError("[GuildPage] 필수 UI 참조가 Inspector 에 직접 할당되어 있지 않습니다.");
+            }
+
+            return valid;
+        }
+
+        private static bool TryGetRunData(out GameRunState run, out DataManager data)
+        {
+            run = null;
+            data = null;
+            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.CurrentRun?.Player == null || gsm.Data?.Skills == null)
+            {
+                Debug.LogError("[GuildPage] GameSystemManager / CurrentRun.Player / Data.Skills 참조가 없습니다.");
+                return false;
+            }
+
+            run = gsm.CurrentRun;
+            data = gsm.Data;
+            return true;
+        }
+
+        private void SubscribeEvents()
+        {
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Events != null)
+            {
+                gsm.Events.OnGoldChanged -= OnGoldChanged;
+                gsm.Events.OnSkillsChanged -= Refresh;
+                gsm.Events.OnGoldChanged += OnGoldChanged;
+                gsm.Events.OnSkillsChanged += Refresh;
+            }
+        }
+
+        private void UnsubscribeEvents()
+        {
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Events != null)
+            {
+                gsm.Events.OnGoldChanged -= OnGoldChanged;
+                gsm.Events.OnSkillsChanged -= Refresh;
+            }
+        }
+
+        private void RebuildBuyList(GameRunState run, DataManager data)
+        {
+            ClearList(buyListRoot);
+            var skills = new System.Collections.Generic.List<SkillData>(data.Skills.Values);
+            skills.Sort((a, b) => a.Id.CompareTo(b.Id));
+            foreach (SkillData skill in skills)
+            {
+                if (skill.AcquireType != AcquireType.Shop)
+                {
+                    continue;
+                }
+
+                bool owned = run.Player.OwnedSkillIds != null && run.Player.OwnedSkillIds.Contains(skill.Id);
+                int price = Guild.GetSkillBuyPrice(skill.Id, run, data);
+                SpawnEntry(buyListRoot, skill.NameKey + "  " + price + "G" + (owned ? "  Owned" : string.Empty), () => infoPanel.Show(skill.Id, SkillDetailContext.GuildBuy));
+            }
+        }
+
+        private void RebuildSlotPanel(GameRunState run, DataManager data)
+        {
+            ClearList(ownedListRoot);
+            int slot1 = SkillSwap.GetSlotSkillId(0, run);
+            int slot2 = SkillSwap.GetSlotSkillId(1, run);
+            slot1Label.text = SlotLabel(slot1, data);
+            slot2Label.text = SlotLabel(slot2, data);
+            WireSlotButton(slot1Button, slot1);
+            WireSlotButton(slot2Button, slot2);
+            WireClearButton(slot1ClearButton, 0, run, data);
+            WireClearButton(slot2ClearButton, 1, run, data);
+
+            if (run.Player.OwnedSkillIds == null)
+            {
+                return;
+            }
+
+            var owned = new System.Collections.Generic.List<int>(run.Player.OwnedSkillIds);
+            owned.Sort();
+            foreach (int skillId in owned)
+            {
+                if (!data.Skills.TryGetValue(skillId, out SkillData skill) || skill.SkillType != SkillType.Active)
+                {
+                    continue;
+                }
+
+                bool equipped = slot1 == skillId || slot2 == skillId;
+                SpawnEntry(ownedListRoot, skill.NameKey + (equipped ? "  Equipped" : string.Empty), () => infoPanel.Show(skillId, SkillDetailContext.GuildSlot));
+            }
+        }
+
+        private void WireStaticButtons()
+        {
+            buyTabButton.onClick.RemoveAllListeners();
+            buyTabButton.onClick.AddListener(() =>
+            {
+                SetTab(GuildTab.Buy);
+                Refresh();
+            });
+            slotTabButton.onClick.RemoveAllListeners();
+            slotTabButton.onClick.AddListener(() =>
+            {
+                SetTab(GuildTab.Slot);
+                Refresh();
+            });
+        }
+
+        private void SetTab(GuildTab tab)
+        {
+            activeTab = tab;
+            buyPanel.SetActive(tab == GuildTab.Buy);
+            slotPanel.SetActive(tab == GuildTab.Slot);
+        }
+
+        private void OnGoldChanged(int value)
+        {
+            goldLabel.text = "Gold " + value;
+        }
+
+        private void WireSlotButton(Button button, int skillId)
+        {
+            button.onClick.RemoveAllListeners();
+            button.interactable = skillId != 0;
+            if (skillId != 0)
+            {
+                button.onClick.AddListener(() => infoPanel.Show(skillId, SkillDetailContext.GuildSlot));
+            }
+        }
+
+        private void WireClearButton(Button button, int slotIndex, GameRunState run, DataManager data)
+        {
+            button.onClick.RemoveAllListeners();
+            button.interactable = SkillSwap.GetSlotSkillId(slotIndex, run) != 0;
+            button.onClick.AddListener(() =>
+            {
+                if (SkillSwap.TryClearSlot(slotIndex, run, data))
+                {
+                    Refresh();
+                }
+            });
+        }
+
+        private static string SlotLabel(int skillId, DataManager data)
+        {
+            if (skillId == 0)
+            {
+                return "(Empty)";
+            }
+
+            return data.Skills.TryGetValue(skillId, out SkillData skill) ? skill.NameKey : "Missing " + skillId;
+        }
+
+        private void SpawnEntry(Transform parent, string label, UnityAction action)
+        {
+            Button entry = Instantiate(skillEntryPrefab, parent);
+            entry.gameObject.SetActive(true);
+            entry.onClick.RemoveAllListeners();
+            entry.onClick.AddListener(action);
+            TMP_Text tmp = entry.GetComponentInChildren<TMP_Text>(true);
+            if (tmp != null)
+            {
+                tmp.text = label;
+                return;
+            }
+
+            Text text = entry.GetComponentInChildren<Text>(true);
+            if (text != null)
+            {
+                text.text = label;
+                return;
+            }
+
+            Debug.LogError("[GuildPage] skillEntryPrefab 하위 텍스트 참조가 없습니다.");
+            entry.interactable = false;
+        }
+
+        private static void ClearList(Transform parent)
+        {
+            for (int i = parent.childCount - 1; i >= 0; i--)
+            {
+                Destroy(parent.GetChild(i).gameObject);
+            }
         }
     }
 }

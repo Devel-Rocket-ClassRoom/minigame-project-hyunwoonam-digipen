@@ -72,7 +72,7 @@ namespace Tempt
             // - 플레이어가 출발 가능한 단계인지 확인.
             // - GameSystemManager.Instance.Scenes.LoadFloorMap().
             //TODO: GameSystemManager.Instance.Scenes.LoadFloorMap();
-            GameSystemManager.Instance.Scenes.LoadFloorMap(); //Wave0write
+            GameSystemManager.Instance.LoadFloorMapFromSafe(SafeIndex); //Wave0write
         }
     }
 }

@@ -27,7 +27,8 @@ namespace Tempt
                 return;
             }
 
-            continueButton.interactable = GameSystemManager.Instance.Save.HasContinue();
+            GameSystemManager gsm = GameSystemManager.Instance;
+            continueButton.interactable = gsm != null && gsm.Save != null && gsm.Save.HasContinue();
             newGameButton.onClick.AddListener(OnClickNewGame);
             continueButton.onClick.AddListener(OnClickContinue);
             optionButton.onClick.AddListener(OnClickOption);
@@ -47,7 +48,13 @@ namespace Tempt
         public void OnClickNewGame()
         {
             GameSystemManager gsm = GameSystemManager.Instance; //Wave0write
-            if (gsm.Save.HasContinue()) //Wave0write
+            if (gsm == null)
+            {
+                Debug.LogError("[MainMenuController] GameSystemManager 인스턴스를 찾을 수 없습니다.");
+                return;
+            }
+
+            if (gsm.Save != null && gsm.Save.HasContinue()) //Wave0write
             { //Wave0write
                 gsm.Save.ClearContinue(); //Wave0write
             } //Wave0write
@@ -58,7 +65,14 @@ namespace Tempt
         /// <summary>Continue 클릭.</summary>
         public void OnClickContinue()
         {
-            GameSystemManager.Instance.ContinueGame(); //Wave0write
+            GameSystemManager gsm = GameSystemManager.Instance; //Wave0write
+            if (gsm == null)
+            {
+                Debug.LogError("[MainMenuController] GameSystemManager 인스턴스를 찾을 수 없습니다.");
+                return;
+            }
+
+            gsm.ContinueGame(); //Wave0write
         }
 
         /// <summary>Option 클릭.</summary>
@@ -70,7 +84,11 @@ namespace Tempt
         /// <summary>Exit 클릭.</summary>
         public void OnClickExit()
         {
-            GameSystemManager.Instance.QuitGame(); //Wave0write
+            GameSystemManager gsm = GameSystemManager.Instance; //Wave0write
+            if (gsm != null)
+            {
+                gsm.QuitGame(); //Wave0write
+            }
         }
 
         private bool ValidateButtonRefs()

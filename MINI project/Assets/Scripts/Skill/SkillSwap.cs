@@ -10,40 +10,178 @@ namespace Tempt
     /// </summary>
     public static class SkillSwap
     {
+        /// <summary>슬롯에 보유 스킬을 장착한다. Safe UI 에서는 Player MonoBehaviour 없이 이 overload 를 사용한다.</summary>
+        public static bool TrySetSlot(int slotIndex, int skillId, GameRunState run, DataManager data)
+        {
+            if (!TryResolveInputs(slotIndex, run, data, out PlayerState state))
+            {
+                return false;
+            }
+
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.CombatContext != null)
+            {
+                return false;
+            }
+
+            if (skillId == 0)
+            {
+                UnityEngine.Debug.LogError("[SkillSwap.TrySetSlot] skillId == 0. 빈 슬롯은 TryClearSlot 을 사용해야 합니다.");
+                return false;
+            }
+
+            if (state.OwnedSkillIds == null || !state.OwnedSkillIds.Contains(skillId))
+            {
+                return false;
+            }
+
+            if (!data.Skills.TryGetValue(skillId, out SkillData skill) || skill == null)
+            {
+                UnityEngine.Debug.LogError("[SkillSwap.TrySetSlot] 스킬 ID 없음: " + skillId);
+                return false;
+            }
+
+            if (skill.SkillType == SkillType.Passive || skill.AcquireType == AcquireType.MonsterOnly)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < state.ActiveSlotSkillIds.Length; i++)
+            {
+                if (i != slotIndex && state.ActiveSlotSkillIds[i] == skillId)
+                {
+                    state.ActiveSlotSkillIds[i] = 0;
+                    SyncActivePlayerSlot(i, null);
+                }
+            }
+
+            state.ActiveSlotSkillIds[slotIndex] = skillId;
+            SyncActivePlayerSlot(slotIndex, new Skill(skill));
+            RaiseSkillsChanged();
+            return true;
+        }
+
         /// <summary>슬롯에 OwnedSkillIds 의 스킬을 장착. 다른 슬롯에 같은 스킬이 있으면 그 슬롯을 비운다.</summary>
         public static bool TrySetSlot(Player player, int slotIndex, int skillId)
         {
-            // 본문 의사코드: Guid3 §6.3 TrySetSlot.
-            // 검증 순서:
-            //  1) slotIndex 범위(0/1).
-            //  2) skillId != 0 (빈 슬롯은 TryClearSlot 사용).
-            //  3) GameSystemManager.CombatContext != null 이면 false (전투 중 차단).
-            //  4) PlayerState.OwnedSkillIds.Contains(skillId).
-            //  5) data.Skills.TryGetValue → SkillType != Passive && AcquireType != MonsterOnly.
-            //  6) 다른 슬롯에 같은 skillId 가 있으면 그 슬롯 = 0.
-            //  7) PlayerState.ActiveSlotSkillIds[slotIndex] = skillId.
-            //  8) player != null 이면 player.SetActiveSkill(slotIndex, new Skill(data)).
-            //  9) EventBus.RaiseSkillsChanged().
-            return false;
+            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                UnityEngine.Debug.LogError("[SkillSwap.TrySetSlot] GameSystemManager 참조가 없습니다.");
+                return false;
+            }
+
+            bool changed = TrySetSlot(slotIndex, skillId, gsm.CurrentRun, gsm.Data);
+            if (changed && player != null && gsm.Data.Skills.TryGetValue(skillId, out SkillData skill))
+            {
+                player.SetActiveSkill(slotIndex, new Skill(skill));
+            }
+
+            return changed;
+        }
+
+        /// <summary>슬롯을 비운다. 이미 0 이면 false.</summary>
+        public static bool TryClearSlot(int slotIndex, GameRunState run, DataManager data)
+        {
+            if (!TryResolveInputs(slotIndex, run, data, out PlayerState state))
+            {
+                return false;
+            }
+
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.CombatContext != null)
+            {
+                return false;
+            }
+
+            if (state.ActiveSlotSkillIds[slotIndex] == 0)
+            {
+                return false;
+            }
+
+            state.ActiveSlotSkillIds[slotIndex] = 0;
+            SyncActivePlayerSlot(slotIndex, null);
+            RaiseSkillsChanged();
+            return true;
         }
 
         /// <summary>슬롯을 비운다. 이미 0 이면 false.</summary>
         public static bool TryClearSlot(Player player, int slotIndex)
         {
-            // 본문 의사코드: Guid3 §6.3 TryClearSlot.
-            // 1) slotIndex 범위 + 전투 중 가드.
-            // 2) PlayerState.ActiveSlotSkillIds[slotIndex] == 0 이면 false.
-            // 3) PlayerState.ActiveSlotSkillIds[slotIndex] = 0.
-            // 4) player != null 이면 player.SetActiveSkill(slotIndex, null).
-            // 5) EventBus.RaiseSkillsChanged().
-            return false;
+            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                UnityEngine.Debug.LogError("[SkillSwap.TryClearSlot] GameSystemManager 참조가 없습니다.");
+                return false;
+            }
+
+            bool changed = TryClearSlot(slotIndex, gsm.CurrentRun, gsm.Data);
+            if (changed && player != null)
+            {
+                player.SetActiveSkill(slotIndex, null);
+            }
+
+            return changed;
+        }
+
+        /// <summary>현재 슬롯에 들어 있는 SkillId. 슬롯 범위 벗어나면 0.</summary>
+        public static int GetSlotSkillId(int slotIndex, GameRunState run)
+        {
+            if (run?.Player?.ActiveSlotSkillIds == null || slotIndex < 0 || slotIndex >= run.Player.ActiveSlotSkillIds.Length)
+            {
+                return 0;
+            }
+
+            return run.Player.ActiveSlotSkillIds[slotIndex];
         }
 
         /// <summary>현재 슬롯에 들어 있는 SkillId. 슬롯 범위 벗어나면 0.</summary>
         public static int GetSlotSkillId(Player player, int slotIndex)
         {
-            // 본문 의사코드: Guid3 §6.3 GetSlotSkillId.
-            return 0;
+            return GameSystemManager.TryGetInstance(out GameSystemManager gsm) ? GetSlotSkillId(slotIndex, gsm.CurrentRun) : 0;
+        }
+
+        private static bool TryResolveInputs(int slotIndex, GameRunState run, DataManager data, out PlayerState state)
+        {
+            state = null;
+            if (slotIndex < 0 || slotIndex >= 2)
+            {
+                UnityEngine.Debug.LogError("[SkillSwap] slotIndex 범위 오류: " + slotIndex);
+                return false;
+            }
+
+            if (run?.Player == null)
+            {
+                UnityEngine.Debug.LogError("[SkillSwap] run / Player 참조가 없습니다.");
+                return false;
+            }
+
+            if (data?.Skills == null)
+            {
+                UnityEngine.Debug.LogError("[SkillSwap] DataManager.Skills 참조가 없습니다.");
+                return false;
+            }
+
+            state = run.Player;
+            if (state.ActiveSlotSkillIds == null || state.ActiveSlotSkillIds.Length != 2)
+            {
+                UnityEngine.Debug.LogError("[SkillSwap] PlayerState.ActiveSlotSkillIds 가 없거나 길이가 2가 아닙니다.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void SyncActivePlayerSlot(int slotIndex, Skill skill)
+        {
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.ActivePlayer != null)
+            {
+                gsm.ActivePlayer.SetActiveSkill(slotIndex, skill);
+            }
+        }
+
+        private static void RaiseSkillsChanged()
+        {
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                gsm.Events?.RaiseSkillsChanged();
+            }
         }
     }
 }
