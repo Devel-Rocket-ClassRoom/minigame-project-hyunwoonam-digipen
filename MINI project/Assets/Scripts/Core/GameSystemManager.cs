@@ -32,6 +32,12 @@ namespace Tempt
         /// <summary>현재 전투 진입 컨텍스트 (전투 중 아니면 null).</summary>
         public CombatContext CombatContext { get; private set; }
 
+        // Guid3 §9.E 2026-05-27: 길드/인벤토리/스탯 화면 등 전투 외 시점에서도
+        // Player MonoBehaviour 의 권위 출처가 필요. CombatController.OnEnter 가 set, OnExit 가 null.
+        // 전투 외에서 Player MonoBehaviour 가 없으면 null 일 수 있다(Guid3 §10 W-G3-1 보류).
+        /// <summary>현재 활성 Player MonoBehaviour. 전투 외에서는 null 일 수 있다.</summary>
+        public Player ActivePlayer { get; set; }
+
         /// <summary>
         /// 게임 부팅 시 호출. 하위 시스템 초기화 순서를 강제한다.
         /// </summary>

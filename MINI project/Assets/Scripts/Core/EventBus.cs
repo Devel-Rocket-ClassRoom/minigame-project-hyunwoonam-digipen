@@ -32,6 +32,10 @@ namespace Tempt
         /// <summary>장비 변경.</summary>
         public event Action OnEquipmentChanged;
 
+        // Guid3 §9.E 2026-05-27: 길드 시스템의 보유 스킬 / ActiveSlotSkillIds 변경 이벤트.
+        /// <summary>보유 스킬 풀 또는 ActiveSlotSkillIds 변경.</summary>
+        public event Action OnSkillsChanged;
+
         /// <summary>동료 모집/해고. (companionId, joined)</summary>
         public event Action<int, bool> OnRosterChanged;
 
@@ -100,6 +104,13 @@ namespace Tempt
             // 동작 요약: OnEquipmentChanged?.Invoke().
             //TODO: OnEquipmentChanged?.Invoke();
             OnEquipmentChanged?.Invoke(); //Wave0write
+        }
+
+        // Guid3 §9.E 2026-05-27: 보유 스킬 / ActiveSlotSkillIds 변경 발행.
+        /// <summary>스킬 풀 또는 슬롯 매핑 변경 발행.</summary>
+        public void RaiseSkillsChanged()
+        {
+            OnSkillsChanged?.Invoke();
         }
 
         /// <summary>동료 변경 발행.</summary>
