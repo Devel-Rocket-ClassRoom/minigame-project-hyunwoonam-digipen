@@ -55,7 +55,6 @@ namespace Tempt
                 return;
             }
 
-
             //초기화
 
             Events = new EventBus();
@@ -76,8 +75,6 @@ namespace Tempt
             Hotkey.BindGlobalKeys();
 
             Erosion = new ErosionSystem(new ErosionStateModel(), Events);
-
-            Scenes.LoadMainMenu();
         }
 
         /// <summary>
@@ -108,6 +105,16 @@ namespace Tempt
             }
 
             base.OnDestroy();
+        }
+
+        private void Update()
+        {
+            if (!IsSingletonInstance)
+            {
+                return;
+            }
+
+            Hotkey?.PollInput();
         }
 
 
@@ -144,6 +151,7 @@ namespace Tempt
             CurrentRun.Erosion = new ErosionStateModel();
             CurrentRun.SafeUnlocks = new SafeZoneUnlockState();
             CurrentRun.SafeUnlocks.Unlock(0);
+            CurrentRun.ShopStock = ShopStockState.CreateDefaultSafe1Stock();
 
             CurrentRun.Gold = 0;
             CurrentRun.ManaStone = 0;
@@ -171,9 +179,9 @@ namespace Tempt
             stats.SetBaseStats(90, 20, 10, 2, 10); //Wave0write
             stats.RestoreToFull(); //Wave0write
 
-            var player = new PlayerState //Wave0write
-            { //Wave0write
-                Name = "Player", //Wave0write
+            var player = new PlayerState
+            { 
+                Name = "Player", 
                 Level = 1, //Wave0write
                 Exp = 0, //Wave0write
                 Stats = stats, //Wave0write
@@ -187,10 +195,31 @@ namespace Tempt
 
             player.Inventory.Add(1, 2); //Wave0write
             player.Inventory.Add(3, 1); //Wave0write
+            AddStartingEquipment(player.Inventory, 901); //Wave0write
+            AddStartingEquipment(player.Inventory, 902); //Wave0write
+            AddStartingEquipment(player.Inventory, 903); //Wave0write
+            AddStartingEquipment(player.Inventory, 904); //Wave0write
             player.Consumables.SlotItemIds[0] = 1; //Wave0write
             player.Consumables.SlotItemIds[1] = 3; //Wave0write
             return player; //Wave0write
         }
+
+        private void AddStartingEquipment(InventoryState inventory, int itemId) //Wave0write
+        { //Wave0write
+            if (inventory == null || Data?.Items == null || !Data.Items.TryGetValue(itemId, out ItemData itemData)) //Wave0write
+            { //Wave0write
+                Debug.LogError("[GameSystemManager] 시작 테스트 장비 ID 없음: " + itemId); //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            if (itemData.Category != ItemCategory.Equipment || itemData.Stackable) //Wave0write
+            { //Wave0write
+                Debug.LogError("[GameSystemManager] 시작 테스트 장비가 Equipment가 아닙니다: " + itemId); //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            inventory.AddEquip(new Item { Data = itemData, Enhancement = 0 }); //Wave0write
+        } //Wave0write
 
         /// <summary>
         /// 이어하기. 메인 메뉴의 Continue 버튼에서 호출.
@@ -240,6 +269,13 @@ namespace Tempt
                 return; //Wave0write
             } //Wave0write
 
+            if (node.IsSafeZone) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            NormalizeCombatNodeMonsterCount(node); //Wave0write
+
             bool selectable = node.Floor == CurrentRun.FloorMap.NextSelectableFloor || (isRechallenget && node.Floor < CurrentRun.FloorMap.NextSelectableFloor); //Wave0write
             if (!selectable || (!isRechallenget && node.IsCleared)) //Wave0write
             { //Wave0write
@@ -263,6 +299,23 @@ namespace Tempt
             Scenes.LoadCombat(); //Wave0write
 
         }
+
+        private static void NormalizeCombatNodeMonsterCount(FloorNode node) //Wave0write
+        { //Wave0write
+            if (node == null || node.IsSafeZone) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            if (node.IsBoss || node.Floor == 1) //Wave0write
+            { //Wave0write
+                node.MonsterCount = 1; //Wave0write
+            } //Wave0write
+            else if (node.Floor == 2) //Wave0write
+            { //Wave0write
+                node.MonsterCount = 2; //Wave0write
+            } //Wave0write
+        } //Wave0write
 
         /// <summary>
         /// 전투 종료 분기. CombatControllert가 결과를 가지고 호출.
@@ -492,7 +545,6 @@ namespace Tempt
             } //Wave0write
 
             CombatContext = null; //Wave0write
-            Save?.SaveSnapshot(); //Wave0write
 
             if (isBoss && node != null) //Wave0write
             { //Wave0write
@@ -503,14 +555,17 @@ namespace Tempt
                     Erosion?.Activate(); //Wave0write
                 } //Wave0write
 
+                Save?.SaveSnapshot(); //Wave0write
                 Scenes.LoadSafeZone(safeIndex); //Wave0write
             } //Wave0write
             else if (isRechallenge && node != null) //Wave0write
             { //Wave0write
+                Save?.SaveSnapshot(); //Wave0write
                 Scenes.LoadSafeZone(System.Math.Max(0, node.StageIndex - 1)); //Wave0write
             } //Wave0write
             else //Wave0write
             { //Wave0write
+                Save?.SaveSnapshot(); //Wave0write
                 Scenes.LoadFloorMap(); //Wave0write
             } //Wave0write
         } //Wave0write
@@ -544,6 +599,9 @@ namespace Tempt
 
         /// <summary>각 안전지대 해금 상태(보스 클리어로 해금, 침식으로 잠김).</summary>
         public SafeZoneUnlockState SafeUnlocks;
+
+        /// <summary>상점 재고/구매 이력 상태.</summary>
+        public ShopStockState ShopStock;
 
         /// <summary>골드 잔액.</summary>
         public int Gold;

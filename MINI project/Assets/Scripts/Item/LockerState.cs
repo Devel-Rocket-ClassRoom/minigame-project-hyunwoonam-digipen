@@ -1,20 +1,12 @@
-using System.Collections.Generic;
-
 namespace Tempt
 {
     /// <summary>
     /// 보관함. 주점에서 구매 후 활성. 인벤토리와 별도 저장.
     /// </summary>
-    public sealed class LockerState
+    public sealed class LockerState : StackableContainer
     {
         /// <summary>활성화 여부(주점에서 구매 시 true).</summary>
         public bool Unlocked;
-
-        /// <summary>보관 중인 소모/재료 아이템(itemId → 수량).</summary>
-        public Dictionary<int, int> StackableItems = new Dictionary<int, int>();
-
-        /// <summary>보관 중인 장비 아이템 목록(강화 단계 포함).</summary>
-        public List<Item> EquipItems = new List<Item>();
 
         /// <summary>주점에서 보관함 구매 시 활성화.</summary>
         public void Unlock()
@@ -29,7 +21,7 @@ namespace Tempt
         }
 
         /// <summary>소모/재료 아이템 추가(InventoryState.MoveToLocker가 호출).</summary>
-        public void Add(int itemId, int count)
+        public bool Add(int itemId, int count)
         {
             // 동작 요약: StackableItems[itemId] += count.
             //TODO: if (count <= 0) return;
@@ -37,28 +29,30 @@ namespace Tempt
             //TODO: else StackableItems[itemId] = count;
             if (count <= 0) //Wave0write
             { //Wave0write
-                return; //Wave0write
+                return false; //Wave0write
             } //Wave0write
 
-            if (StackableItems.ContainsKey(itemId)) //Wave0write
+            bool added = AddStackCore(itemId, count); //Wave0write
+            if (added) //Wave0write
             { //Wave0write
-                StackableItems[itemId] += count; //Wave0write
+                RaiseInventoryChanged(); //Wave0write
             } //Wave0write
-            else //Wave0write
-            { //Wave0write
-                StackableItems[itemId] = count; //Wave0write
-            } //Wave0write
+
+            return added; //Wave0write
         }
 
         /// <summary>장비 아이템 추가.</summary>
-        public void AddEquip(Item item)
+        public bool AddEquip(Item item)
         {
             // 동작 요약: EquipItems.Add(item).
             //TODO: EquipItems.Add(item);
-            if (item != null) //Wave0write
+            bool added = AddEquipCore(item); //Wave0write
+            if (added) //Wave0write
             { //Wave0write
-                EquipItems.Add(item); //Wave0write
+                RaiseInventoryChanged(); //Wave0write
             } //Wave0write
+
+            return added; //Wave0write
         }
 
         /// <summary>소모/재료 아이템 꺼냄(수량 지정).</summary>
@@ -76,17 +70,13 @@ namespace Tempt
                 return false; //Wave0write
             } //Wave0write
 
-            int remaining = current - count; //Wave0write
-            if (remaining <= 0) //Wave0write
+            bool removed = RemoveStackCore(itemId, count); //Wave0write
+            if (removed) //Wave0write
             { //Wave0write
-                StackableItems.Remove(itemId); //Wave0write
-            } //Wave0write
-            else //Wave0write
-            { //Wave0write
-                StackableItems[itemId] = remaining; //Wave0write
+                RaiseInventoryChanged(); //Wave0write
             } //Wave0write
 
-            return true; //Wave0write
+            return removed; //Wave0write
         }
 
         /// <summary>장비 아이템 꺼냄.</summary>
@@ -94,8 +84,20 @@ namespace Tempt
         {
             // 동작 요약: EquipItems.Remove(item).
             //TODO: return EquipItems.Remove(item);
-            return EquipItems.Remove(item); //Wave0write
+            bool removed = RemoveEquipCore(item); //Wave0write
+            if (removed) //Wave0write
+            { //Wave0write
+                RaiseInventoryChanged(); //Wave0write
+            } //Wave0write
+
+            return removed; //Wave0write
         }
+
+        /// <summary>보유량 조회(소모/재료).</summary>
+        public int CountOf(int itemId) //Wave0write
+        { //Wave0write
+            return CountStackCore(itemId); //Wave0write
+        } //Wave0write
 
         /// <summary>
         /// 보관함 → 인벤토리로 소모/재료 이동(수량 지정). InventoryState.MoveFromLocker와 동일 흐름.
@@ -115,7 +117,11 @@ namespace Tempt
                 return false; //Wave0write
             } //Wave0write
 
-            inventory.Add(itemId, count); //Wave0write
+            if (!inventory.Add(itemId, count)) //Wave0write
+            { //Wave0write
+                Add(itemId, count); //Wave0write
+                return false; //Wave0write
+            } //Wave0write
             return true; //Wave0write
         }
 
@@ -136,9 +142,21 @@ namespace Tempt
                 return false; //Wave0write
             } //Wave0write
 
-            inventory.AddEquip(item); //Wave0write
+            if (!inventory.AddEquip(item)) //Wave0write
+            { //Wave0write
+                AddEquip(item); //Wave0write
+                return false; //Wave0write
+            } //Wave0write
             return true; //Wave0write
         }
+
+        private static void RaiseInventoryChanged() //Wave0write
+        { //Wave0write
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm)) //Wave0write
+            { //Wave0write
+                gsm.Events?.RaiseInventoryChanged(); //Wave0write
+            } //Wave0write
+        } //Wave0write
     }
 }
 

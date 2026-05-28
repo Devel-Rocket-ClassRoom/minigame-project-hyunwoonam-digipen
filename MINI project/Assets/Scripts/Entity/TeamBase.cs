@@ -103,5 +103,53 @@ namespace Tempt
             return Rune.FixedSequence.GetRange(0, count); //Wave0write
         }
     }
+
+    /// <summary>
+    /// 전투 진입 시 런타임으로 생성되는 기본 동료 엔티티.
+    /// 직업별 특수 처리는 데이터와 CompanionActionSelector가 담당한다.
+    /// </summary>
+    public sealed class CombatCompanion : TeamBase
+    {
+        public void BindState(CompanionInstance state)
+        {
+            if (state == null)
+            {
+                return;
+            }
+
+            Initialize(state.CompanionDataId, state.Seed);
+            Level = state.Level <= 0 ? 1 : state.Level;
+            CurrentExp = state.Exp;
+            Stats = state.Stats ?? Stats;
+            state.Stats = Stats;
+            Rune = state.Rune ?? Rune;
+            Equipment = state.Equipment ?? Equipment ?? new EquipmentSlots();
+
+            Stats.ResetEquipmentBonuses();
+            Stats.ApplyEquipmentBonus(Equipment.AggregateStatMod());
+            Stats.ResetRuneBonuses();
+            EquipmentStatMod runeMod = Rune != null ? Rune.AggregateStatMod() : new EquipmentStatMod();
+            Stats.ApplyRuneBonus(StatType.HP, runeMod.HP);
+            Stats.ApplyRuneBonus(StatType.MP, runeMod.MP);
+            Stats.ApplyRuneBonus(StatType.ATK, runeMod.ATK);
+            Stats.ApplyRuneBonus(StatType.DEF, runeMod.DEF);
+            Stats.ApplyRuneBonus(StatType.SPD, runeMod.SPD);
+
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                SyncPassivesFromRunes(gsm.Data);
+                if (gsm.Data.Skills.TryGetValue(1, out SkillData attackSkill))
+                {
+                    SetActiveSkill(0, new Skill(attackSkill));
+                }
+                if (gsm.Data.Skills.TryGetValue(2, out SkillData skill))
+                {
+                    SetActiveSkill(1, new Skill(skill));
+                }
+            }
+
+            DisplayName = "Companion " + state.CompanionDataId;
+        }
+    }
 }
 

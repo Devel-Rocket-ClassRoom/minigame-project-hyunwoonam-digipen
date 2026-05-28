@@ -3,8 +3,8 @@ using System.Collections.Generic;
 namespace Tempt
 {
     /// <summary>
-    /// 한 노드. 층 위치 + 난이도 + 몬스터 수 + 클리어 상태.
-    /// 노드의 몬스터 ID는 노드 진입 시 풀에서 무작위로 결정.
+    /// 한 노드. 전투 노드는 층 위치 + 난이도 + 몬스터 수 + 클리어 상태를 가진다.
+    /// 안전지대 노드는 IsSafeZone=true 이며 전투 진입 대상이 아니다.
     /// </summary>
     public sealed class FloorNode
     {
@@ -25,6 +25,9 @@ namespace Tempt
 
         /// <summary>이 노드가 보스 노드인가.</summary>
         public bool IsBoss;
+
+        /// <summary>이 노드가 안전지대 표시 노드인가.</summary>
+        public bool IsSafeZone;
 
         /// <summary>이미 클리어됐는가.</summary>
         public bool IsCleared;

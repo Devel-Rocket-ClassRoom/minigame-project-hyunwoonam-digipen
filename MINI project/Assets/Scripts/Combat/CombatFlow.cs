@@ -36,6 +36,9 @@ namespace Tempt
         /// <summary>동료 행동 선택기.</summary>
         public CompanionActionSelector CompanionAi;
 
+        /// <summary>사망 몬스터를 연출 후 제거하는 씬 측 어댑터.</summary>
+        public IDeadEnemyRemover DeadEnemyRemover;
+
         // Resolving 상태에서의 경과 시간 추적
         private float elapsedTime;
         private CombatAction currentAction;
@@ -386,9 +389,28 @@ namespace Tempt
             }
 
             Queue?.RemoveDeadEntries();
+            ScheduleDeadEnemyRemoval();
             // CheckOutcome 은 ResolveAction 단일 위치(F.2).
             State = CheckOutcome().HasValue ? CombatState.Ended : CombatState.Resolving;
         }
+
+        private void ScheduleDeadEnemyRemoval() //Wave0write
+        { //Wave0write
+            if (EnemiesT == null) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            foreach (EntityBase enemy in EnemiesT) //Wave0write
+            { //Wave0write
+                if (enemy != null && enemy.IsDead) //Wave0write
+                { //Wave0write
+                    enemy.WorldUI?.SetTargetHighlight(false); //Wave0write
+                    enemy.WorldUI?.HideActionIcon(); //Wave0write
+                    DeadEnemyRemover?.ScheduleDeadEnemyRemoval(enemy, 0.5f); //Wave0write
+                } //Wave0write
+            } //Wave0write
+        } //Wave0write
 
         // Wave0refactor 2026-05-27 (F.5): 반복 패턴 "Queue?.ConsumeCurrent(); State = RoundEndCheck;" 추출.
         private void ConsumeAndRoundCheck()
@@ -496,5 +518,9 @@ namespace Tempt
         /// <summary>확정된 행동을 꺼내고 큐 진행.</summary>
         CombatAction PopAction();
     }
-}
 
+    public interface IDeadEnemyRemover
+    {
+        void ScheduleDeadEnemyRemoval(EntityBase enemy, float delaySec);
+    }
+}

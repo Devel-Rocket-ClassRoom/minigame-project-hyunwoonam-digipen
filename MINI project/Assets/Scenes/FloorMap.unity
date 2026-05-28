@@ -1137,7 +1137,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 132, y: 76}
+  m_SizeDelta: {x: 172, y: 96}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1652814095
 MonoBehaviour:
@@ -1271,9 +1271,11 @@ MonoBehaviour:
   connectionContainer: {fileID: 1146121528}
   nodeTemplate: {fileID: 1652814095}
   headerLabel: {fileID: 1587466587}
+  scrollRect: {fileID: 434126473}
   floorSpacingY: 190
   nodeSpacingX: 180
-  topPadding: 120
+  edgePadding: 240
+  nodeHitSize: {x: 172, y: 96}
   connectionThickness: 4
 --- !u!4 &1937347923
 Transform:

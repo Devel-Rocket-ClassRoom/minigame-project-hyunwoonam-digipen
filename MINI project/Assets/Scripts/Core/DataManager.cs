@@ -279,11 +279,15 @@ namespace Tempt
         { //Wave0write
             return new Dictionary<int, ItemData> //Wave0write
             { //Wave0write
-                [1] = new ItemData { Id = 1, NameKey = "item.hp_potion", Category = ItemCategory.Consumable, SubCategory = "HP_Potion", ConsumeEffectKey = "HealHP", ParamValue = 30f, BaseBuyPrice = 15, BaseSellPrice = 7, Stackable = true, MaxStack = 99 }, //Wave0write
-                [2] = new ItemData { Id = 2, NameKey = "item.mp_potion", Category = ItemCategory.Consumable, SubCategory = "MP_Potion", ConsumeEffectKey = "HealMP", ParamValue = 12f, BaseBuyPrice = 15, BaseSellPrice = 7, Stackable = true, MaxStack = 99 }, //Wave0write
-                [3] = new ItemData { Id = 3, NameKey = "item.escape", Category = ItemCategory.Consumable, SubCategory = "Escape", ConsumeEffectKey = "Escape", ParamValue = 0f, BaseBuyPrice = 30, BaseSellPrice = 15, Stackable = true, MaxStack = 10, IsRetreat = true }, //Wave0write
-                [101] = new ItemData { Id = 101, NameKey = "item.training_sword", Category = ItemCategory.Equipment, SubCategory = "Weapon", EquipSlot = EquipmentSlotId.Weapon, EquipMod = new EquipmentStatMod { ATK = 3 }, ParamValue = 3f, BaseBuyPrice = 40, BaseSellPrice = 20, Stackable = false, MaxStack = 1 }, //Wave0write
-                [201] = new ItemData { Id = 201, NameKey = "item.cloth_armor", Category = ItemCategory.Equipment, SubCategory = "ArmorBody", EquipSlot = EquipmentSlotId.ArmorBody, EquipMod = new EquipmentStatMod { HP = 10, DEF = 1 }, ParamValue = 1f, BaseBuyPrice = 35, BaseSellPrice = 17, Stackable = false, MaxStack = 1 }, //Wave0write
+                [1] = new ItemData { Id = 1, NameKey = "item.hp_potion", Category = ItemCategory.Consumable, SubCategory = "HP_Potion", ConsumeEffectKey = "HealHP", ParamValue = 30f, BasePrice = 1, Stackable = true, MaxStack = 99 }, //Wave0write
+                [2] = new ItemData { Id = 2, NameKey = "item.mp_potion", Category = ItemCategory.Consumable, SubCategory = "MP_Potion", ConsumeEffectKey = "HealMP", ParamValue = 12f, BasePrice = 1, Stackable = true, MaxStack = 99 }, //Wave0write
+                [3] = new ItemData { Id = 3, NameKey = "item.escape", Category = ItemCategory.Consumable, SubCategory = "Escape", ConsumeEffectKey = "Escape", ParamValue = 0f, BasePrice = 30, Stackable = true, MaxStack = 10, IsRetreat = true }, //Wave0write
+                [101] = new ItemData { Id = 101, NameKey = "item.training_sword", Category = ItemCategory.Equipment, SubCategory = "Weapon", EquipSlot = EquipmentSlotId.Weapon, EquipMod = new EquipmentStatMod { ATK = 3 }, ParamValue = 3f, BasePrice = 40, Stackable = false, MaxStack = 1 }, //Wave0write
+                [201] = new ItemData { Id = 201, NameKey = "item.cloth_armor", Category = ItemCategory.Equipment, SubCategory = "ArmorBody", EquipSlot = EquipmentSlotId.ArmorBody, EquipMod = new EquipmentStatMod { HP = 10, DEF = 1 }, ParamValue = 1f, BasePrice = 35, Stackable = false, MaxStack = 1 }, //Wave0write
+                [901] = new ItemData { Id = 901, NameKey = "test.weapon", Category = ItemCategory.Equipment, SubCategory = "Weapon", EquipSlot = EquipmentSlotId.Weapon, EquipMod = new EquipmentStatMod { ATK = 5 }, ParamValue = 5f, BasePrice = 1, Stackable = false, MaxStack = 1 }, //Wave0write
+                [902] = new ItemData { Id = 902, NameKey = "test.body", Category = ItemCategory.Equipment, SubCategory = "ArmorBody", EquipSlot = EquipmentSlotId.ArmorBody, EquipMod = new EquipmentStatMod { HP = 15, DEF = 2 }, ParamValue = 2f, BasePrice = 1, Stackable = false, MaxStack = 1 }, //Wave0write
+                [903] = new ItemData { Id = 903, NameKey = "test.arms", Category = ItemCategory.Equipment, SubCategory = "ArmorArms", EquipSlot = EquipmentSlotId.ArmorArms, EquipMod = new EquipmentStatMod { ATK = 1, DEF = 1 }, ParamValue = 1f, BasePrice = 1, Stackable = false, MaxStack = 1 }, //Wave0write
+                [904] = new ItemData { Id = 904, NameKey = "test.legs", Category = ItemCategory.Equipment, SubCategory = "ArmorLegs", EquipSlot = EquipmentSlotId.ArmorLegs, EquipMod = new EquipmentStatMod { SPD = 2, DEF = 1 }, ParamValue = 2f, BasePrice = 1, Stackable = false, MaxStack = 1 }, //Wave0write
             }; //Wave0write
         } //Wave0write
 
@@ -352,6 +356,8 @@ namespace Tempt
                 ErosionCurve = new ErosionCurve { DailyBase = 1f, ExpBase = 1.05f, InflectionDay = 10 }, //Wave0write
                 ErosionMonsterMultiplier = 1.5f, //Wave0write
                 InflationCoef = 0.5f, //Wave0write
+                SellRatio = 0.5f, //Wave0write
+                EnhanceMultiplier = 0.1f, //Wave0write
                 MineDailyGain = new List<int> { 1, 2, 3 }, //Wave0write
                 ErosionAltarReduction = 10f, //Wave0write
                 ErosionAltarCost = 3, //Wave0write

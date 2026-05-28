@@ -21,9 +21,11 @@ namespace Tempt
         [SerializeField] private RectTransform connectionContainer;
         [SerializeField] private FloorNodeUI nodeTemplate;
         [SerializeField] private TextMeshProUGUI headerLabel;
+        [SerializeField] private ScrollRect scrollRect;
         [SerializeField] private float floorSpacingY = 180f;
         [SerializeField] private float nodeSpacingX = 170f;
-        [SerializeField] private float topPadding = 110f;
+        [SerializeField] private float edgePadding = 220f;
+        [SerializeField] private Vector2 nodeHitSize = new Vector2(172f, 96f);
         [SerializeField] private float connectionThickness = 4f;
 
         private readonly List<FloorNodeUI> spawnedNodes = new List<FloorNodeUI>();
@@ -42,6 +44,7 @@ namespace Tempt
                 return;
             }
 
+            FloorMapCreator.EnsureSafeZoneNodes(Map, gsm.Data?.World);
             if (!ValidateUiRefs())
             {
                 return;
@@ -63,6 +66,11 @@ namespace Tempt
         public void OnNodeClicked(int nodeId)
         {
             if (Map == null || !Map.NodesById.TryGetValue(nodeId, out FloorNode node)) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            if (node.IsSafeZone) //Wave0write
             { //Wave0write
                 return; //Wave0write
             } //Wave0write
@@ -119,12 +127,12 @@ namespace Tempt
 
         private bool ValidateUiRefs()
         {
-            if (nodeContainer != null && connectionContainer != null && nodeTemplate != null)
+            if (nodeContainer != null && connectionContainer != null && nodeTemplate != null && scrollRect != null && scrollRect.content != null)
             {
                 return true;
             }
 
-            Debug.LogError("[FloorMapController] nodeContainer / connectionContainer / nodeTemplate 참조가 씬에 직접 할당되어 있지 않습니다.");
+            Debug.LogError("[FloorMapController] nodeContainer / connectionContainer / nodeTemplate / scrollRect 참조가 씬에 직접 할당되어 있지 않습니다.");
             return false;
         }
 
@@ -135,13 +143,11 @@ namespace Tempt
 
             List<int> floors = new List<int>(Map.NodesByFloor.Keys);
             floors.Sort();
-            float requiredHeight = topPadding * 2f + Mathf.Max(1, floors.Count) * floorSpacingY;
-            nodeContainer.sizeDelta = new Vector2(nodeContainer.sizeDelta.x, requiredHeight);
-            connectionContainer.sizeDelta = new Vector2(connectionContainer.sizeDelta.x, requiredHeight);
-            if (nodeContainer.parent is RectTransform content)
-            {
-                content.sizeDelta = new Vector2(content.sizeDelta.x, requiredHeight);
-            }
+            float widestRowWidth = CalculateWidestRowWidth(floors);
+            float viewportWidth = scrollRect.viewport != null ? scrollRect.viewport.rect.width : 0f;
+            float requiredWidth = Mathf.Max(viewportWidth, widestRowWidth + edgePadding * 2f);
+            float requiredHeight = edgePadding * 2f + nodeHitSize.y + Mathf.Max(0, floors.Count - 1) * floorSpacingY;
+            ResizeContent(requiredWidth, requiredHeight);
 
             for (int floorIndex = 0; floorIndex < floors.Count; floorIndex++)
             {
@@ -151,7 +157,7 @@ namespace Tempt
                     continue;
                 }
 
-                float rowY = -topPadding - floorIndex * floorSpacingY;
+                float rowY = -edgePadding - nodeHitSize.y * 0.5f - floorIndex * floorSpacingY;
                 float rowStartX = -((nodes.Count - 1) * nodeSpacingX) * 0.5f;
                 for (int nodeIndex = 0; nodeIndex < nodes.Count; nodeIndex++)
                 {
@@ -165,6 +171,7 @@ namespace Tempt
                     nodePositions[node.NodeId] = anchoredPosition;
                     FloorNodeUI ui = Instantiate(nodeTemplate, nodeContainer);
                     ui.gameObject.SetActive(true);
+                    ui.SetHitSize(nodeHitSize);
                     ui.RectTransform.anchoredPosition = anchoredPosition;
                     ui.Bind(node, OnNodeClicked);
                     ui.SetInteractable(IsNodeSelectable(node));
@@ -194,9 +201,51 @@ namespace Tempt
             }
         }
 
+        private float CalculateWidestRowWidth(List<int> floors)
+        {
+            int maxNodes = 1;
+            foreach (int floor in floors)
+            {
+                if (Map.NodesByFloor.TryGetValue(floor, out List<FloorNode> nodes) && nodes != null)
+                {
+                    maxNodes = Mathf.Max(maxNodes, nodes.Count);
+                }
+            }
+
+            return nodeHitSize.x + Mathf.Max(0, maxNodes - 1) * nodeSpacingX;
+        }
+
+        private void ResizeContent(float requiredWidth, float requiredHeight)
+        {
+            RectTransform content = scrollRect.content;
+            content.anchorMin = new Vector2(0.5f, 1f);
+            content.anchorMax = new Vector2(0.5f, 1f);
+            content.pivot = new Vector2(0.5f, 1f);
+            content.sizeDelta = new Vector2(requiredWidth, requiredHeight);
+            content.anchoredPosition = Vector2.zero;
+
+            StretchLayer(nodeContainer);
+            StretchLayer(connectionContainer);
+            scrollRect.verticalNormalizedPosition = 1f;
+        }
+
+        private static void StretchLayer(RectTransform layer)
+        {
+            layer.anchorMin = Vector2.zero;
+            layer.anchorMax = Vector2.one;
+            layer.pivot = new Vector2(0.5f, 0.5f);
+            layer.offsetMin = Vector2.zero;
+            layer.offsetMax = Vector2.zero;
+        }
+
         private bool IsNodeSelectable(FloorNode node)
         {
             if (node == null)
+            {
+                return false;
+            }
+
+            if (node.IsSafeZone)
             {
                 return false;
             }

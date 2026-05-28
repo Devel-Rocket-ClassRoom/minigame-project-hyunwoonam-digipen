@@ -36,7 +36,19 @@ namespace Tempt
                 return new EquipmentStatMod(); //Wave0write
             } //Wave0write
 
-            float multiplier = 1f + System.Math.Max(0, Enhancement) * 0.1f; //Wave0write
+            float enhanceMultiplier = 0f; //Wave0write
+            if (Enhancement > 0) //Wave0write
+            { //Wave0write
+                if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.Data?.Balance == null) //Wave0write
+                { //Wave0write
+                    UnityEngine.Debug.LogError("[Item.GetFinalMod] BalanceData.EnhanceMultiplier 참조가 없습니다."); //Wave0write
+                    return new EquipmentStatMod(); //Wave0write
+                } //Wave0write
+
+                enhanceMultiplier = gsm.Data.Balance.EnhanceMultiplier; //Wave0write
+            } //Wave0write
+
+            float multiplier = 1f + System.Math.Max(0, Enhancement) * enhanceMultiplier; //Wave0write
             return new EquipmentStatMod //Wave0write
             { //Wave0write
                 HP = UnityEngine.Mathf.RoundToInt(Data.EquipMod.HP * multiplier), //Wave0write

@@ -23,6 +23,8 @@ namespace Tempt
         /// <summary>전환 완료 후 발생. (from, to)</summary>
         public event Action<SceneId, SceneId> OnSceneChanged;
 
+        private Coroutine loadSceneCoroutine;
+
         /// <summary>
         /// 임의 씬으로 전환을 요청한다.
         /// </summary>
@@ -38,7 +40,12 @@ namespace Tempt
 
             OnSceneWillChange?.Invoke(from, next); //Wave0write
             ActiveController?.OnExit(); //Wave0write
-            StartCoroutine(LoadSceneRoutine(next, from)); //Wave0write
+            if (loadSceneCoroutine != null) //Wave0write
+            { //Wave0write
+                StopCoroutine(loadSceneCoroutine); //Wave0write
+            } //Wave0write
+
+            loadSceneCoroutine = StartCoroutine(LoadSceneRoutine(next, from)); //Wave0write
         }
 
         /// <summary>메인 메뉴로 이동.</summary>
@@ -96,6 +103,7 @@ namespace Tempt
         private IEnumerator LoadSceneRoutine(SceneId next, SceneId from) //Wave0write
         { //Wave0write
             string sceneName = SceneNameOf(next); //Wave0write
+            CurrentSceneId = next; //Wave0write
             if (Application.CanStreamedLevelBeLoaded(sceneName)) //Wave0write
             { //Wave0write
                 AsyncOperation op = SceneManager.LoadSceneAsync(sceneName); //Wave0write
@@ -115,15 +123,76 @@ namespace Tempt
                 Debug.LogError("[GameSceneManager] SceneControllerBase missing in scene: " + sceneName);
             }
 
-            CurrentSceneId = next; //Wave0write
             ActiveController?.OnEnter(); //Wave0write
             OnSceneChanged?.Invoke(from, next); //Wave0write
+            loadSceneCoroutine = null; //Wave0write
         } //Wave0write
 
         private void Update() //Wave0write
         { //Wave0write
+            SyncSceneIdWithActiveScene(); //Wave0write
             ActiveController?.OnSceneUpdate(); //Wave0write
         } //Wave0write
+
+        private void SyncSceneIdWithActiveScene() //Wave0write
+        { //Wave0write
+            Scene activeScene = SceneManager.GetActiveScene(); //Wave0write
+            if (!activeScene.IsValid() || !activeScene.isLoaded) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            if (!TrySceneIdOf(activeScene.name, out SceneId activeId) || CurrentSceneId == activeId) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            CurrentSceneId = activeId; //Wave0write
+            if (ActiveController == null || ActiveController.gameObject.scene != activeScene) //Wave0write
+            { //Wave0write
+                ActiveController = FindAnyObjectByType<SceneControllerBase>(); //Wave0write
+            } //Wave0write
+        } //Wave0write
+
+        private static bool TrySceneIdOf(string sceneName, out SceneId sceneId) //Wave0write
+        { //Wave0write
+            switch (sceneName) //Wave0write
+            { //Wave0write
+                case "Boot": 
+                    sceneId = SceneId.Boot;
+                    return true;
+                case "MainMenu": 
+                    sceneId = SceneId.MainMenu;
+                    return true;
+                case "Safe0": 
+                    sceneId = SceneId.Safe0;
+                    return true; 
+                case "Safe1": 
+                    sceneId = SceneId.Safe1;
+                    return true; 
+                case "Safe2": 
+                    sceneId = SceneId.Safe2;
+                    return true; 
+                case "Safe3": 
+                    sceneId = SceneId.Safe3; 
+                    return true; 
+                case "Safe4": 
+                    sceneId = SceneId.Safe4; 
+                    return true; 
+                case "Safe5": 
+                    sceneId = SceneId.Safe5; 
+                    return true; 
+                case "FloorMap": 
+                    sceneId = SceneId.FloorMap;
+                    return true; 
+                case "Combat": 
+                    sceneId = SceneId.Combat;
+                    return true;
+                default: 
+                    sceneId = SceneId.Boot;
+                    return false; 
+            } 
+        } 
     }
 
     /// <summary>씬 ID 열거.</summary>

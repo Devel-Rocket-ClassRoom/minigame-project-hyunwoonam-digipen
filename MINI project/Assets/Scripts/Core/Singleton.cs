@@ -83,6 +83,7 @@ namespace Tempt
             if (cachedInstance == this)
             {
                 IsSingletonInstance = true;
+                DontDestroyOnLoad(gameObject);
                 return;
             }
 

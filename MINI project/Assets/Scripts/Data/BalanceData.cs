@@ -22,6 +22,12 @@ namespace Tempt
         /// <summary>가격 인플레이션 계수.</summary>
         public float InflationCoef;
 
+        /// <summary>판매가 비율. 판매가 = BasePrice * SellRatio * Inflation.</summary>
+        public float SellRatio;
+
+        /// <summary>장비 강화 1단계당 스탯 배율 증가량.</summary>
+        public float EnhanceMultiplier;
+
         /// <summary>광산 단계별 일일 마석 지급량(SafeZone 3~5).</summary>
         public List<int> MineDailyGain;
 

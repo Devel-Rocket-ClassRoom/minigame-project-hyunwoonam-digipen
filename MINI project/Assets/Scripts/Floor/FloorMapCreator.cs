@@ -99,7 +99,7 @@ namespace Tempt
                             Floor = floor, //Wave0write
                             StageIndex = stage.StageIndex, //Wave0write
                             Difficulty = isBossFloor ? stage.DifficultyMax + 1 : rng.Next(stage.DifficultyMin, stage.DifficultyMax + 1), //Wave0write
-                            MonsterCount = isBossFloor ? 1 : rng.Next(world.FloorGen.MonstersMin, world.FloorGen.MonstersMax + 1), //Wave0write
+                            MonsterCount = ResolveMonsterCount(world, floor, isBossFloor, rng), //Wave0write
                             IsBoss = isBossFloor, //Wave0write
                             IsCleared = false, //Wave0write
                             NextNodeIds = new System.Collections.Generic.List<int>(), //Wave0write
@@ -114,9 +114,81 @@ namespace Tempt
                 } //Wave0write
             } //Wave0write
 
+            EnsureSafeZoneNodes(model, world); //Wave0write
             model.NextSelectableFloor = FindFirstFloor(model); //Wave0write
             return model; //Wave0write
         }
+
+        public static void EnsureSafeZoneNodes(FloorMapModel model, WorldData world) //Wave0write
+        { //Wave0write
+            if (model == null || world?.Stages == null || world.SafeZones == null) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            int nextNodeId = FindNextNodeId(model); //Wave0write
+            nextNodeId = EnsureStartSafeZoneNode(model, world, nextNodeId); //Wave0write
+            for (int stageIndex = 0; stageIndex < world.Stages.Count; stageIndex++) //Wave0write
+            { //Wave0write
+                StageDef stage = world.Stages[stageIndex]; //Wave0write
+                SafeZoneDef safeZone = FindSafeZone(world, stage.UnlocksSafeZoneIndex); //Wave0write
+                if (safeZone == null || safeZone.FloorNumber <= stage.BossFloor) //Wave0write
+                { //Wave0write
+                    continue; //Wave0write
+                } //Wave0write
+
+                FloorNode safeNode = FindSafeNode(model, safeZone.Index, safeZone.FloorNumber); //Wave0write
+                if (safeNode == null) //Wave0write
+                { //Wave0write
+                    safeNode = new FloorNode //Wave0write
+                    { //Wave0write
+                        NodeId = nextNodeId++, //Wave0write
+                        Floor = safeZone.FloorNumber, //Wave0write
+                        StageIndex = safeZone.Index, //Wave0write
+                        Difficulty = 0, //Wave0write
+                        MonsterCount = 0, //Wave0write
+                        IsBoss = false, //Wave0write
+                        IsSafeZone = true, //Wave0write
+                        IsCleared = false, //Wave0write
+                        NextNodeIds = new System.Collections.Generic.List<int>(), //Wave0write
+                    }; //Wave0write
+                    AddNode(model, safeNode); //Wave0write
+                } //Wave0write
+
+                LinkBossToSafe(model, stage.BossFloor, safeNode); //Wave0write
+                LinkSafeToNextStage(model, world, stageIndex, safeNode); //Wave0write
+            } //Wave0write
+        } //Wave0write
+
+        private static int EnsureStartSafeZoneNode(FloorMapModel model, WorldData world, int nextNodeId) //Wave0write
+        { //Wave0write
+            SafeZoneDef safeZone = FindSafeZone(world, 0); //Wave0write
+            int floor = safeZone != null ? safeZone.FloorNumber : 0; //Wave0write
+            FloorNode safeNode = FindSafeNode(model, 0, floor); //Wave0write
+            if (safeNode == null) //Wave0write
+            { //Wave0write
+                safeNode = new FloorNode //Wave0write
+                { //Wave0write
+                    NodeId = nextNodeId++, //Wave0write
+                    Floor = floor, //Wave0write
+                    StageIndex = 0, //Wave0write
+                    Difficulty = 0, //Wave0write
+                    MonsterCount = 0, //Wave0write
+                    IsBoss = false, //Wave0write
+                    IsSafeZone = true, //Wave0write
+                    IsCleared = false, //Wave0write
+                    NextNodeIds = new System.Collections.Generic.List<int>(), //Wave0write
+                }; //Wave0write
+                AddNode(model, safeNode); //Wave0write
+            } //Wave0write
+
+            if (world.Stages.Count > 0) //Wave0write
+            { //Wave0write
+                LinkSafeToFloor(model, safeNode, world.Stages[0].FloorStart); //Wave0write
+            } //Wave0write
+
+            return nextNodeId; //Wave0write
+        } //Wave0write
 
         private static int ResolveNodeCount(WorldData world, StageDef stage, int floor, bool isBossFloor, System.Random rng) //Wave0write
         { //Wave0write
@@ -137,6 +209,21 @@ namespace Tempt
             return rng.Next(world.FloorGen.MinNodesPerFloor, world.FloorGen.MaxNodesPerFloor + 1); //Wave0write
         } //Wave0write
 
+        private static int ResolveMonsterCount(WorldData world, int floor, bool isBossFloor, System.Random rng) //Wave0write
+        { //Wave0write
+            if (isBossFloor || floor == 1) //Wave0write
+            { //Wave0write
+                return 1; //Wave0write
+            } //Wave0write
+
+            if (floor == 2) //Wave0write
+            { //Wave0write
+                return 2; //Wave0write
+            } //Wave0write
+
+            return rng.Next(world.FloorGen.MonstersMin, world.FloorGen.MonstersMax + 1); //Wave0write
+        } //Wave0write
+
         private static void LinkPreviousFloor(System.Collections.Generic.List<FloorNode> previousFloorNodes, System.Collections.Generic.List<FloorNode> floorNodes, System.Random rng) //Wave0write
         { //Wave0write
             if (previousFloorNodes == null || floorNodes == null || floorNodes.Count == 0) //Wave0write
@@ -155,14 +242,147 @@ namespace Tempt
             } //Wave0write
         } //Wave0write
 
+        private static int FindNextNodeId(FloorMapModel model) //Wave0write
+        { //Wave0write
+            int next = 1; //Wave0write
+            foreach (int nodeId in model.NodesById.Keys) //Wave0write
+            { //Wave0write
+                if (nodeId >= next) //Wave0write
+                { //Wave0write
+                    next = nodeId + 1; //Wave0write
+                } //Wave0write
+            } //Wave0write
+
+            return next; //Wave0write
+        } //Wave0write
+
+        private static SafeZoneDef FindSafeZone(WorldData world, int safeZoneIndex) //Wave0write
+        { //Wave0write
+            foreach (SafeZoneDef safeZone in world.SafeZones) //Wave0write
+            { //Wave0write
+                if (safeZone != null && safeZone.Index == safeZoneIndex) //Wave0write
+                { //Wave0write
+                    return safeZone; //Wave0write
+                } //Wave0write
+            } //Wave0write
+
+            return null; //Wave0write
+        } //Wave0write
+
+        private static FloorNode FindSafeNode(FloorMapModel model, int safeZoneIndex, int floor) //Wave0write
+        { //Wave0write
+            if (!model.NodesByFloor.TryGetValue(floor, out System.Collections.Generic.List<FloorNode> nodes)) //Wave0write
+            { //Wave0write
+                return null; //Wave0write
+            } //Wave0write
+
+            foreach (FloorNode node in nodes) //Wave0write
+            { //Wave0write
+                if (node != null && node.IsSafeZone && node.StageIndex == safeZoneIndex) //Wave0write
+                { //Wave0write
+                    return node; //Wave0write
+                } //Wave0write
+            } //Wave0write
+
+            return null; //Wave0write
+        } //Wave0write
+
+        private static void AddNode(FloorMapModel model, FloorNode node) //Wave0write
+        { //Wave0write
+            model.NodesById[node.NodeId] = node; //Wave0write
+            if (!model.NodesByFloor.TryGetValue(node.Floor, out System.Collections.Generic.List<FloorNode> nodes)) //Wave0write
+            { //Wave0write
+                nodes = new System.Collections.Generic.List<FloorNode>(); //Wave0write
+                model.NodesByFloor[node.Floor] = nodes; //Wave0write
+            } //Wave0write
+
+            nodes.Add(node); //Wave0write
+        } //Wave0write
+
+        private static void LinkBossToSafe(FloorMapModel model, int bossFloor, FloorNode safeNode) //Wave0write
+        { //Wave0write
+            if (!model.NodesByFloor.TryGetValue(bossFloor, out System.Collections.Generic.List<FloorNode> bossNodes)) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            foreach (FloorNode bossNode in bossNodes) //Wave0write
+            { //Wave0write
+                if (bossNode == null || !bossNode.IsBoss || bossNode.NextNodeIds == null) //Wave0write
+                { //Wave0write
+                    continue; //Wave0write
+                } //Wave0write
+
+                bossNode.NextNodeIds.RemoveAll(id => model.NodesById.TryGetValue(id, out FloorNode next) && next != null && !next.IsSafeZone && next.Floor > bossFloor); //Wave0write
+                if (!bossNode.NextNodeIds.Contains(safeNode.NodeId)) //Wave0write
+                { //Wave0write
+                    bossNode.NextNodeIds.Add(safeNode.NodeId); //Wave0write
+                } //Wave0write
+            } //Wave0write
+        } //Wave0write
+
+        private static void LinkSafeToNextStage(FloorMapModel model, WorldData world, int stageIndex, FloorNode safeNode) //Wave0write
+        { //Wave0write
+            if (safeNode.NextNodeIds == null) //Wave0write
+            { //Wave0write
+                safeNode.NextNodeIds = new System.Collections.Generic.List<int>(); //Wave0write
+            } //Wave0write
+
+            if (stageIndex + 1 >= world.Stages.Count) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            StageDef nextStage = world.Stages[stageIndex + 1]; //Wave0write
+            if (!model.NodesByFloor.TryGetValue(nextStage.FloorStart, out System.Collections.Generic.List<FloorNode> nextNodes)) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            foreach (FloorNode nextNode in nextNodes) //Wave0write
+            { //Wave0write
+                if (nextNode != null && !safeNode.NextNodeIds.Contains(nextNode.NodeId)) //Wave0write
+                { //Wave0write
+                    safeNode.NextNodeIds.Add(nextNode.NodeId); //Wave0write
+                } //Wave0write
+            } //Wave0write
+        } //Wave0write
+
+        private static void LinkSafeToFloor(FloorMapModel model, FloorNode safeNode, int floor) //Wave0write
+        { //Wave0write
+            if (safeNode.NextNodeIds == null) //Wave0write
+            { //Wave0write
+                safeNode.NextNodeIds = new System.Collections.Generic.List<int>(); //Wave0write
+            } //Wave0write
+
+            if (!model.NodesByFloor.TryGetValue(floor, out System.Collections.Generic.List<FloorNode> nextNodes)) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
+            foreach (FloorNode nextNode in nextNodes) //Wave0write
+            { //Wave0write
+                if (nextNode != null && !nextNode.IsSafeZone && !safeNode.NextNodeIds.Contains(nextNode.NodeId)) //Wave0write
+                { //Wave0write
+                    safeNode.NextNodeIds.Add(nextNode.NodeId); //Wave0write
+                } //Wave0write
+            } //Wave0write
+        } //Wave0write
+
         private static int FindFirstFloor(FloorMapModel model) //Wave0write
         { //Wave0write
             int first = int.MaxValue; //Wave0write
-            foreach (int floor in model.NodesByFloor.Keys) //Wave0write
+            foreach (System.Collections.Generic.KeyValuePair<int, System.Collections.Generic.List<FloorNode>> entry in model.NodesByFloor) //Wave0write
             { //Wave0write
-                if (floor < first) //Wave0write
+                if (entry.Value == null) //Wave0write
                 { //Wave0write
-                    first = floor; //Wave0write
+                    continue; //Wave0write
+                } //Wave0write
+
+                bool hasCombatNode = entry.Value.Exists(node => node != null && !node.IsSafeZone); //Wave0write
+                if (hasCombatNode && entry.Key < first) //Wave0write
+                { //Wave0write
+                    first = entry.Key; //Wave0write
                 } //Wave0write
             } //Wave0write
 

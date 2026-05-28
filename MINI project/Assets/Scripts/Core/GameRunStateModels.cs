@@ -212,5 +212,130 @@ namespace Tempt
             return !string.IsNullOrEmpty(sequenceKey) && CompletedSteps.Contains(sequenceKey); //Wave0write
         }
     }
+
+    /// <summary>
+    /// 안전지대 상점의 런별 재고 상태. 구매 이력은 이 모델에 남고 SaveSnapshot에 저장된다.
+    /// </summary>
+    [System.Serializable]
+    public sealed class ShopStockState
+    {
+        public const int UnlimitedCount = -1;
+        private const string Safe1DefaultUnlockKey = "Safe1Default";
+
+        /// <summary>상점에 등록된 모든 재고. Available=false 이면 현재 목록에 표시하지 않는다.</summary>
+        public List<ShopStockEntry> Entries = new List<ShopStockEntry>();
+
+        public static ShopStockState CreateDefaultSafe1Stock()
+        {
+            var state = new ShopStockState();
+            state.EnsureDefaultSafe1Stock();
+            return state;
+        }
+
+        /// <summary>현재 테스트용 Safe1 기본 재고를 누락분만 보강한다. 기존 구매/비활성 상태는 덮어쓰지 않는다.</summary>
+        public void EnsureDefaultSafe1Stock()
+        {
+            if (Entries == null)
+            {
+                Entries = new List<ShopStockEntry>();
+            }
+
+            EnsureEntry(1, UnlimitedCount, 1, Safe1DefaultUnlockKey, true);
+            EnsureEntry(2, UnlimitedCount, 1, Safe1DefaultUnlockKey, true);
+            EnsureEntry(901, 1, 1, Safe1DefaultUnlockKey, true);
+            EnsureEntry(902, 1, 1, Safe1DefaultUnlockKey, true);
+            EnsureEntry(903, 1, 1, Safe1DefaultUnlockKey, true);
+            EnsureEntry(904, 1, 1, Safe1DefaultUnlockKey, true);
+        }
+
+        public ShopStockEntry Find(int itemId)
+        {
+            if (Entries == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < Entries.Count; i++)
+            {
+                ShopStockEntry entry = Entries[i];
+                if (entry != null && entry.ItemId == itemId)
+                {
+                    return entry;
+                }
+            }
+
+            return null;
+        }
+
+        public void ActivateByUnlockKey(string unlockKey)
+        {
+            if (string.IsNullOrEmpty(unlockKey) || Entries == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < Entries.Count; i++)
+            {
+                ShopStockEntry entry = Entries[i];
+                if (entry == null || entry.UnlockKey != unlockKey)
+                {
+                    continue;
+                }
+
+                entry.Available = true;
+                if (!entry.IsUnlimited && entry.RemainingCount <= 0)
+                {
+                    entry.RemainingCount = System.Math.Max(1, entry.InitialCount);
+                }
+            }
+        }
+
+        private void EnsureEntry(int itemId, int remainingCount, int unitPrice, string unlockKey, bool available)
+        {
+            if (Find(itemId) != null)
+            {
+                return;
+            }
+
+            Entries.Add(new ShopStockEntry
+            {
+                ItemId = itemId,
+                Available = available,
+                RemainingCount = remainingCount,
+                InitialCount = remainingCount,
+                UnitPrice = unitPrice,
+                UnlockKey = unlockKey,
+            });
+        }
+    }
+
+    /// <summary>상점 재고 1행. RemainingCount=-1 이면 무제한 구매 가능.</summary>
+    [System.Serializable]
+    public sealed class ShopStockEntry
+    {
+        public int ItemId;
+        public bool Available = true;
+        public int RemainingCount = 1;
+        public int InitialCount = 1;
+        public int UnitPrice = 1;
+        public string UnlockKey;
+
+        public bool IsUnlimited => RemainingCount == ShopStockState.UnlimitedCount;
+        public bool CanPurchase => Available && (IsUnlimited || RemainingCount > 0);
+
+        public void ConsumeOne()
+        {
+            if (IsUnlimited)
+            {
+                return;
+            }
+
+            RemainingCount = System.Math.Max(0, RemainingCount - 1);
+            if (RemainingCount <= 0)
+            {
+                Available = false;
+            }
+        }
+    }
 }
 

@@ -19,17 +19,25 @@ namespace Tempt
         /// </summary>
         public void PollInput()
         {
-            // 동작 요약:
-            // - I → OnTogglePage(Inventory).
-            // - K → OnTogglePage(Skill).
-            // - S → OnTogglePage(StatRune).
-            // - ESC → OnRequestQuit().
-            // - 단, 현재 활성 씬이 Combat이고 단축키가 소비 4칸 변경을 일으키는 입력이면 차단(UIManagert가 페이지 모드를 view-only로 표시).
-            //TODO: if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.I)) OnTogglePage?.Invoke(HotkeyPageId.Inventory);
-            //TODO: if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.K)) OnTogglePage?.Invoke(HotkeyPageId.Skill);
-            //TODO: if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.S)) OnTogglePage?.Invoke(HotkeyPageId.StatRune);
-            //TODO: if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.Escape)) OnRequestQuit?.Invoke();
-            // 소비 4칸 변경 차단은 UIManager.SetConsumablesEditable(false) 상태에서 자동 처리됨
+            if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.I))
+            {
+                OnTogglePage?.Invoke(HotkeyPageId.Inventory);
+            }
+
+            if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.K))
+            {
+                OnTogglePage?.Invoke(HotkeyPageId.Skill);
+            }
+
+            if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.S))
+            {
+                OnTogglePage?.Invoke(HotkeyPageId.StatRune);
+            }
+
+            if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.Escape))
+            {
+                OnRequestQuit?.Invoke();
+            }
         }
 
         /// <summary>

@@ -22,17 +22,6 @@ namespace Tempt
         /// </summary>
         public Item Equip(EquipmentSlotId slot, Item item)
         {
-            // 동작 요약:
-            // - slot에 맞는 필드 교체.
-            // - 슬롯이 None이거나 item.Data.EquipSlot이 다르면 거절.
-            // - 기존 장비 반환 → 호출자가 인벤토리에 추가.
-            // - EventBus.RaiseEquipmentChanged().
-            //TODO: if (slot == EquipmentSlotId.None || item == null) return null;
-            //TODO: if (item.Data.EquipSlot != slot) return null;
-            //TODO: Item old = GetSlot(slot);
-            //TODO: SetSlot(slot, item);
-            //TODO: GameSystemManager.Instance.Events.RaiseEquipmentChanged();
-            //TODO: return old; // 호출자가 인벤토리에 추가
             if (slot == EquipmentSlotId.None || item == null || item.Data == null || item.Data.EquipSlot != slot) //Wave0write
             { //Wave0write
                 return null; //Wave0write
@@ -49,11 +38,6 @@ namespace Tempt
         /// </summary>
         public Item Unequip(EquipmentSlotId slot)
         {
-            // 동작 요약: 해당 슬롯 null로 설정 후 기존 아이템 반환.
-            //TODO: Item old = GetSlot(slot);
-            //TODO: SetSlot(slot, null);
-            //TODO: if (old != null) GameSystemManager.Instance.Events.RaiseEquipmentChanged();
-            //TODO: return old;
             Item old = GetSlot(slot); //Wave0write
             if (old == null) //Wave0write
             { //Wave0write
@@ -70,16 +54,6 @@ namespace Tempt
         /// </summary>
         public EquipmentStatMod AggregateStatMod()
         {
-            // 동작 요약: 각 슬롯의 Item.GetFinalMod() 합산.
-            //TODO: var result = new EquipmentStatMod();
-            //TODO: foreach (var item in new[] { Weapon, ArmorBody, ArmorArms, ArmorLegs })
-            //TODO: {
-            //TODO:     if (item == null) continue;
-            //TODO:     var mod = item.GetFinalMod();
-            //TODO:     result.HP  += mod.HP;  result.MP  += mod.MP;
-            //TODO:     result.ATK += mod.ATK; result.DEF += mod.DEF; result.SPD += mod.SPD;
-            //TODO: }
-            //TODO: return result;
             var result = new EquipmentStatMod(); //Wave0write
             AddMod(result, Weapon); //Wave0write
             AddMod(result, ArmorBody); //Wave0write

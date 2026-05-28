@@ -16,6 +16,14 @@ namespace Tempt
         /// </summary>
         public void SpawnFromNode(FloorNode node, float erosionMultiplier)
         {
+            SpawnFromNode(node, erosionMultiplier, null, null);
+        }
+
+        /// <summary>
+        /// 노드에서 몬스터를 무작위 선택 후 지정된 런타임 위치에 생성한다.
+        /// </summary>
+        public void SpawnFromNode(FloorNode node, float erosionMultiplier, Transform parent, IReadOnlyList<Vector3> spawnPositions)
+        {
             // 동작 요약:
             // - DataManager.PickMonsterGroup(node.Difficulty, node.MonsterCount) 호출.
             // - 기존 씬 몬스터 비활성/제거.
@@ -45,7 +53,7 @@ namespace Tempt
             IList<int> monsterIds = node.IsBoss //Wave0write
                 ? new List<int> { PickBossMonsterId(gsm.Data, node.StageIndex) } //Wave0write
                 : gsm.Data.PickMonsterGroup(node.Difficulty, node.MonsterCount); //Wave0write
-            float spacing = 2f; //Wave0write
+            float spacing = 1.45f; //Wave0write
             for (int i = 0; i < monsterIds.Count; i++) //Wave0write
             { //Wave0write
                 if (!gsm.Data.Monsters.TryGetValue(monsterIds[i], out MonsterData data)) //Wave0write
@@ -53,9 +61,15 @@ namespace Tempt
                     continue; //Wave0write
                 } //Wave0write
 
-                Vector3 pos = transform.position + new Vector3(i * spacing, 0f, 0f); //Wave0write
+                Vector3 pos = spawnPositions != null && i < spawnPositions.Count
+                    ? spawnPositions[i]
+                    : transform.position + new Vector3(i * spacing, 0f, 0f); //Wave0write
                 GameObject prefab = !string.IsNullOrEmpty(data.PrefabKey) ? Resources.Load<GameObject>("Monsters/" + data.PrefabKey) : null; //Wave0write
-                GameObject go = prefab != null ? Instantiate(prefab, pos, Quaternion.identity) : new GameObject(data.NameKey); //Wave0write
+                GameObject go = prefab != null ? Instantiate(prefab, pos, Quaternion.identity, parent) : new GameObject(data.NameKey); //Wave0write
+                if (prefab == null && parent != null) //Wave0write
+                { //Wave0write
+                    go.transform.SetParent(parent, false); //Wave0write
+                } //Wave0write
                 go.transform.position = pos; //Wave0write
                 MonsterBase monster = go.GetComponent<MonsterBase>(); //Wave0write
                 if (monster == null) //Wave0write

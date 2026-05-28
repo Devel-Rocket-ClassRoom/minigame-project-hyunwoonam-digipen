@@ -9,24 +9,22 @@ namespace Tempt
         public int[] SlotItemIds = new int[4];
 
         /// <summary>
-        /// 슬롯 설정. 전투 중에는 호출 금지(UIManagert가 차단).
+        /// 슬롯 설정. 전투 중에는 호출 금지(UI와 도메인 양쪽에서 차단).
         /// </summary>
         public bool TrySetSlot(int slotIndex, int itemId, InventoryState inv)
         {
-            // 동작 요약:
-            // - 슬롯 범위 검사 [0,3].
-            // - itemId가 0이면 비우기.
-            // - itemId가 인벤토리에 존재하고 소모 카테고리인지 검사.
-            // - 같은 itemId가 다른 슬롯에 이미 있으면 정책 결정(설계: 중복 허용).
-            //TODO: if (slotIndex < 0 || slotIndex > 3) return false;
-            //TODO: if (itemId == 0) { SlotItemIds[slotIndex] = 0; return true; }
-            //TODO: // 인벤토리 보유 확인 + 소모 카테고리 확인
-            //TODO: ItemData data = GameSystemManager.Instance.Data.Items[itemId];
-            //TODO: if (data.Category != ItemCategory.Consumable) return false;
-            //TODO: if (inv.CountOf(itemId) <= 0) return false;
-            //TODO: SlotItemIds[slotIndex] = itemId;
-            //TODO: return true;
             if (slotIndex < 0 || slotIndex >= SlotItemIds.Length) //Wave0write
+            { //Wave0write
+                return false; //Wave0write
+            } //Wave0write
+
+            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm)) //Wave0write
+            { //Wave0write
+                UnityEngine.Debug.LogError("[ConsumableSlots.TrySetSlot] GameSystemManager 참조가 없습니다."); //Wave0write
+                return false; //Wave0write
+            } //Wave0write
+
+            if (gsm.CombatContext != null || (gsm.Scenes != null && gsm.Scenes.CurrentSceneId == SceneId.Combat)) //Wave0write
             { //Wave0write
                 return false; //Wave0write
             } //Wave0write
@@ -34,6 +32,7 @@ namespace Tempt
             if (itemId == 0) //Wave0write
             { //Wave0write
                 SlotItemIds[slotIndex] = 0; //Wave0write
+                gsm.Events?.RaiseInventoryChanged(); //Wave0write
                 return true; //Wave0write
             } //Wave0write
 
@@ -42,8 +41,9 @@ namespace Tempt
                 return false; //Wave0write
             } //Wave0write
 
-            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || !gsm.Data.Items.TryGetValue(itemId, out ItemData data)) //Wave0write
+            if (gsm.Data?.Items == null || !gsm.Data.Items.TryGetValue(itemId, out ItemData data)) //Wave0write
             { //Wave0write
+                UnityEngine.Debug.LogError("[ConsumableSlots.TrySetSlot] 아이템 ID 없음: " + itemId); //Wave0write
                 return false; //Wave0write
             } //Wave0write
 
@@ -52,7 +52,16 @@ namespace Tempt
                 return false; //Wave0write
             } //Wave0write
 
+            for (int i = 0; i < SlotItemIds.Length; i++) //Wave0write
+            { //Wave0write
+                if (i != slotIndex && SlotItemIds[i] == itemId) //Wave0write
+                { //Wave0write
+                    SlotItemIds[i] = 0; //Wave0write
+                } //Wave0write
+            } //Wave0write
+
             SlotItemIds[slotIndex] = itemId; //Wave0write
+            gsm.Events?.RaiseInventoryChanged(); //Wave0write
             return true; //Wave0write
         }
 
@@ -61,22 +70,6 @@ namespace Tempt
         /// </summary>
         public bool TryUse(int slotIndex, EntityBase user, InventoryState inv)
         {
-            // 동작 요약:
-            // - 슬롯 아이템 조회.
-            // - inv.CountOf 검사 → Remove 1.
-            // - 아이템 효과 적용(ConsumeEffectKey 분기 또는 데이터 표).
-            // - 후퇴 아이템(IsRetreat)이면 Player.UseRetreatItem() 위임.
-            //TODO: if (slotIndex < 0 || slotIndex > 3) return false;
-            //TODO: int itemId = SlotItemIds[slotIndex];
-            //TODO: if (itemId == 0) return false;
-            //TODO: if (inv.CountOf(itemId) <= 0) return false;
-            //TODO: inv.Remove(itemId, 1);
-            //TODO: ItemData data = GameSystemManager.Instance.Data.Items[itemId];
-            //TODO: if (data.IsRetreat)
-            //TODO:     (user as Player)?.UseRetreatItem();
-            //TODO: else
-            //TODO:     ItemEffectAppliert.Apply(data, user); // 회복/버프 효과 분기 처리
-            //TODO: return true;
             if (slotIndex < 0 || slotIndex >= SlotItemIds.Length || user == null || inv == null) //Wave0write
             { //Wave0write
                 return false; //Wave0write
@@ -112,10 +105,6 @@ namespace Tempt
         /// </summary>
         public void PruneEmptySlots(InventoryState inv)
         {
-            // 동작 요약: 각 슬롯의 아이템 보유량이 0이면 슬롯을 0으로 비운다.
-            //TODO: for (int i = 0; i < 4; i++)
-            //TODO:     if (SlotItemIds[i] != 0 && inv.CountOf(SlotItemIds[i]) <= 0)
-            //TODO:         SlotItemIds[i] = 0;
             if (inv == null) //Wave0write
             { //Wave0write
                 return; //Wave0write

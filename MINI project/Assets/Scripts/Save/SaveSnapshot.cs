@@ -41,6 +41,9 @@ namespace Tempt
         /// </summary>
         public List<bool> SafeUnlocks;
 
+        /// <summary>상점 재고와 구매 이력.</summary>
+        public List<ShopStockEntrySnapshot> ShopStock;
+
         /// <summary>골드.</summary>
         public int Gold;
 
@@ -74,6 +77,7 @@ namespace Tempt
                 Roster = FromRoster(run.Roster), //Wave0write
                 Erosion = FromErosion(run.Erosion), //Wave0write
                 SafeUnlocks = FromSafeUnlocks(run.SafeUnlocks), //Wave0write
+                ShopStock = FromShopStock(run.ShopStock), //Wave0write
                 Gold = run.Gold, //Wave0write
                 ManaStone = run.ManaStone, //Wave0write
                 Tutorial = new TutorialSnapshot { CompletedSteps = run.Tutorial != null ? new List<string>(run.Tutorial.CompletedSteps) : new List<string>() }, //Wave0write
@@ -94,6 +98,7 @@ namespace Tempt
                 Roster = ToRoster(Roster), //Wave0write
                 Erosion = ToErosion(Erosion), //Wave0write
                 SafeUnlocks = ToSafeUnlocks(SafeUnlocks), //Wave0write
+                ShopStock = ToShopStock(ShopStock), //Wave0write
                 Gold = Gold, //Wave0write
                 ManaStone = ManaStone, //Wave0write
                 Tutorial = new TutorialProgressState { CompletedSteps = Tutorial?.CompletedSteps != null ? new List<string>(Tutorial.CompletedSteps) : new List<string>() }, //Wave0write
@@ -124,6 +129,7 @@ namespace Tempt
                         Difficulty = node.Difficulty, //Wave0write
                         MonsterCount = node.MonsterCount, //Wave0write
                         IsBoss = node.IsBoss, //Wave0write
+                        IsSafeZone = node.IsSafeZone, //Wave0write
                         IsCleared = node.IsCleared, //Wave0write
                         NextNodeIds = node.NextNodeIds != null ? new List<int>(node.NextNodeIds) : new List<int>(), //Wave0write
                     }); //Wave0write
@@ -152,6 +158,7 @@ namespace Tempt
                     Difficulty = src.Difficulty, //Wave0write
                     MonsterCount = src.MonsterCount, //Wave0write
                     IsBoss = src.IsBoss, //Wave0write
+                    IsSafeZone = src.IsSafeZone, //Wave0write
                     IsCleared = src.IsCleared, //Wave0write
                     NextNodeIds = src.NextNodeIds != null ? new List<int>(src.NextNodeIds) : new List<int>(), //Wave0write
                 }; //Wave0write
@@ -511,6 +518,63 @@ namespace Tempt
             return state; //Wave0write
         } //Wave0write
 
+        private static List<ShopStockEntrySnapshot> FromShopStock(ShopStockState state) //Wave0write
+        { //Wave0write
+            var result = new List<ShopStockEntrySnapshot>(); //Wave0write
+            if (state?.Entries == null) //Wave0write
+            { //Wave0write
+                return result; //Wave0write
+            } //Wave0write
+
+            foreach (ShopStockEntry entry in state.Entries) //Wave0write
+            { //Wave0write
+                if (entry == null) //Wave0write
+                { //Wave0write
+                    continue; //Wave0write
+                } //Wave0write
+
+                result.Add(new ShopStockEntrySnapshot //Wave0write
+                { //Wave0write
+                    ItemId = entry.ItemId, //Wave0write
+                    Available = entry.Available, //Wave0write
+                    RemainingCount = entry.RemainingCount, //Wave0write
+                    InitialCount = entry.InitialCount, //Wave0write
+                    UnitPrice = entry.UnitPrice, //Wave0write
+                    UnlockKey = entry.UnlockKey, //Wave0write
+                }); //Wave0write
+            } //Wave0write
+
+            return result; //Wave0write
+        } //Wave0write
+
+        private static ShopStockState ToShopStock(List<ShopStockEntrySnapshot> snapshot) //Wave0write
+        { //Wave0write
+            var state = new ShopStockState { Entries = new List<ShopStockEntry>() }; //Wave0write
+            if (snapshot != null) //Wave0write
+            { //Wave0write
+                foreach (ShopStockEntrySnapshot src in snapshot) //Wave0write
+                { //Wave0write
+                    if (src == null) //Wave0write
+                    { //Wave0write
+                        continue; //Wave0write
+                    } //Wave0write
+
+                    state.Entries.Add(new ShopStockEntry //Wave0write
+                    { //Wave0write
+                        ItemId = src.ItemId, //Wave0write
+                        Available = src.Available, //Wave0write
+                        RemainingCount = src.RemainingCount, //Wave0write
+                        InitialCount = src.InitialCount, //Wave0write
+                        UnitPrice = src.UnitPrice, //Wave0write
+                        UnlockKey = src.UnlockKey, //Wave0write
+                    }); //Wave0write
+                } //Wave0write
+            } //Wave0write
+
+            state.EnsureDefaultSafe1Stock(); //Wave0write
+            return state; //Wave0write
+        } //Wave0write
+
         private static int ResolveCurrentFloor(FloorMapModel map) //Wave0write
         { //Wave0write
             return map != null ? System.Math.Max(0, map.NextSelectableFloor - 1) : 0; //Wave0write
@@ -524,7 +588,7 @@ namespace Tempt
             { //Wave0write
                 foreach (FloorNode node in nodes) //Wave0write
                 { //Wave0write
-                    if (node.IsCleared && node.Floor > highest) highest = node.Floor; //Wave0write
+                    if (!node.IsSafeZone && node.IsCleared && node.Floor > highest) highest = node.Floor; //Wave0write
                 } //Wave0write
             } //Wave0write
 
@@ -731,6 +795,18 @@ namespace Tempt
         public List<EquipItemEntry> EquipItems;
     }
 
+    /// <summary>상점 재고 1행 직렬화.</summary>
+    [System.Serializable]
+    public sealed class ShopStockEntrySnapshot
+    {
+        public int ItemId;
+        public bool Available;
+        public int RemainingCount;
+        public int InitialCount;
+        public int UnitPrice;
+        public string UnlockKey;
+    }
+
     /// <summary>
     /// 플로어 맵 직렬화.
     /// seed를 저장해 재생성하지 않고, 저장 시점의 전체 노드 구조를 JSON에 직접 기록한다.
@@ -769,6 +845,9 @@ namespace Tempt
 
         /// <summary>보스 노드 여부.</summary>
         public bool IsBoss;
+
+        /// <summary>안전지대 표시 노드 여부.</summary>
+        public bool IsSafeZone;
 
         /// <summary>클리어 여부.</summary>
         public bool IsCleared;

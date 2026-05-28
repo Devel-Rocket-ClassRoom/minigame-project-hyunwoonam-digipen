@@ -30,11 +30,8 @@ namespace Tempt
         /// </summary>
         public float ParamValue;
 
-        /// <summary>침식률 적용 전 구매 기본 가격(골드).</summary>
-        public int BaseBuyPrice;
-
-        /// <summary>판매 기본 가격(골드).</summary>
-        public int BaseSellPrice;
+        /// <summary>침식률 적용 전 기본 가격(골드). 구매/판매가는 Shop 이 산식으로 계산한다.</summary>
+        public int BasePrice;
 
         /// <summary>중첩 가능 여부(소모품/재료 true, 장비 false).</summary>
         public bool Stackable;
@@ -53,23 +50,22 @@ namespace Tempt
             // - cells[1] = NameKey
             // - cells[2] = Category (enum 문자열 → ItemCategory)
             // - cells[3] = SubCategory (string: HP_Potion/MP_Potion/Offensive/Escape/Weapon/ArmorBody/ArmorArms/ArmorLegs)
-            // - cells[4] = BasePrice → BaseBuyPrice (int)
+            // - cells[4] = BasePrice (int)
             // - cells[5] = ParamValue (float)
             // - cells[6] = DescriptionKey → DescKey
-            // - EquipSlot, EquipMod, ConsumeEffectKey, BaseSellPrice, Stackable, MaxStack, IsRetreat는
+            // - EquipSlot, EquipMod, ConsumeEffectKey, Stackable, MaxStack, IsRetreat는
             //   추가 컬럼 또는 SubCategory 기반 기본값으로 처리
             //TODO: Id           = int.Parse(cells[0]);
             //TODO: NameKey      = cells[1];
             //TODO: Category     = (ItemCategory)System.Enum.Parse(typeof(ItemCategory), cells[2]);
             //TODO: SubCategory  = cells[3];
-            //TODO: BaseBuyPrice = int.Parse(cells[4]);
+            //TODO: BasePrice    = int.Parse(cells[4]);
             //TODO: ParamValue   = float.Parse(cells[5]);
             //TODO: DescKey      = cells[6];
             //TODO: // Stackable/IsRetreat: Category 기반 기본값
             //TODO: Stackable = (Category == ItemCategory.Consumable || Category == ItemCategory.Material);
             //TODO: IsRetreat = SubCategory == "Escape";
-            //TODO: BaseSellPrice = cells.Length > 7 ? int.Parse(cells[7]) : BaseBuyPrice / 2;
-            //TODO: MaxStack      = cells.Length > 8 ? int.Parse(cells[8]) : (Stackable ? 99 : 1);
+            //TODO: MaxStack      = cells.Length > 7 ? int.Parse(cells[7]) : (Stackable ? 99 : 1);
         }
     }
 

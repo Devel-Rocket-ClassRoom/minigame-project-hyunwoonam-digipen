@@ -44,6 +44,11 @@ namespace Tempt
                 return; //Wave0write
             } //Wave0write
 
+            if (node.IsSafeZone) //Wave0write
+            { //Wave0write
+                return; //Wave0write
+            } //Wave0write
+
             node.IsCleared = true; //Wave0write
             NextSelectableFloor = FindNextSelectableFloor(node.Floor); //Wave0write
         }
@@ -68,7 +73,7 @@ namespace Tempt
 
             foreach (FloorNode node in nodes) //Wave0write
             { //Wave0write
-                if (node.IsBoss && node.IsCleared) //Wave0write
+                if (!node.IsSafeZone && node.IsBoss && node.IsCleared) //Wave0write
                 { //Wave0write
                     return true; //Wave0write
                 } //Wave0write
@@ -89,7 +94,7 @@ namespace Tempt
 
                 if (NodesByFloor.TryGetValue(floor, out List<FloorNode> nodes)) //Wave0write
                 { //Wave0write
-                    bool hasUncleared = nodes.Exists(n => !n.IsCleared); //Wave0write
+                    bool hasUncleared = nodes.Exists(n => n != null && !n.IsSafeZone && !n.IsCleared); //Wave0write
                     if (hasUncleared && floor < next) //Wave0write
                     { //Wave0write
                         next = floor; //Wave0write

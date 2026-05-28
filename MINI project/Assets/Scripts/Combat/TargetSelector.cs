@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Tempt
 {
@@ -53,19 +54,31 @@ namespace Tempt
             // - 후보 변경 시 OnHoverChanged 발생.
             // - 좌클릭 + 유효 후보면 OnTargetConfirmed 발생 후 EndHover.
             // - 우클릭/ESC 면 취소.
-            if (!IsActive || cachedCamera == null)
+            if (!IsActive)
             {
                 return;
             }
 
+            if (cachedCamera == null)
+            {
+                cachedCamera = Camera.main;
+                if (cachedCamera == null)
+                {
+                    return;
+                }
+            }
+
+            bool pointerOverUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
             Ray ray = cachedCamera.ScreenPointToRay(Input.mousePosition);
             EntityBase hovered = null;
-            if (Physics.Raycast(ray, out RaycastHit hit))
+            if (!pointerOverUi && Physics.Raycast(ray, out RaycastHit hit))
             {
                 hovered = hit.collider.GetComponentInParent<EntityBase>();
             }
 
             bool validTarget = hovered != null &&
+                !hovered.IsDead &&
+                hovered.gameObject.activeInHierarchy &&
                 ((Mode == SkillTargetType.EnemySingle && hovered is MonsterBase) ||
                  (Mode == SkillTargetType.AllySingle && (hovered is Player || hovered is TeamBase)));
             if (!validTarget)
@@ -79,7 +92,7 @@ namespace Tempt
                 OnHoverChanged?.Invoke(hovered);
             }
 
-            if (Input.GetMouseButtonDown(0) && hovered != null)
+            if (!pointerOverUi && Input.GetMouseButtonDown(0) && hovered != null)
             {
                 OnTargetConfirmed?.Invoke(hovered);
                 EndHover();

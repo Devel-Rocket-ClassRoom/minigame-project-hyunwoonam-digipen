@@ -102,7 +102,6 @@ namespace Tempt
                 Stats.BaseDEF += 1;
                 Stats.BaseSPD += 1;
                 Stats.RecalculateFinalStats();
-                Stats.RestoreToFull();
             }
 
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm))
@@ -179,7 +178,6 @@ namespace Tempt
             } //Wave0write
 
             RecalcBonusStats(); //Wave0write
-            Stats.RestoreToFull(); //Wave0write
         } //Wave0write
 
         // Wave0refactor 2026-05-27: BUG-2 수정.
