@@ -1,283 +1,366 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>
-/// 전투 중 엔티티 머리 위에 붙는 임시 월드 UI입니다.
-/// </summary>
-public class EntityWorldUI : MonoBehaviour
+namespace Tempt
 {
-    [SerializeField]
-    private Vector3 worldOffset = new Vector3(0f, 1.25f, 0f);
-
-    [SerializeField]
-    private Vector3 effectOffset = new Vector3(0f, 0.7f, 0f);
-
-    [SerializeField]
-    private float canvasScale = 0.01f;
-
-    [SerializeField]
-    private float actionVisibleSeconds = 1f;
-
-    [SerializeField]
-    private bool showHealthSlider;
-
-    private EntityBase entity;
-    private Canvas worldCanvas;
-    private Image actionImage;
-    private Slider healthSlider;
-    private Transform effectAnchor;
-    private float hideActionAt = -1f;
-
-    public Canvas WorldCanvas => worldCanvas;
-    public Image ActionImage => actionImage;
-    public Slider HealthSlider => healthSlider;
-    public Transform EffectAnchor => effectAnchor;
-
-    public static EntityWorldUI EnsureFor(EntityBase target, bool includeHealthSlider)
+    /// <summary>
+    /// 엔티티 머리 위 World Space Canvas. HP/MP 슬라이더 + 행동 아이콘(빨강/파랑).
+    /// </summary>
+    public sealed class EntityWorldUI : MonoBehaviour
     {
-        if (target == null)
+        [SerializeField] private Vector3 worldOffset = new Vector3(0f, 1.25f, 0f);
+        [SerializeField] private Vector3 effectOffset = new Vector3(0f, 0.7f, 0f);
+        [SerializeField] private float canvasScale = 0.01f;
+        [SerializeField] private float actionVisibleSeconds = 1f;
+        [SerializeField] private bool showHealthSlider = true;
+        [SerializeField] private bool showManaSlider;
+
+        /// <summary>대응 엔티티.</summary>
+        public EntityBase Entity;
+
+        /// <summary>HP 슬라이더 컴포넌트(Inspector 연결).</summary>
+        public Slider HpSlider;
+
+        /// <summary>MP 슬라이더 컴포넌트(Inspector 연결).</summary>
+        public Slider MpSlider;
+
+        /// <summary>액션 아이콘.</summary>
+        public ActionIconUI ActionIcon;
+
+        private Canvas worldCanvas;
+        private Image targetHighlight;
+        private Transform effectAnchor;
+        private Coroutine flashRoutine;
+
+        public static EntityWorldUI EnsureFor(EntityBase target, bool includeManaSlider)
         {
-            return null;
+            if (target == null)
+            {
+                return null;
+            }
+
+            EntityWorldUI worldUI = target.GetComponent<EntityWorldUI>();
+            if (worldUI == null)
+            {
+                worldUI = target.gameObject.AddComponent<EntityWorldUI>();
+            }
+
+            worldUI.Entity = target;
+            worldUI.showHealthSlider = true;
+            worldUI.showManaSlider = includeManaSlider;
+            worldUI.EnsureInitialized();
+            worldUI.UpdateBars();
+            target.WorldUI = worldUI;
+            return worldUI;
         }
 
-        EntityWorldUI worldUI = target.GetComponent<EntityWorldUI>();
-        if (worldUI == null)
+        private void Awake()
         {
-            worldUI = target.gameObject.AddComponent<EntityWorldUI>();
+            Entity = Entity != null ? Entity : GetComponent<EntityBase>();
+            EnsureInitialized();
+            HideActionIcon();
         }
 
-        worldUI.entity = target;
-        worldUI.showHealthSlider = includeHealthSlider;
-        worldUI.EnsureInitialized();
-        worldUI.SetHealthSliderVisible(includeHealthSlider);
-        worldUI.UpdateHealthDisplay();
-        return worldUI;
-    }
-
-    private void Awake()
-    {
-        entity = GetComponent<EntityBase>();
-        EnsureInitialized();
-        SetHealthSliderVisible(showHealthSlider);
-    }
-
-    private void LateUpdate()
-    {
-        EnsureInitialized();
-        UpdateHealthDisplay();
-        FaceCamera();
-
-        if (
-            Application.isPlaying
-            && actionImage != null
-            && actionImage.gameObject.activeSelf
-            && hideActionAt >= 0f
-            && Time.time >= hideActionAt
-        )
+        private void LateUpdate()
         {
-            actionImage.gameObject.SetActive(false);
-            hideActionAt = -1f;
-        }
-    }
-
-    public void ShowAction(CombatActionType actionType)
-    {
-        ShowAction(actionType, actionVisibleSeconds);
-    }
-
-    public void ShowAction(CombatActionType actionType, float visibleSeconds)
-    {
-        EnsureInitialized();
-
-        if (actionImage == null)
-        {
-            return;
+            EnsureInitialized();
+            UpdateBars();
+            FaceCamera();
         }
 
-        actionImage.color = actionType == CombatActionType.Defend ? Color.blue : Color.red;
-        actionImage.gameObject.SetActive(true);
-        float safeVisibleSeconds = Mathf.Max(0f, visibleSeconds);
-        hideActionAt = Application.isPlaying ? Time.time + safeVisibleSeconds : -1f;
-    }
-
-    public void UpdateHealthDisplay()
-    {
-        if (entity == null || healthSlider == null)
+        /// <summary>
+        /// 공격/스킬 시 빨강 아이콘 표시.
+        /// </summary>
+        public void ShowAttackIcon()
         {
-            return;
+            EnsureInitialized();
+            ActionIcon?.SetMode(ActionIconMode.AttackRed);
+            CancelInvoke(nameof(HideActionIcon));
+            Invoke(nameof(HideActionIcon), Mathf.Max(0.1f, actionVisibleSeconds));
         }
 
-        healthSlider.minValue = 0f;
-        healthSlider.maxValue = Mathf.Max(1, entity.MaxHP);
-        healthSlider.value = Mathf.Clamp(entity.CurrentHP, 0, entity.MaxHP);
-    }
-
-    private void EnsureInitialized()
-    {
-        entity = entity != null ? entity : GetComponent<EntityBase>();
-        EnsureEffectAnchor();
-        EnsureCanvas();
-        EnsureActionImage();
-        EnsureHealthSlider();
-    }
-
-    private void EnsureEffectAnchor()
-    {
-        if (effectAnchor != null)
+        /// <summary>
+        /// 방어 시 파랑 아이콘 표시.
+        /// </summary>
+        public void ShowDefendIcon()
         {
-            return;
+            EnsureInitialized();
+            CancelInvoke(nameof(HideActionIcon));
+            ActionIcon?.SetMode(ActionIconMode.DefendBlue);
         }
 
-        Transform existing = transform.Find("EffectAnchor");
-        if (existing != null)
+        /// <summary>
+        /// 아이콘 숨김.
+        /// </summary>
+        public void HideActionIcon()
         {
-            effectAnchor = existing;
-            return;
+            CancelInvoke(nameof(HideActionIcon));
+            ActionIcon?.Hide();
         }
 
-        GameObject anchorObject = new GameObject("EffectAnchor");
-        effectAnchor = anchorObject.transform;
-        effectAnchor.SetParent(transform, false);
-        effectAnchor.localPosition = effectOffset;
-    }
-
-    private void EnsureCanvas()
-    {
-        if (worldCanvas != null)
+        public void SetTargetHighlight(bool highlighted)
         {
-            return;
+            EnsureInitialized();
+            if (targetHighlight != null)
+            {
+                targetHighlight.enabled = highlighted;
+            }
         }
 
-        Transform existing = transform.Find("WorldUICanvas");
-        if (existing != null)
+        /// <summary>피격 연출.</summary>
+        public void PlayHitFx()
         {
-            worldCanvas = existing.GetComponent<Canvas>();
+            StartFlash(new Color(1f, 0.18f, 0.12f, 1f));
+        }
+
+        /// <summary>회복 연출.</summary>
+        public void PlayHealFx()
+        {
+            StartFlash(new Color(0.2f, 1f, 0.45f, 1f));
+        }
+
+        private void EnsureInitialized()
+        {
+            Entity = Entity != null ? Entity : GetComponent<EntityBase>();
+            EnsureEffectAnchor();
+            EnsureCanvas();
+            EnsureTargetHighlight();
+            EnsureActionIcon();
+            EnsureSlider(ref HpSlider, "HP", new Vector2(0f, -14f), new Color(0.85f, 0.08f, 0.08f, 1f));
+            EnsureSlider(ref MpSlider, "MP", new Vector2(0f, -28f), new Color(0.12f, 0.34f, 0.95f, 1f));
+
+            if (HpSlider != null)
+            {
+                HpSlider.gameObject.SetActive(showHealthSlider);
+            }
+
+            if (MpSlider != null)
+            {
+                MpSlider.gameObject.SetActive(showManaSlider);
+            }
+        }
+
+        private void EnsureEffectAnchor()
+        {
+            if (effectAnchor != null)
+            {
+                return;
+            }
+
+            Transform existing = transform.Find("EffectAnchor");
+            if (existing != null)
+            {
+                effectAnchor = existing;
+                return;
+            }
+
+            GameObject anchorObject = new GameObject("EffectAnchor");
+            effectAnchor = anchorObject.transform;
+            effectAnchor.SetParent(transform, false);
+            effectAnchor.localPosition = effectOffset;
+        }
+
+        private void EnsureCanvas()
+        {
             if (worldCanvas != null)
             {
                 return;
             }
+
+            Transform existing = transform.Find("WorldUICanvas");
+            if (existing != null && existing.TryGetComponent(out Canvas existingCanvas))
+            {
+                worldCanvas = existingCanvas;
+                return;
+            }
+
+            GameObject canvasObject = new GameObject("WorldUICanvas");
+            canvasObject.transform.SetParent(transform, false);
+            canvasObject.transform.localPosition = worldOffset;
+            canvasObject.transform.localScale = Vector3.one * canvasScale;
+
+            worldCanvas = canvasObject.AddComponent<Canvas>();
+            worldCanvas.renderMode = RenderMode.WorldSpace;
+            worldCanvas.sortingOrder = 50;
+
+            RectTransform rect = canvasObject.GetComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(132f, 80f);
         }
 
-        GameObject canvasObject = new GameObject("WorldUICanvas");
-        canvasObject.transform.SetParent(transform, false);
-        canvasObject.transform.localPosition = worldOffset;
-        canvasObject.transform.localScale = Vector3.one * canvasScale;
-
-        worldCanvas = canvasObject.AddComponent<Canvas>();
-        worldCanvas.renderMode = RenderMode.WorldSpace;
-        worldCanvas.sortingOrder = 30;
-
-        RectTransform rectTransform = canvasObject.GetComponent<RectTransform>();
-        rectTransform.sizeDelta = new Vector2(140f, 72f);
-    }
-
-    private void EnsureActionImage()
-    {
-        if (actionImage != null)
+        private void EnsureTargetHighlight()
         {
-            return;
-        }
-
-        Transform existing = worldCanvas.transform.Find("ActionImage");
-        if (existing != null)
-        {
-            actionImage = existing.GetComponent<Image>();
-            if (actionImage != null)
+            if (targetHighlight != null)
             {
                 return;
             }
+
+            Transform existing = worldCanvas.transform.Find("TargetHighlight");
+            if (existing != null && existing.TryGetComponent(out Image existingImage))
+            {
+                targetHighlight = existingImage;
+                targetHighlight.enabled = false;
+                return;
+            }
+
+            GameObject highlightObject = new GameObject("TargetHighlight");
+            highlightObject.transform.SetParent(worldCanvas.transform, false);
+
+            RectTransform rect = highlightObject.AddComponent<RectTransform>();
+            rect.anchoredPosition = new Vector2(0f, -20f);
+            rect.sizeDelta = new Vector2(118f, 46f);
+
+            targetHighlight = highlightObject.AddComponent<Image>();
+            targetHighlight.color = new Color(1f, 0.82f, 0.12f, 0.28f);
+            targetHighlight.raycastTarget = false;
+            targetHighlight.enabled = false;
         }
 
-        GameObject imageObject = new GameObject("ActionImage");
-        imageObject.transform.SetParent(worldCanvas.transform, false);
-
-        RectTransform rectTransform = imageObject.AddComponent<RectTransform>();
-        rectTransform.anchoredPosition = new Vector2(0f, 22f);
-        rectTransform.sizeDelta = new Vector2(32f, 32f);
-
-        actionImage = imageObject.AddComponent<Image>();
-        actionImage.raycastTarget = false;
-        actionImage.color = Color.red;
-        actionImage.gameObject.SetActive(false);
-    }
-
-    private void EnsureHealthSlider()
-    {
-        if (healthSlider != null)
+        private void EnsureActionIcon()
         {
-            return;
-        }
-
-        Transform existing = worldCanvas.transform.Find("HealthSlider");
-        if (existing != null)
-        {
-            healthSlider = existing.GetComponent<Slider>();
-            if (healthSlider != null)
+            if (ActionIcon != null)
             {
                 return;
             }
+
+            Transform existing = worldCanvas.transform.Find("ActionIcon");
+            if (existing != null && existing.TryGetComponent(out ActionIconUI existingIcon))
+            {
+                ActionIcon = existingIcon;
+                return;
+            }
+
+            GameObject iconObject = new GameObject("ActionIcon");
+            iconObject.transform.SetParent(worldCanvas.transform, false);
+
+            RectTransform rect = iconObject.AddComponent<RectTransform>();
+            rect.anchoredPosition = new Vector2(0f, 22f);
+            rect.sizeDelta = new Vector2(52f, 24f);
+
+            ActionIcon = iconObject.AddComponent<ActionIconUI>();
+            ActionIcon.Hide();
         }
 
-        GameObject sliderObject = new GameObject("HealthSlider");
-        sliderObject.transform.SetParent(worldCanvas.transform, false);
-
-        RectTransform sliderRect = sliderObject.AddComponent<RectTransform>();
-        sliderRect.anchoredPosition = new Vector2(0f, -12f);
-        sliderRect.sizeDelta = new Vector2(96f, 10f);
-
-        Image background = sliderObject.AddComponent<Image>();
-        background.color = new Color(0.12f, 0.02f, 0.02f, 0.85f);
-        background.raycastTarget = false;
-
-        healthSlider = sliderObject.AddComponent<Slider>();
-        healthSlider.transition = Selectable.Transition.None;
-        healthSlider.interactable = false;
-        healthSlider.minValue = 0f;
-        healthSlider.maxValue = 1f;
-        healthSlider.value = 1f;
-
-        RectTransform fillArea = CreateSliderChild("Fill Area", sliderObject.transform);
-        fillArea.anchorMin = new Vector2(0f, 0f);
-        fillArea.anchorMax = new Vector2(1f, 1f);
-        fillArea.offsetMin = new Vector2(1f, 1f);
-        fillArea.offsetMax = new Vector2(-1f, -1f);
-
-        RectTransform fill = CreateSliderChild("Fill", fillArea);
-        fill.anchorMin = new Vector2(0f, 0f);
-        fill.anchorMax = new Vector2(1f, 1f);
-        fill.offsetMin = Vector2.zero;
-        fill.offsetMax = Vector2.zero;
-
-        Image fillImage = fill.gameObject.AddComponent<Image>();
-        fillImage.color = new Color(0.8f, 0.08f, 0.08f, 1f);
-        fillImage.raycastTarget = false;
-
-        healthSlider.fillRect = fill;
-        healthSlider.targetGraphic = fillImage;
-    }
-
-    private static RectTransform CreateSliderChild(string objectName, Transform parent)
-    {
-        GameObject child = new GameObject(objectName);
-        child.transform.SetParent(parent, false);
-        return child.AddComponent<RectTransform>();
-    }
-
-    private void SetHealthSliderVisible(bool visible)
-    {
-        if (healthSlider != null)
+        private void EnsureSlider(ref Slider slider, string label, Vector2 anchoredPosition, Color fillColor)
         {
-            healthSlider.gameObject.SetActive(visible);
-        }
-    }
+            if (slider != null)
+            {
+                return;
+            }
 
-    private void FaceCamera()
-    {
-        if (worldCanvas == null || Camera.main == null)
+            string objectName = label + "Slider";
+            Transform existing = worldCanvas.transform.Find(objectName);
+            if (existing != null && existing.TryGetComponent(out Slider existingSlider))
+            {
+                slider = existingSlider;
+                return;
+            }
+
+            GameObject sliderObject = new GameObject(objectName);
+            sliderObject.transform.SetParent(worldCanvas.transform, false);
+
+            RectTransform sliderRect = sliderObject.AddComponent<RectTransform>();
+            sliderRect.anchoredPosition = anchoredPosition;
+            sliderRect.sizeDelta = new Vector2(96f, 9f);
+
+            Image background = sliderObject.AddComponent<Image>();
+            background.color = new Color(0.08f, 0.08f, 0.08f, 0.88f);
+            background.raycastTarget = false;
+
+            slider = sliderObject.AddComponent<Slider>();
+            slider.transition = Selectable.Transition.None;
+            slider.interactable = false;
+            slider.minValue = 0f;
+            slider.maxValue = 1f;
+            slider.value = 1f;
+
+            RectTransform fillArea = CreateRect("Fill Area", sliderObject.transform);
+            fillArea.anchorMin = new Vector2(0f, 0f);
+            fillArea.anchorMax = new Vector2(1f, 1f);
+            fillArea.offsetMin = new Vector2(1f, 1f);
+            fillArea.offsetMax = new Vector2(-1f, -1f);
+
+            RectTransform fill = CreateRect("Fill", fillArea);
+            fill.anchorMin = new Vector2(0f, 0f);
+            fill.anchorMax = new Vector2(1f, 1f);
+            fill.offsetMin = Vector2.zero;
+            fill.offsetMax = Vector2.zero;
+
+            Image fillImage = fill.gameObject.AddComponent<Image>();
+            fillImage.color = fillColor;
+            fillImage.raycastTarget = false;
+
+            slider.fillRect = fill;
+            slider.targetGraphic = fillImage;
+        }
+
+        private static RectTransform CreateRect(string objectName, Transform parent)
         {
-            return;
+            GameObject child = new GameObject(objectName);
+            child.transform.SetParent(parent, false);
+            return child.AddComponent<RectTransform>();
         }
 
-        worldCanvas.transform.rotation = Camera.main.transform.rotation;
+        private void UpdateBars()
+        {
+            if (Entity?.Stats == null)
+            {
+                return;
+            }
+
+            if (HpSlider != null)
+            {
+                HpSlider.value = Entity.Stats.MaxHP > 0 ? Mathf.Clamp01((float)Entity.Stats.CurrentHP / Entity.Stats.MaxHP) : 0f;
+            }
+
+            if (MpSlider != null)
+            {
+                MpSlider.value = Entity.Stats.MaxMP > 0 ? Mathf.Clamp01((float)Entity.Stats.CurrentMP / Entity.Stats.MaxMP) : 0f;
+            }
+        }
+
+        private void FaceCamera()
+        {
+            Camera camera = Camera.main;
+            if (worldCanvas == null || camera == null)
+            {
+                return;
+            }
+
+            worldCanvas.transform.rotation = camera.transform.rotation;
+        }
+
+        private void StartFlash(Color flashColor)
+        {
+            if (flashRoutine != null)
+            {
+                StopCoroutine(flashRoutine);
+            }
+
+            flashRoutine = StartCoroutine(FlashRoutine(flashColor));
+        }
+
+        private IEnumerator FlashRoutine(Color flashColor)
+        {
+            SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>();
+            Color[] originalColors = new Color[renderers.Length];
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                originalColors[i] = renderers[i].color;
+                renderers[i].color = flashColor;
+            }
+
+            yield return new WaitForSeconds(0.16f);
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] != null)
+                {
+                    renderers[i].color = originalColors[i];
+                }
+            }
+
+            flashRoutine = null;
+        }
     }
 }
