@@ -249,7 +249,7 @@ namespace Tempt
                 NameKey = nameKey, //Wave0write
                 IsBoss = isBoss, //Wave0write
                 Difficulty = difficulty, //Wave0write
-                MaxHP = 1, //Wave0write
+                MaxHP = hp, //Wave0write
                 MaxMP = mp, //Wave0write
                 ATK = atk, //Wave0write
                 DEF = def, //Wave0write
