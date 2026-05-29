@@ -28374,6 +28374,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Tempt.Safe1Controller
   SafeIndex: 1
+  dayLabel: {fileID: 639240929}
 --- !u!4 &1074570891
 Transform:
   m_ObjectHideFlags: 0

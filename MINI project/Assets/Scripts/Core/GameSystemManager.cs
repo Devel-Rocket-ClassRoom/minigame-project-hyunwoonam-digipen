@@ -43,6 +43,7 @@ namespace Tempt
         private int floorMapRechallengeReturnSafeIndex;
         private bool floorMapSafeTravelRequested;
         private int floorMapSafeTravelSourceSafeIndex;
+        private const int SafeIndexForErosionStart = 2;
 
         /// <summary>
         /// 게임 부팅 시 호출. 하위 시스템 초기화 순서를 강제한다.
@@ -54,9 +55,9 @@ namespace Tempt
             // - 2) Events = new EventBus() — 이벤트 버스 최우선.
             // - 3) Data = new DataManager(); Data.LoadAll() — CSV/JSON 일괄 로드.
             // - 4) Save = new SaveLoader(); Save.LoadAll() — Continue/기록 로드.
-            // - 5) Scenes = GetComponentInChildren<GameSceneManager>() 또는 신규 추가.
+            // - 5) Scenes = 같은 GameObject의 GameSceneManager 참조.
             // - 6) Hotkey = new HotkeyManager(); Hotkey.BindGlobalKeys().
-            // - 7) Erosion = new ErosionSystem(new ErosionStateModel(), Events).
+            // - 7) Erosion 은 런 생성/로드 시 CurrentRun.Erosion 에 연결.
             // - 8) DontDestroyOnLoad(this.gameObject)는 base.Awake()에서 처리.
             // - 9) Scenes.LoadMainMenu().
 
@@ -77,16 +78,18 @@ namespace Tempt
             Save = new SaveLoader();
             Save.LoadAll();
 
-            Scenes = GetComponentInChildren<GameSceneManager>();
+            Scenes = GetComponent<GameSceneManager>();
             if (Scenes == null)
             {
-                Scenes = gameObject.AddComponent<GameSceneManager>();
+                Debug.LogError("[GameSystemManager] GameSceneManager 컴포넌트가 같은 GameObject에 필요합니다.");
+                enabled = false;
+                return;
             }
 
             Hotkey = new HotkeyManager();
             Hotkey.BindGlobalKeys();
-
-            Erosion = new ErosionSystem(new ErosionStateModel(), Events);
+            // TEMP 2026-05-29: 정식 종료 확인 팝업 도입 전, ESC는 즉시 종료로 연결한다.
+            Hotkey.OnRequestQuit += QuitGame;
         }
 
         /// <summary>
@@ -102,10 +105,12 @@ namespace Tempt
                 // 3. 런 상태 참조 정리
                 // 4. 시스템 참조 정리
 
-                // 현재 HotkeyManagert에는 Unbind 메서드가 없으므로,
-                // 나중에 생기면 여기서 호출.
-                // Hotkey?.UnbindGlobalKeys();
+                if (Hotkey != null)
+                {
+                    Hotkey.OnRequestQuit -= QuitGame;
+                }
 
+                UnsubscribeErosionEvents();
                 CombatContext = null;
                 CurrentRun = null;
                 Erosion = null;
@@ -154,6 +159,7 @@ namespace Tempt
             CurrentRun.FloorMap = FloorMapCreator.Generate(Data.World);
 
             CurrentRun.CurrentDay = 0;
+            Events?.RaiseDayChanged(CurrentRun.CurrentDay);
             CurrentRun.CurrentFloor = 0;
             CurrentRun.HighestFloor = 0;
 
@@ -169,7 +175,7 @@ namespace Tempt
             CurrentRun.ManaStone = 0;
             CurrentRun.Tutorial = new TutorialProgressState();
 
-            Erosion = new ErosionSystem(CurrentRun.Erosion, Events);
+            AttachErosionToCurrentRun();
 
             CombatContext = null;
             Scenes.LoadSafeZone(0);
@@ -254,7 +260,7 @@ namespace Tempt
             } //Wave0write
 
             CurrentRun = Save.Continue.ToGameRunStatet(Data); //Wave0write
-            Erosion = new ErosionSystem(CurrentRun.Erosion, Events); //Wave0write
+            AttachErosionToCurrentRun(); //Wave0write
             CombatContext = null; //Wave0write
             SceneId sceneId = Save.Continue.Location != null ? Save.Continue.Location.SceneId : SceneId.Safe0; //Wave0write
             Scenes.RequestScene(sceneId); //Wave0write
@@ -271,7 +277,6 @@ namespace Tempt
             // 동작 요약:
             // - node null, CurrentRun null, 이미 클리어된 노드 등 진입 불가 조건 검사.
             // - CombatContext = new CombatContext { Node = node, IsBossNode = node.IsBoss, IsRechallenge = isRechallenget }.
-            // - ErosionMultiplier는 Erosion.ComputeMonsterMultiplier(node.StageIndex)로 계산.
             // - currentDay += 1 (Erosion 진행 트리거).
             // - CurrentFloor, HighestFloor를 node.Floor 기준으로 갱신.
             // - Erosion.AdvanceDay(currentDay).
@@ -307,7 +312,6 @@ namespace Tempt
                 IsBossNode = node.IsBoss, //Wave0write
                 IsRechallenge = isRechallenget, //Wave0write
                 RechallengeReturnSafeIndex = isRechallenget ? rechallengeReturnSafeIndex : 0, //Wave0write
-                ErosionMultiplier = Erosion != null ? Erosion.ComputeMonsterMultiplier(node.StageIndex) : 1f, //Wave0write
             }; //Wave0write
 
             ClearFloorMapRechallengeState(); //Wave0write
@@ -321,9 +325,19 @@ namespace Tempt
         public void LoadFloorMapFromSafe(int safeIndex)
         {
             ArmFloorMapSafeTravel(safeIndex);
-            floorMapRechallengeRequested = false;
-            floorMapRechallengeMaxFloor = 0;
-            floorMapRechallengeReturnSafeIndex = 0;
+            if (CanOpenRechallengeFromSafe(safeIndex, out int maxFloor))
+            {
+                floorMapRechallengeRequested = true;
+                floorMapRechallengeMaxFloor = maxFloor;
+                floorMapRechallengeReturnSafeIndex = System.Math.Max(0, System.Math.Min(5, safeIndex));
+            }
+            else
+            {
+                floorMapRechallengeRequested = false;
+                floorMapRechallengeMaxFloor = 0;
+                floorMapRechallengeReturnSafeIndex = 0;
+            }
+
             Scenes.LoadFloorMap();
         }
 
@@ -412,6 +426,35 @@ namespace Tempt
             return safeIndex <= 1 ? 3 : 0;
         }
 
+        private bool CanOpenRechallengeFromSafe(int safeIndex, out int maxFloor)
+        {
+            maxFloor = 0;
+            if (CurrentRun?.FloorMap == null || CurrentRun.SafeUnlocks == null || safeIndex <= 0)
+            {
+                return false;
+            }
+
+            if (!CurrentRun.SafeUnlocks.IsUnlocked(safeIndex))
+            {
+                return false;
+            }
+
+            int safeFloor = ResolveSafeZoneFloor(safeIndex);
+            if (CurrentRun.CurrentFloor != safeFloor)
+            {
+                return false;
+            }
+
+            maxFloor = ResolveRechallengeMaxFloor(safeIndex);
+            if (maxFloor <= 0)
+            {
+                return false;
+            }
+
+            int clearedStage = StageIndexResolver.FromFloor(maxFloor, Data?.World);
+            return CurrentRun.FloorMap.IsStageCleared(clearedStage);
+        }
+
         private void AdvanceRunDay() //Wave0write
         { //Wave0write
             if (CurrentRun == null) //Wave0write
@@ -420,6 +463,7 @@ namespace Tempt
             } //Wave0write
 
             CurrentRun.CurrentDay += 1; //Wave0write
+            Events?.RaiseDayChanged(CurrentRun.CurrentDay); //Wave0write
             Erosion?.AdvanceDay(CurrentRun.CurrentDay); //Wave0write
         } //Wave0write
 
@@ -598,7 +642,11 @@ namespace Tempt
                 Save?.SaveSnapshot(); //Wave0write
             } //Wave0write
 
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
             Application.Quit(); //Wave0write
+#endif
 
         }
 
@@ -682,7 +730,12 @@ namespace Tempt
             int rechallengeReturnSafeIndex = CombatContext != null ? CombatContext.RechallengeReturnSafeIndex : 0; //Wave0write
             if (node != null) //Wave0write
             { //Wave0write
+                int nextSelectableBeforeRechallenge = isRechallenge ? CurrentRun.FloorMap.NextSelectableFloor : 0; //Wave0write
                 CurrentRun.FloorMap.MarkCleared(node.NodeId); //Wave0write
+                if (isRechallenge && CurrentRun.FloorMap.NextSelectableFloor < nextSelectableBeforeRechallenge) //Wave0write
+                { //Wave0write
+                    CurrentRun.FloorMap.NextSelectableFloor = nextSelectableBeforeRechallenge; //Wave0write
+                } //Wave0write
             } //Wave0write
 
             if (node != null && node.Floor >= 49 && isBoss) //Wave0write
@@ -695,20 +748,27 @@ namespace Tempt
 
             if (isBoss && node != null) //Wave0write
             { //Wave0write
-                int safeIndex = System.Math.Min(5, node.StageIndex); //Wave0write
+                int safeIndex = StageIndexResolver.SafeIndexForStage(node.StageIndex); //Wave0write
                 CurrentRun.SafeUnlocks.Unlock(safeIndex); //Wave0write
-                if (safeIndex >= 2) //Wave0write
+                Events?.RaiseSafeZoneLockChanged(safeIndex, false); //Wave0write
+                bool shouldActivateErosionAfterSafeEntry = !isRechallenge && safeIndex >= SafeIndexForErosionStart; //Wave0write
+                if (isRechallenge || Erosion?.IsStageFullyEroded(node.StageIndex) == true) //Wave0write
                 { //Wave0write
-                    Erosion?.Activate(); //Wave0write
+                    Erosion?.Reset(node.StageIndex); //Wave0write
                 } //Wave0write
 
                 AdvanceDayForBossSafeEntry(); //Wave0write
+                if (shouldActivateErosionAfterSafeEntry) //Wave0write
+                { //Wave0write
+                    Erosion?.Activate(); //Wave0write
+                } //Wave0write
                 CurrentRun.CurrentFloor = ResolveSafeZoneFloor(safeIndex); //Wave0write
                 Save?.SaveSnapshot(); //Wave0write
                 Scenes.LoadSafeZone(safeIndex); //Wave0write
             } //Wave0write
             else if (isRechallenge && node != null) //Wave0write
             { //Wave0write
+                CurrentRun.CurrentFloor = ResolveSafeZoneFloor(rechallengeReturnSafeIndex); //Wave0write
                 Save?.SaveSnapshot(); //Wave0write
                 Scenes.LoadSafeZone(System.Math.Max(0, System.Math.Min(5, rechallengeReturnSafeIndex))); //Wave0write
             } //Wave0write
@@ -730,6 +790,71 @@ namespace Tempt
                 Debug.LogError("[GameSystemManager] GlobalOverlayController 를 찾을 수 없어 GameOver 패널을 표시할 수 없습니다."); //Wave0write
             } //Wave0write
         } //Wave0write
+
+        private void AttachErosionToCurrentRun()
+        {
+            if (CurrentRun?.Erosion == null)
+            {
+                Erosion = null;
+                return;
+            }
+
+            Erosion = new ErosionSystem(CurrentRun.Erosion, Events, Data?.Balance);
+            SubscribeErosionEvents();
+        }
+
+        private void SubscribeErosionEvents()
+        {
+            if (Events == null)
+            {
+                return;
+            }
+
+            Events.OnStageFullyEroded -= HandleStageFullyEroded;
+            Events.OnAllStagesEroded -= HandleAllStagesEroded;
+            Events.OnStageFullyEroded += HandleStageFullyEroded;
+            Events.OnAllStagesEroded += HandleAllStagesEroded;
+        }
+
+        private void UnsubscribeErosionEvents()
+        {
+            if (Events == null)
+            {
+                return;
+            }
+
+            Events.OnStageFullyEroded -= HandleStageFullyEroded;
+            Events.OnAllStagesEroded -= HandleAllStagesEroded;
+        }
+
+        private void HandleStageFullyEroded(int stage)
+        {
+            if (CurrentRun?.SafeUnlocks == null)
+            {
+                return;
+            }
+
+            int safeIndex = StageIndexResolver.SafeIndexForStage(stage);
+            CurrentRun.FloorMap?.ResetStageProgression(stage);
+            CurrentRun.SafeUnlocks.Lock(safeIndex);
+            Events?.RaiseSafeZoneLockChanged(safeIndex, true);
+            Save?.SaveSnapshot();
+        }
+
+        private void HandleAllStagesEroded()
+        {
+            if (CurrentRun != null)
+            {
+                Save?.AppendGrave(CurrentRun.Player != null ? CurrentRun.Player.Name : "Player", System.DateTime.Now);
+            }
+
+            Save?.ClearContinue();
+            CurrentRun = null;
+            CombatContext = null;
+            // TEMP: H13-W1 보류 임시 처리. 정식 게임오버 패널 컨트롤러로 교체 필요.
+            BootSceneBootstrap.ShowTempGameOverPanel();
+            Scenes.LoadMainMenu();
+        }
     }
 
     /// <summary>
@@ -791,8 +916,6 @@ namespace Tempt
         /// <summary>재도전 전투 종료 후 복귀할 안전지대 인덱스.</summary>
         public int RechallengeReturnSafeIndex;
 
-        /// <summary>침식 보정 배수(현재 단계 침식률 기준).</summary>
-        public float ErosionMultiplier;
     }
 
     /// <summary>전투 결과.</summary>

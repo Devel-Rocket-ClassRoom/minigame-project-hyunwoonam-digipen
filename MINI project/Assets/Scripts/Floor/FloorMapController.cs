@@ -43,6 +43,7 @@ namespace Tempt
         private readonly List<FloorNodeUI> spawnedNodes = new List<FloorNodeUI>();
         private readonly List<GameObject> spawnedConnections = new List<GameObject>();
         private readonly Dictionary<int, Vector2> nodePositions = new Dictionary<int, Vector2>();
+        private EventBus subscribedEvents;
 
         /// <inheritdoc/>
         public override void OnEnter()
@@ -67,12 +68,14 @@ namespace Tempt
             }
 
             RenderMap();
+            SubscribeErosionEvents(gsm.Events);
         }
 
         /// <inheritdoc/>
         public override void OnExit()
         {
             ClearRenderedMap();
+            UnsubscribeErosionEvents();
             Map = null; //Wave0write
             CanEnterSafeZonesFromMap = false; //Wave0write
             FloorMapSourceSafeIndex = 0; //Wave0write
@@ -120,7 +123,7 @@ namespace Tempt
                 return false; //Wave0write
             } //Wave0write
 
-            int stageIndex = StageIndexFromFloor(run.CurrentFloor); //Wave0write
+            int stageIndex = StageIndexResolver.FromFloor(run.CurrentFloor, GameSystemManager.Instance.Data?.World); //Wave0write
             return Map.IsStageCleared(stageIndex); //Wave0write
         }
 
@@ -135,19 +138,9 @@ namespace Tempt
             } //Wave0write
 
             GameRunState run = GameSystemManager.Instance.CurrentRun; //Wave0write
-            int safeZoneIndex = System.Math.Max(0, StageIndexFromFloor(run.CurrentFloor) - 1); //Wave0write
+            int safeZoneIndex = System.Math.Max(0, StageIndexResolver.FromFloor(run.CurrentFloor, GameSystemManager.Instance.Data?.World) - 1); //Wave0write
             GameSystemManager.Instance.Scenes.LoadSafeZone(safeZoneIndex); //Wave0write
         }
-
-        private static int StageIndexFromFloor(int floor) //Wave0write
-        { //Wave0write
-            if (floor <= 3) return 1; //Wave0write
-            if (floor <= 11) return 2; //Wave0write
-            if (floor <= 19) return 3; //Wave0write
-            if (floor <= 29) return 4; //Wave0write
-            if (floor <= 39) return 5; //Wave0write
-            return 6; //Wave0write
-        } //Wave0write
 
         private bool ValidateUiRefs()
         {
@@ -199,6 +192,7 @@ namespace Tempt
                     ui.RectTransform.anchoredPosition = anchoredPosition;
                     ui.Bind(node, OnNodeClicked);
                     ui.SetInteractable(IsNodeSelectable(node));
+                    ApplyErosionStateToNode(ui, node);
                     spawnedNodes.Add(ui);
                 }
             }
@@ -219,10 +213,7 @@ namespace Tempt
                 }
             }
 
-            if (headerLabel != null)
-            {
-                headerLabel.text = IsRechallengeMode ? "FLOOR MAP - RECHALLENGE" : "FLOOR MAP";
-            }
+            UpdateHeaderText();
         }
 
         private float CalculateWidestRowWidth(List<int> floors)
@@ -284,12 +275,6 @@ namespace Tempt
                 return false; //Wave0write
             } //Wave0write
 
-            // build2 temporary: Safe1에서 다음 단계 진입은 보류하고 아래 단계 재도전/안전지대 이동만 검증한다.
-            if (IsRechallengeMode && RechallengeReturnSafeIndex == 1 && node.Floor > RechallengeMaxFloor) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
-
             return true; //Wave0write
         } //Wave0write
 
@@ -309,6 +294,7 @@ namespace Tempt
             return IsRechallengeMode
                 && node != null
                 && !node.IsSafeZone
+                && !IsStageFullyEroded(node.StageIndex)
                 && node.Floor > 0
                 && node.Floor <= RechallengeMaxFloor;
         }
@@ -351,6 +337,110 @@ namespace Tempt
             }
             spawnedConnections.Clear();
             nodePositions.Clear();
+        }
+
+        private void SubscribeErosionEvents(EventBus events)
+        {
+            UnsubscribeErosionEvents();
+            subscribedEvents = events;
+            if (subscribedEvents == null)
+            {
+                return;
+            }
+
+            subscribedEvents.OnStageErosionChanged += HandleStageErosionChanged;
+            subscribedEvents.OnSafeZoneLockChanged += HandleSafeLockChanged;
+        }
+
+        private void UnsubscribeErosionEvents()
+        {
+            if (subscribedEvents == null)
+            {
+                return;
+            }
+
+            subscribedEvents.OnStageErosionChanged -= HandleStageErosionChanged;
+            subscribedEvents.OnSafeZoneLockChanged -= HandleSafeLockChanged;
+            subscribedEvents = null;
+        }
+
+        private void HandleStageErosionChanged(int stage, float rate)
+        {
+            for (int i = 0; i < spawnedNodes.Count; i++)
+            {
+                FloorNodeUI ui = spawnedNodes[i];
+                if (ui != null && ui.StageIndex == stage)
+                {
+                    ui.SetErosionRate(rate);
+                    ui.SetFullyEroded(rate >= 100f);
+                }
+            }
+
+            UpdateHeaderText();
+        }
+
+        private void HandleSafeLockChanged(int safeIndex, bool locked)
+        {
+            for (int i = 0; i < spawnedNodes.Count; i++)
+            {
+                FloorNodeUI ui = spawnedNodes[i];
+                if (ui != null && ui.IsSafeZone && ui.StageIndex == safeIndex)
+                {
+                    ui.SetSafeLocked(locked);
+                }
+            }
+        }
+
+        private static void ApplyErosionStateToNode(FloorNodeUI ui, FloorNode node)
+        {
+            if (ui == null || node == null || !GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                return;
+            }
+
+            float rate = gsm.CurrentRun?.Erosion != null ? gsm.CurrentRun.Erosion.GetRate(node.StageIndex) : 0f;
+            ui.SetErosionRate(rate);
+            ui.SetFullyEroded(gsm.Erosion?.IsStageFullyEroded(node.StageIndex) == true);
+            if (node.IsSafeZone && gsm.CurrentRun?.SafeUnlocks != null)
+            {
+                ui.SetSafeLocked(!gsm.CurrentRun.SafeUnlocks.IsUnlocked(node.StageIndex));
+            }
+        }
+
+        private static bool IsStageFullyEroded(int stageIndex)
+        {
+            return GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                && gsm.Erosion?.IsStageFullyEroded(stageIndex) == true;
+        }
+
+        private void UpdateHeaderText()
+        {
+            if (headerLabel == null)
+            {
+                return;
+            }
+
+            string modeText = IsRechallengeMode ? "FLOOR MAP - RECHALLENGE" : "FLOOR MAP";
+            headerLabel.text = modeText + "\n" + BuildStageErosionSummary();
+        }
+
+        private static string BuildStageErosionSummary()
+        {
+            GameRunState run = GameSystemManager.TryGetInstance(out GameSystemManager gsm) ? gsm.CurrentRun : null;
+            ErosionStateModel erosion = run?.Erosion;
+            if (erosion == null)
+            {
+                return "Stage Erosion: S1 0% / S2 0% / S3 0% / S4 0% / S5 0% / S6 0%";
+            }
+
+            return string.Format(
+                "Stage Erosion: S1 {0:0.#}% / S2 {1:0.#}% / S3 {2:0.#}% / S4 {3:0.#}% / S5 {4:0.#}% / S6 {5:0.#}%",
+                erosion.GetRate(1),
+                erosion.GetRate(2),
+                erosion.GetRate(3),
+                erosion.GetRate(4),
+                erosion.GetRate(5),
+                erosion.GetRate(6));
         }
     }
 }

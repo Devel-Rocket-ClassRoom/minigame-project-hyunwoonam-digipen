@@ -14,21 +14,21 @@ namespace Tempt
         /// <summary>
         /// 노드에서 몬스터를 무작위 선택 후 생성.
         /// </summary>
-        public void SpawnFromNode(FloorNode node, float erosionMultiplier)
+        public void SpawnFromNode(FloorNode node)
         {
-            SpawnFromNode(node, erosionMultiplier, null, null);
+            SpawnFromNode(node, null, null);
         }
 
         /// <summary>
         /// 노드에서 몬스터를 무작위 선택 후 지정된 런타임 위치에 생성한다.
         /// </summary>
-        public void SpawnFromNode(FloorNode node, float erosionMultiplier, Transform parent, IReadOnlyList<Vector3> spawnPositions)
+        public void SpawnFromNode(FloorNode node, Transform parent, IReadOnlyList<Vector3> spawnPositions)
         {
             // 동작 요약:
             // - DataManager.PickMonsterGroup(node.Difficulty, node.MonsterCount) 호출.
             // - 기존 씬 몬스터 비활성/제거.
             // - 각 ID에 대해 Resources/Addressables에서 프리팹 로드.
-            // - Instantiate, MonsterBase.InitializeFromData(data, erosionMultiplier).
+            // - Instantiate, MonsterBase.InitializeFromData(data, ErosionSystem 조회 배수).
             // - 배치 간격 일정하게 정렬.
             // - SpawnedT에 누적.
             //TODO: Cleanup(); // 이전 몬스터 제거
@@ -50,6 +50,7 @@ namespace Tempt
                 return; //Wave0write
             } //Wave0write
 
+            float erosionMultiplier = gsm.Erosion != null ? gsm.Erosion.ComputeMonsterMultiplier(node.StageIndex) : 1f; //Wave0write
             IList<int> monsterIds = node.IsBoss //Wave0write
                 ? new List<int> { PickBossMonsterId(gsm.Data, node.StageIndex) } //Wave0write
                 : gsm.Data.PickMonsterGroup(node.Difficulty, node.MonsterCount); //Wave0write

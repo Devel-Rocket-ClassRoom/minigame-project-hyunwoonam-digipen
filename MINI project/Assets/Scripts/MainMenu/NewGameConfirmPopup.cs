@@ -1,5 +1,3 @@
-using System;
-
 namespace Tempt
 {
     /// <summary>
@@ -8,9 +6,6 @@ namespace Tempt
     /// </summary>
     public sealed class NewGameConfirmPopup
     {
-        /// <summary>확인 시 호출되는 콜백(연결자가 등록).</summary>
-        public event Action OnConfirmed;
-
         /// <summary>
         /// 팝업 표시.
         /// </summary>
@@ -18,7 +13,7 @@ namespace Tempt
         {
             // 동작 요약:
             // - UIManager.OpenPage(ConfirmPage, message=언어키 "main.confirm_new_game").
-            // - 네 → GSM.Save.ClearContinue() + OnConfirmed.Invoke().
+            // - 네 → GSM.Save.ClearContinue() + 새 게임 시작.
             // - 아니요 → 팝업 닫기.
             //TODO: string msg = LanguageService.Get("main.confirm_new_game");
             //TODO: GameSystemManager.Instance.UI.OpenPage(ConfirmPage);
@@ -26,7 +21,7 @@ namespace Tempt
             //TODO: ConfirmPage.OnYes = () =>
             //TODO: {
             //TODO:     GameSystemManager.Instance.Save.ClearContinue();
-            //TODO:     OnConfirmed?.Invoke();
+            //TODO:     GameSystemManager.Instance.StartNewGame();
             //TODO:     GameSystemManager.Instance.UI.CloseTopPage();
             //TODO: };
             //TODO: ConfirmPage.OnNo = () => GameSystemManager.Instance.UI.CloseTopPage();

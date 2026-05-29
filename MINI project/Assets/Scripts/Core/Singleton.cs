@@ -26,9 +26,8 @@ namespace Tempt
                     return null;
                 }
 
-                var go = new GameObject(typeof(T).Name);
-                cachedInstance = go.AddComponent<T>();
-                return cachedInstance;
+                Debug.LogError($"[Singleton<{typeof(T).Name}>] 활성 인스턴스를 찾지 못함");
+                return null;
             }
         }
 
@@ -56,11 +55,6 @@ namespace Tempt
             if (IsQuitting)
             {
                 return false;
-            }
-
-            if (cachedInstance == null)
-            {
-                cachedInstance = UnityEngine.Object.FindFirstObjectByType<T>();
             }
 
             instance = cachedInstance;

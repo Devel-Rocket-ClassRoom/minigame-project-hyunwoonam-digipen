@@ -101,27 +101,16 @@ namespace Tempt
         }
 
         /// <summary>
-        /// 침식 시각화 적용(어두운 색조 + 셰이더 변이).
+        /// 침식 시각화 적용(어두운 색조).
         /// </summary>
         public void ApplyErosionVisual()
         {
-            // 동작 요약:
-            // - IsEroded = true.
-            // - SpriteRenderer/머티리얼에 data.ErosionShaderKey 셰이더 키 적용.
-            //TODO: IsEroded = true;
-            //TODO: // SpriteRenderer 또는 MeshRenderer의 머티리얼 교체
-            //TODO: var sr = GetComponent<SpriteRenderer>();
-            //TODO: if (sr != null)
-            //TODO: {
-            //TODO:     MonsterData data = GameSystemManager.Instance.Data.Monsters[MonsterDataId];
-            //TODO:     Material erosionMat = Resources.Load<Material>("Materials/" + data.ErosionShaderKey);
-            //TODO:     if (erosionMat != null) sr.material = erosionMat;
-            //TODO: }
             IsEroded = true; //Wave0write
             SpriteRenderer sr = GetComponent<SpriteRenderer>(); //Wave0write
             if (sr != null) //Wave0write
             { //Wave0write
-                sr.color = Color.Lerp(sr.color, Color.magenta, 0.25f); //Wave0write
+                // TEMP: 셰이더 에셋 부재로 SpriteRenderer.color lerp 만 적용. ErosionShaderKey 도입 시 교체.
+                sr.color = Color.Lerp(sr.color, new Color(0.30f, 0.18f, 0.35f, 1f), 0.55f); //Wave0write
             } //Wave0write
         }
 

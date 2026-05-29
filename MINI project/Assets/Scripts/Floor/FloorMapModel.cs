@@ -53,6 +53,37 @@ namespace Tempt
             NextSelectableFloor = FindNextSelectableFloor(node.Floor); //Wave0write
         }
 
+        public void ResetStageProgression(int stageIndex) //Wave0write
+        { //Wave0write
+            int firstFloor = int.MaxValue; //Wave0write
+            foreach (List<FloorNode> nodes in NodesByFloor.Values) //Wave0write
+            { //Wave0write
+                if (nodes == null) //Wave0write
+                { //Wave0write
+                    continue; //Wave0write
+                } //Wave0write
+
+                foreach (FloorNode node in nodes) //Wave0write
+                { //Wave0write
+                    if (node == null || node.IsSafeZone || node.StageIndex != stageIndex) //Wave0write
+                    { //Wave0write
+                        continue; //Wave0write
+                    } //Wave0write
+
+                    node.IsCleared = false; //Wave0write
+                    if (node.Floor < firstFloor) //Wave0write
+                    { //Wave0write
+                        firstFloor = node.Floor; //Wave0write
+                    } //Wave0write
+                } //Wave0write
+            } //Wave0write
+
+            if (firstFloor != int.MaxValue) //Wave0write
+            { //Wave0write
+                NextSelectableFloor = firstFloor; //Wave0write
+            } //Wave0write
+        } //Wave0write
+
         /// <summary>
         /// 특정 층이 클리어됐는가(보스 노드 클리어 기준).
         /// </summary>
