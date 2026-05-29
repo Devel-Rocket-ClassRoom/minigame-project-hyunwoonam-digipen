@@ -33,6 +33,15 @@ namespace Tempt
         private Transform effectAnchor;
         private Coroutine flashRoutine;
 
+        public Vector3 EffectAnchorPosition
+        {
+            get
+            {
+                EnsureInitialized();
+                return effectAnchor != null ? effectAnchor.position : transform.position + effectOffset;
+            }
+        }
+
         public static EntityWorldUI EnsureFor(EntityBase target, bool includeManaSlider)
         {
             if (target == null)

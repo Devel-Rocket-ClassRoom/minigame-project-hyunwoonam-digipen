@@ -41,7 +41,12 @@ namespace Tempt
 
         // Resolving 상태에서의 경과 시간 추적
         private float elapsedTime;
+        private float actingDelayTimer;
         private CombatAction currentAction;
+        private CombatAction delayedAiAction;
+        private bool firstActionDelayAvailable;
+
+        private const float FirstNonPlayerActionDelaySec = 2f;
 
         // Wave0refactor 2026-05-27 (F.5): BeginRound / EndRound 가 매번 new List 를 만들지 않도록
         // 재사용 가능한 참가자 버퍼를 보유한다. 라운드 시작/종료 시 Clear 후 채운다.
@@ -78,10 +83,11 @@ namespace Tempt
 
             Queue = new ActionQueue(); //Wave0write
             RoundNumber = 1; //Wave0write
-            // Wave0refactor 2026-05-27 (F.3.3): Starting 상태는 현재 비어 있으므로 RoundStart 로 직접 진입.
-            // CombatState.Starting enum 멤버는 미래 선공 결정/시작 효과를 위해 보존.
-            State = CombatState.RoundStart;
-            BeginRound(); //Wave0write
+            firstActionDelayAvailable = true;
+            delayedAiAction = null;
+            actingDelayTimer = 0f;
+            // Guid5 §8 2026-05-29 — Starting 은 StartCombat 직후 1프레임 머무는 명시 진입 상태.
+            State = CombatState.Starting;
         }
 
         /// <summary>
@@ -105,44 +111,11 @@ namespace Tempt
             //   * RoundEndCheck → Queue.IsRoundFinished()이면 EndRound().
             //                     아니면 State = NextActor.
             //   * Ended → 결과는 CombatController.OnSceneUpdate가 CheckOutcome()으로 감지.
-            //TODO: switch (State)
-            //TODO: {
-            //TODO:     case CombatState.Starting:
-            //TODO:         State = CombatState.RoundStart;
-            //TODO:         break;
-            //TODO:     case CombatState.RoundStart:
-            //TODO:         BeginRound();
-            //TODO:         break;
-            //TODO:     case CombatState.NextActor:
-            //TODO:         TurnEntry next = Queue.PeekNext();
-            //TODO:         if (next == null) { State = CombatState.RoundEndCheck; break; }
-            //TODO:         ResolveActor(next.Actor);
-            //TODO:         break;
-            //TODO:     case CombatState.AwaitInput:
-            //TODO:         if (Input != null && Input.HasAction)
-            //TODO:         {
-            //TODO:             CombatAction action = Input.PopAction();
-            //TODO:             ResolveAction(action);
-            //TODO:         }
-            //TODO:         break;
-            //TODO:     case CombatState.Resolving:
-            //TODO:         elapsedTime += Time.deltaTime;
-            //TODO:         if (currentAction != null && elapsedTime >= currentAction.DurationSec)
-            //TODO:         {
-            //TODO:             Queue.ConsumeCurrent();
-            //TODO:             State = CombatState.RoundEndCheck;
-            //TODO:         }
-            //TODO:         break;
-            //TODO:     case CombatState.RoundEndCheck:
-            //TODO:         if (Queue.IsRoundFinished()) EndRound();
-            //TODO:         else State = CombatState.NextActor;
-            //TODO:         break;
-            //TODO:     case CombatState.Ended:
-            //TODO:         break;
-            //TODO: }
             switch (State) //Wave0write
             { //Wave0write
                 case CombatState.Starting: //Wave0write
+                    State = CombatState.RoundStart; //Wave0write
+                    break; //Wave0write
                 case CombatState.RoundStart: //Wave0write
                     BeginRound(); //Wave0write
                     break; //Wave0write
@@ -161,6 +134,15 @@ namespace Tempt
                         ResolveAction(Input.PopAction()); //Wave0write
                     } //Wave0write
                     break; //Wave0write
+                case CombatState.ActingDelay:
+                    actingDelayTimer -= Time.deltaTime;
+                    if (actingDelayTimer <= 0f)
+                    {
+                        CombatAction action = delayedAiAction;
+                        delayedAiAction = null;
+                        ResolveAction(action);
+                    }
+                    break;
                 // Wave0refactor 2026-05-27 (F.5): ConsumeAndRoundCheck 헬퍼 사용.
                 case CombatState.Resolving:
                     elapsedTime += Time.deltaTime;
@@ -273,6 +255,7 @@ namespace Tempt
 
             if (actor is Player player) //Wave0write
             { //Wave0write
+                firstActionDelayAvailable = false;
                 Input?.RequestPlayerAction(player); //Wave0write
                 State = CombatState.AwaitInput; //Wave0write
                 return; //Wave0write
@@ -284,7 +267,7 @@ namespace Tempt
                 { //Wave0write
                     CompanionAi = new CompanionActionSelector(); //Wave0write
                 } //Wave0write
-                ResolveAction(CompanionAi.Pick(companion, AlliesT, EnemiesT)); //Wave0write
+                ResolveActionWithOpeningDelay(CompanionAi.Pick(companion, AlliesT, EnemiesT)); //Wave0write
                 return; //Wave0write
             } //Wave0write
 
@@ -294,8 +277,22 @@ namespace Tempt
                 { //Wave0write
                     MonsterAi = new MonsterActionSelector(); //Wave0write
                 } //Wave0write
-                ResolveAction(MonsterAi.Pick(monster, EnemiesT, AlliesT)); //Wave0write
+                ResolveActionWithOpeningDelay(MonsterAi.Pick(monster, EnemiesT, AlliesT)); //Wave0write
             } //Wave0write
+        }
+
+        private void ResolveActionWithOpeningDelay(CombatAction action)
+        {
+            if (firstActionDelayAvailable)
+            {
+                firstActionDelayAvailable = false;
+                delayedAiAction = action;
+                actingDelayTimer = FirstNonPlayerActionDelaySec;
+                State = CombatState.ActingDelay;
+                return;
+            }
+
+            ResolveAction(action);
         }
 
         /// <summary>
@@ -317,44 +314,6 @@ namespace Tempt
             // - Queue.RemoveDeadEntries() 호출(사망자 즉시 제거).
             // - CheckOutcome() 호출: 승패 확정 시 State = Ended, 아니면 State = Resolving.
             // ※ 승패 검사는 여기서만 수행. EndRound에서는 중복 검사하지 않는다.
-            //TODO: action.DurationSec = ActionTiming.Compute(action);
-            //TODO: currentAction = action;
-            //TODO: elapsedTime = 0f;
-            //TODO: switch (action.Type)
-            //TODO: {
-            //TODO:     case CombatActionType.Attack:
-            //TODO:         foreach (EntityBase target in action.Targets)
-            //TODO:         {
-            //TODO:             int dmg = DamageCalculator.ComputeAttack(action.Actor, target);
-            //TODO:             target.ApplyDamage(dmg);
-            //TODO:         }
-            //TODO:         action.Actor.WorldUI.ShowActionIcon(ActionIconTypet.Attack);
-            //TODO:         break;
-            //TODO:     case CombatActionType.Skill:
-            //TODO:         SkillData skillData = action.Skill.Data;
-            //TODO:         if (skillData.DamageScale > 0f)
-            //TODO:             SkillEffect.ApplyDamage(action.Actor, action.Targets, skillData);
-            //TODO:         else if (skillData.HealScale > 0f)
-            //TODO:             SkillEffect.ApplyHeal(action.Actor, action.Targets, skillData);
-            //TODO:         else if (skillData.ShieldScale > 0f)
-            //TODO:             SkillEffect.ApplyShield(action.Actor, action.Targets, skillData);
-            //TODO:         action.Skill.ConsumeForUse(action.Actor);
-            //TODO:         action.Actor.WorldUI.ShowActionIcon(ActionIconTypet.Skill);
-            //TODO:         break;
-            //TODO:     case CombatActionType.Defend:
-            //TODO:         action.Actor.SetDefending(true);
-            //TODO:         action.Actor.WorldUI.ShowActionIcon(ActionIconTypet.Defend);
-            //TODO:         break;
-            //TODO:     case CombatActionType.Item:
-            //TODO:         return; // 아이템은 CombatController 직접 처리
-            //TODO: }
-            //TODO: Queue.RemoveDeadEntries();
-            //TODO: CombatResult? outcome = CheckOutcome();
-            //TODO: if (outcome.HasValue)
-            //TODO:     State = CombatState.Ended;
-            //TODO: else
-            //TODO:     State = CombatState.Resolving;
-            // Wave0refactor 2026-05-27 (F.5): ConsumeAndRoundCheck 헬퍼로 반복 패턴 통합.
             if (action == null || action.Actor == null)
             {
                 ConsumeAndRoundCheck();
@@ -369,10 +328,12 @@ namespace Tempt
             {
                 case CombatActionType.Attack:
                     ApplyAttack(action);
+                    CombatEffectPresenter.Play(action);
                     action.Actor.WorldUI?.ShowAttackIcon();
                     break;
                 case CombatActionType.Skill:
                     ApplySkill(action);
+                    CombatEffectPresenter.Play(action);
                     action.Actor.WorldUI?.ShowAttackIcon();
                     break;
                 case CombatActionType.Defend:
@@ -495,6 +456,9 @@ namespace Tempt
 
         /// <summary>플레이어 입력 대기.</summary>
         AwaitInput,
+
+        /// <summary>전투 시작 직후 AI 선행 행동 연출 대기.</summary>
+        ActingDelay,
 
         /// <summary>행동 실행/연출 대기.</summary>
         Resolving,

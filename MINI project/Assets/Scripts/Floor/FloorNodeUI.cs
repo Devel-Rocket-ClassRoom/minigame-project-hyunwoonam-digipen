@@ -20,6 +20,7 @@ namespace Tempt
         private Outline outline;
         private bool safeLocked;
         private float erosionRate;
+        private bool fullyEroded;
 
         /// <summary>RectTransform 캐시.</summary>
         public RectTransform RectTransform => (RectTransform)transform;
@@ -73,28 +74,15 @@ namespace Tempt
 
             if (background != null)
             {
-                if (node != null && node.IsSafeZone)
-                {
-                    background.color = interactable
-                        ? new Color(0.08f, 0.28f, 0.30f, 1f)
-                        : new Color(0.08f, 0.15f, 0.17f, 0.88f);
-                }
-                else if (node != null && node.IsCleared)
-                {
-                    background.color = new Color(0.18f, 0.32f, 0.24f, 0.98f);
-                }
-                else
-                {
-                    background.color = interactable
-                        ? new Color(0.36f, 0.08f, 0.12f, 1f)
-                        : new Color(0.09f, 0.10f, 0.13f, 0.88f);
-                }
+                background.color = BackgroundColor(interactable);
             }
 
             if (outline != null)
             {
                 outline.enabled = interactable || (node != null && (node.IsCleared || node.IsSafeZone));
-                outline.effectColor = node != null && node.IsSafeZone
+                outline.effectColor = fullyEroded && node != null && !node.IsSafeZone
+                    ? new Color(0.82f, 0.44f, 1f, 0.95f)
+                    : node != null && node.IsSafeZone
                     ? new Color(0.50f, 0.92f, 0.92f, 0.90f)
                     : interactable
                     ? new Color(1f, 0.78f, 0.34f, 0.95f)
@@ -117,6 +105,17 @@ namespace Tempt
         public void SetErosionRate(float rate)
         {
             erosionRate = Mathf.Clamp(rate, 0f, 100f);
+            SetFullyEroded(erosionRate >= 100f);
+        }
+
+        public void SetFullyEroded(bool eroded)
+        {
+            fullyEroded = eroded;
+            if (button != null)
+            {
+                SetInteractable(button.interactable);
+            }
+
             RefreshDetailOnly();
         }
 
@@ -172,6 +171,11 @@ namespace Tempt
                 return interactable ? "RETRY" : "CLEARED";
             }
 
+            if (fullyEroded)
+            {
+                return interactable ? "ERODED READY" : "ERODED";
+            }
+
             return interactable ? "READY" : string.Empty;
         }
 
@@ -187,7 +191,33 @@ namespace Tempt
 
         private string ErosionDetailText()
         {
-            return string.Empty;
+            return fullyEroded ? "ERODED" : string.Empty;
+        }
+
+        private Color BackgroundColor(bool interactable)
+        {
+            if (node != null && node.IsSafeZone)
+            {
+                return interactable
+                    ? new Color(0.08f, 0.28f, 0.30f, 1f)
+                    : new Color(0.08f, 0.15f, 0.17f, 0.88f);
+            }
+
+            if (fullyEroded)
+            {
+                return interactable
+                    ? new Color(0.38f, 0.13f, 0.55f, 1f)
+                    : new Color(0.22f, 0.10f, 0.32f, 0.95f);
+            }
+
+            if (node != null && node.IsCleared)
+            {
+                return new Color(0.18f, 0.32f, 0.24f, 0.98f);
+            }
+
+            return interactable
+                ? new Color(0.36f, 0.08f, 0.12f, 1f)
+                : new Color(0.09f, 0.10f, 0.13f, 0.88f);
         }
 
         private void RefreshDetailOnly()

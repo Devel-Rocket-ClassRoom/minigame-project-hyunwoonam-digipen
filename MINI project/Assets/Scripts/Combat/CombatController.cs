@@ -563,10 +563,11 @@ namespace Tempt
 
             count = Mathf.Min(3, count);
             var positions = new List<Vector3>(count);
-            float startY = 1.85f + (count - 1) * 0.58f;
+            float spacing = 1.1f;
+            float startX = 3.35f - (count - 1) * spacing * 0.5f;
             for (int i = 0; i < count; i++)
             {
-                positions.Add(new Vector3(3.35f, startY - i * 1.16f, 0f));
+                positions.Add(new Vector3(startX + i * spacing, 1.85f, 0f));
             }
 
             return positions;

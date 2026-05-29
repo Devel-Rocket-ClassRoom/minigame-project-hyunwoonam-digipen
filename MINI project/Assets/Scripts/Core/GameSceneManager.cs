@@ -14,6 +14,9 @@ namespace Tempt
         /// <summary>현재 활성 씬 ID.</summary>
         public SceneId CurrentSceneId { get; private set; }
 
+        /// <summary>현재 씬 전환 FSM 상태.</summary>
+        public SceneFsmState State { get; private set; } = SceneFsmState.Idle;
+
         /// <summary>현재 활성 씬 컨트롤러(없으면 null).</summary>
         public SceneControllerBase ActiveController { get; private set; }
 
@@ -23,7 +26,12 @@ namespace Tempt
         /// <summary>전환 완료 후 발생. (from, to)</summary>
         public event Action<SceneId, SceneId> OnSceneChanged;
 
+        /// <summary>FSM 상태 변경 시 발생. (from, to)</summary>
+        public event Action<SceneFsmState, SceneFsmState> OnSceneFsmStateChanged;
+
         private Coroutine loadSceneCoroutine;
+        private bool hasPendingRequest;
+        private SceneId pendingRequest;
 
         /// <summary>
         /// 임의 씬으로 전환을 요청한다.
@@ -31,21 +39,20 @@ namespace Tempt
         /// <param name="next">전환할 씬 ID.</param>
         public void RequestScene(SceneId next)
         {
-            SceneId from = CurrentSceneId; //Wave0write
-            if (from == next && ActiveController != null) //Wave0write
-            { //Wave0write
-                ActiveController.OnEnter(); //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (State != SceneFsmState.Idle && State != SceneFsmState.Running)
+            {
+                pendingRequest = next;
+                hasPendingRequest = true;
+                return;
+            }
 
-            OnSceneWillChange?.Invoke(from, next); //Wave0write
-            ActiveController?.OnExit(); //Wave0write
-            if (loadSceneCoroutine != null) //Wave0write
-            { //Wave0write
-                StopCoroutine(loadSceneCoroutine); //Wave0write
-            } //Wave0write
+            if (CurrentSceneId == next && ActiveController != null && State == SceneFsmState.Running)
+            {
+                ActiveController.OnEnter();
+                return;
+            }
 
-            loadSceneCoroutine = StartCoroutine(LoadSceneRoutine(next, from)); //Wave0write
+            StartTransition(next);
         }
 
         /// <summary>메인 메뉴로 이동.</summary>
@@ -100,99 +107,137 @@ namespace Tempt
             } //Wave0write
         }
 
-        private IEnumerator LoadSceneRoutine(SceneId next, SceneId from) //Wave0write
-        { //Wave0write
-            string sceneName = SceneNameOf(next); //Wave0write
-            CurrentSceneId = next; //Wave0write
-            if (Application.CanStreamedLevelBeLoaded(sceneName)) //Wave0write
-            { //Wave0write
-                AsyncOperation op = SceneManager.LoadSceneAsync(sceneName); //Wave0write
-                while (op != null && !op.isDone) //Wave0write
-                { //Wave0write
-                    yield return null; //Wave0write
-                } //Wave0write
-            } //Wave0write
-            else //Wave0write
-            { //Wave0write
-                yield return null; //Wave0write
-            } //Wave0write
+        // Guid5 §6 2026-05-29 — 씬 전환은 명시 FSM과 1슬롯 pending 요청으로만 처리한다.
+        private void StartTransition(SceneId next)
+        {
+            SceneId from = CurrentSceneId;
+            OnSceneWillChange?.Invoke(from, next);
+            loadSceneCoroutine = StartCoroutine(TransitionRoutine(next, from));
+        }
 
-            ActiveController = FindAnyObjectByType<SceneControllerBase>(); //Wave0write
+        private IEnumerator TransitionRoutine(SceneId next, SceneId from)
+        {
+            SetState(SceneFsmState.Exiting);
+            ActiveController?.OnExit();
+            ActiveController = null;
+
+            SetState(SceneFsmState.Unloading);
+            yield return null;
+
+            SetState(SceneFsmState.Loading);
+            CurrentSceneId = next;
+            string sceneName = SceneNameOf(next);
+            if (Application.CanStreamedLevelBeLoaded(sceneName))
+            {
+                AsyncOperation op = SceneManager.LoadSceneAsync(sceneName);
+                while (op != null && !op.isDone)
+                {
+                    yield return null;
+                }
+            }
+            else
+            {
+                Debug.LogError("[GameSceneManager] 빌드 세팅에 씬이 없습니다: " + sceneName);
+                yield return null;
+            }
+
+            Scene loadedScene = SceneManager.GetSceneByName(sceneName);
+            if (ActiveController == null || ActiveController.gameObject.scene != loadedScene)
+            {
+                ActiveController = ResolveControllerInScene(loadedScene);
+            }
+
+            SetState(SceneFsmState.Entering);
             if (ActiveController == null)
             {
                 Debug.LogError("[GameSceneManager] SceneControllerBase missing in scene: " + sceneName);
             }
+            else
+            {
+                ActiveController.OnEnter();
+            }
 
-            ActiveController?.OnEnter(); //Wave0write
-            OnSceneChanged?.Invoke(from, next); //Wave0write
-            loadSceneCoroutine = null; //Wave0write
-        } //Wave0write
+            OnSceneChanged?.Invoke(from, next);
+            loadSceneCoroutine = null;
+            SetState(SceneFsmState.Running);
+            PumpPendingTransition();
+        }
 
-        private void Update() //Wave0write
-        { //Wave0write
-            SyncSceneIdWithActiveScene(); //Wave0write
-            ActiveController?.OnSceneUpdate(); //Wave0write
-        } //Wave0write
+        public void RegisterActiveController(SceneControllerBase controller)
+        {
+            if (controller == null)
+            {
+                Debug.LogError("[GameSceneManager] 등록할 SceneControllerBase가 null입니다.");
+                return;
+            }
 
-        private void SyncSceneIdWithActiveScene() //Wave0write
-        { //Wave0write
-            Scene activeScene = SceneManager.GetActiveScene(); //Wave0write
-            if (!activeScene.IsValid() || !activeScene.isLoaded) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            ActiveController = controller;
+        }
 
-            if (!TrySceneIdOf(activeScene.name, out SceneId activeId) || CurrentSceneId == activeId) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+        private static SceneControllerBase ResolveControllerInScene(Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                return null;
+            }
 
-            CurrentSceneId = activeId; //Wave0write
-            if (ActiveController == null || ActiveController.gameObject.scene != activeScene) //Wave0write
-            { //Wave0write
-                ActiveController = FindAnyObjectByType<SceneControllerBase>(); //Wave0write
-            } //Wave0write
-        } //Wave0write
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int i = 0; i < roots.Length; i++)
+            {
+                SceneControllerBase controller = roots[i].GetComponentInChildren<SceneControllerBase>(true);
+                if (controller != null)
+                {
+                    return controller;
+                }
+            }
 
-        private static bool TrySceneIdOf(string sceneName, out SceneId sceneId) //Wave0write
-        { //Wave0write
-            switch (sceneName) //Wave0write
-            { //Wave0write
-                case "Boot": 
-                    sceneId = SceneId.Boot;
-                    return true;
-                case "MainMenu": 
-                    sceneId = SceneId.MainMenu;
-                    return true;
-                case "Safe0": 
-                    sceneId = SceneId.Safe0;
-                    return true; 
-                case "Safe1": 
-                    sceneId = SceneId.Safe1;
-                    return true; 
-                case "Safe2": 
-                    sceneId = SceneId.Safe2;
-                    return true; 
-                case "Safe3": 
-                    sceneId = SceneId.Safe3; 
-                    return true; 
-                case "Safe4": 
-                    sceneId = SceneId.Safe4; 
-                    return true; 
-                case "Safe5": 
-                    sceneId = SceneId.Safe5; 
-                    return true; 
-                case "FloorMap": 
-                    sceneId = SceneId.FloorMap;
-                    return true; 
-                case "Combat": 
-                    sceneId = SceneId.Combat;
-                    return true;
-                default: 
-                    sceneId = SceneId.Boot;
-                    return false; 
-            } 
-        } 
+            return null;
+        }
+
+        private void PumpPendingTransition()
+        {
+            if (!hasPendingRequest)
+            {
+                return;
+            }
+
+            SceneId next = pendingRequest;
+            hasPendingRequest = false;
+            StartTransition(next);
+        }
+
+        private void SetState(SceneFsmState next)
+        {
+            if (State == next)
+            {
+                return;
+            }
+
+            SceneFsmState previous = State;
+            State = next;
+            OnSceneFsmStateChanged?.Invoke(previous, next);
+        }
+
+        private void Update()
+        {
+            ActiveController?.OnSceneUpdate();
+
+            if (State == SceneFsmState.Idle || State == SceneFsmState.Running)
+            {
+                PumpPendingTransition();
+            }
+        }
+    }
+
+    /// <summary>씬 전환 FSM 상태.</summary>
+    public enum SceneFsmState
+    {
+        Idle,
+        Loading,
+        Entering,
+        Running,
+        Exiting,
+        Unloading,
     }
 
     /// <summary>씬 ID 열거.</summary>
@@ -234,6 +279,14 @@ namespace Tempt
     /// </summary>
     public abstract class SceneControllerBase : MonoBehaviour
     {
+        protected virtual void Awake()
+        {
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Scenes != null)
+            {
+                gsm.Scenes.RegisterActiveController(this);
+            }
+        }
+
         /// <summary>씬 진입 직후 호출.</summary>
         public abstract void OnEnter();
 

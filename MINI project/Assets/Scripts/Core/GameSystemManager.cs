@@ -55,7 +55,7 @@ namespace Tempt
             // - 2) Events = new EventBus() — 이벤트 버스 최우선.
             // - 3) Data = new DataManager(); Data.LoadAll() — CSV/JSON 일괄 로드.
             // - 4) Save = new SaveLoader(); Save.LoadAll() — Continue/기록 로드.
-            // - 5) Scenes = GetComponentInChildren<GameSceneManager>() 또는 신규 추가.
+            // - 5) Scenes = 같은 GameObject의 GameSceneManager 참조.
             // - 6) Hotkey = new HotkeyManager(); Hotkey.BindGlobalKeys().
             // - 7) Erosion 은 런 생성/로드 시 CurrentRun.Erosion 에 연결.
             // - 8) DontDestroyOnLoad(this.gameObject)는 base.Awake()에서 처리.
@@ -78,14 +78,18 @@ namespace Tempt
             Save = new SaveLoader();
             Save.LoadAll();
 
-            Scenes = GetComponentInChildren<GameSceneManager>();
+            Scenes = GetComponent<GameSceneManager>();
             if (Scenes == null)
             {
-                Scenes = gameObject.AddComponent<GameSceneManager>();
+                Debug.LogError("[GameSystemManager] GameSceneManager 컴포넌트가 같은 GameObject에 필요합니다.");
+                enabled = false;
+                return;
             }
 
             Hotkey = new HotkeyManager();
             Hotkey.BindGlobalKeys();
+            // TEMP 2026-05-29: 정식 종료 확인 팝업 도입 전, ESC는 즉시 종료로 연결한다.
+            Hotkey.OnRequestQuit += QuitGame;
         }
 
         /// <summary>
@@ -101,9 +105,10 @@ namespace Tempt
                 // 3. 런 상태 참조 정리
                 // 4. 시스템 참조 정리
 
-                // 현재 HotkeyManagert에는 Unbind 메서드가 없으므로,
-                // 나중에 생기면 여기서 호출.
-                // Hotkey?.UnbindGlobalKeys();
+                if (Hotkey != null)
+                {
+                    Hotkey.OnRequestQuit -= QuitGame;
+                }
 
                 UnsubscribeErosionEvents();
                 CombatContext = null;
@@ -637,7 +642,11 @@ namespace Tempt
                 Save?.SaveSnapshot(); //Wave0write
             } //Wave0write
 
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
             Application.Quit(); //Wave0write
+#endif
 
         }
 
@@ -742,16 +751,17 @@ namespace Tempt
                 int safeIndex = StageIndexResolver.SafeIndexForStage(node.StageIndex); //Wave0write
                 CurrentRun.SafeUnlocks.Unlock(safeIndex); //Wave0write
                 Events?.RaiseSafeZoneLockChanged(safeIndex, false); //Wave0write
-                if (isRechallenge) //Wave0write
+                bool shouldActivateErosionAfterSafeEntry = !isRechallenge && safeIndex >= SafeIndexForErosionStart; //Wave0write
+                if (isRechallenge || Erosion?.IsStageFullyEroded(node.StageIndex) == true) //Wave0write
                 { //Wave0write
                     Erosion?.Reset(node.StageIndex); //Wave0write
                 } //Wave0write
-                else if (safeIndex >= SafeIndexForErosionStart) //Wave0write
+
+                AdvanceDayForBossSafeEntry(); //Wave0write
+                if (shouldActivateErosionAfterSafeEntry) //Wave0write
                 { //Wave0write
                     Erosion?.Activate(); //Wave0write
                 } //Wave0write
-
-                AdvanceDayForBossSafeEntry(); //Wave0write
                 CurrentRun.CurrentFloor = ResolveSafeZoneFloor(safeIndex); //Wave0write
                 Save?.SaveSnapshot(); //Wave0write
                 Scenes.LoadSafeZone(safeIndex); //Wave0write
@@ -825,6 +835,7 @@ namespace Tempt
             }
 
             int safeIndex = StageIndexResolver.SafeIndexForStage(stage);
+            CurrentRun.FloorMap?.ResetStageProgression(stage);
             CurrentRun.SafeUnlocks.Lock(safeIndex);
             Events?.RaiseSafeZoneLockChanged(safeIndex, true);
             Save?.SaveSnapshot();

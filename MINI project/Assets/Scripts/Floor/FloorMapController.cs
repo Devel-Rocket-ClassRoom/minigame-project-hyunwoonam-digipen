@@ -294,6 +294,7 @@ namespace Tempt
             return IsRechallengeMode
                 && node != null
                 && !node.IsSafeZone
+                && !IsStageFullyEroded(node.StageIndex)
                 && node.Floor > 0
                 && node.Floor <= RechallengeMaxFloor;
         }
@@ -368,9 +369,10 @@ namespace Tempt
             for (int i = 0; i < spawnedNodes.Count; i++)
             {
                 FloorNodeUI ui = spawnedNodes[i];
-                if (ui != null && ui.IsSafeZone && ui.StageIndex == stage)
+                if (ui != null && ui.StageIndex == stage)
                 {
                     ui.SetErosionRate(rate);
+                    ui.SetFullyEroded(rate >= 100f);
                 }
             }
 
@@ -396,17 +398,19 @@ namespace Tempt
                 return;
             }
 
-            if (!node.IsSafeZone)
-            {
-                return;
-            }
-
             float rate = gsm.CurrentRun?.Erosion != null ? gsm.CurrentRun.Erosion.GetRate(node.StageIndex) : 0f;
             ui.SetErosionRate(rate);
-            if (gsm.CurrentRun?.SafeUnlocks != null)
+            ui.SetFullyEroded(gsm.Erosion?.IsStageFullyEroded(node.StageIndex) == true);
+            if (node.IsSafeZone && gsm.CurrentRun?.SafeUnlocks != null)
             {
                 ui.SetSafeLocked(!gsm.CurrentRun.SafeUnlocks.IsUnlocked(node.StageIndex));
             }
+        }
+
+        private static bool IsStageFullyEroded(int stageIndex)
+        {
+            return GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                && gsm.Erosion?.IsStageFullyEroded(stageIndex) == true;
         }
 
         private void UpdateHeaderText()
