@@ -48,13 +48,13 @@ namespace Tempt
         /// <inheritdoc/>
         public override void OnEnter()
         {
-            GameSystemManager gsm = GameSystemManager.Instance; //Wave0write
-            Map = gsm.CurrentRun?.FloorMap; //Wave0write
-            IsRechallengeMode = gsm.TryConsumeFloorMapRechallenge(out int maxFloor, out int returnSafeIndex); //Wave0write
-            RechallengeMaxFloor = maxFloor; //Wave0write
-            RechallengeReturnSafeIndex = returnSafeIndex; //Wave0write
-            CanEnterSafeZonesFromMap = gsm.TryConsumeFloorMapSafeTravel(out int sourceSafeIndex); //Wave0write
-            FloorMapSourceSafeIndex = sourceSafeIndex; //Wave0write
+            GameSystemManager gsm = GameSystemManager.Instance;
+            Map = gsm.CurrentRun?.FloorMap;
+            IsRechallengeMode = gsm.TryConsumeFloorMapRechallenge(out int maxFloor, out int returnSafeIndex);
+            RechallengeMaxFloor = maxFloor;
+            RechallengeReturnSafeIndex = returnSafeIndex;
+            CanEnterSafeZonesFromMap = gsm.TryConsumeFloorMapSafeTravel(out int sourceSafeIndex);
+            FloorMapSourceSafeIndex = sourceSafeIndex;
             if (Map == null)
             {
                 Debug.LogError("[FloorMapController] CurrentRun.FloorMap 이 없습니다.");
@@ -76,9 +76,9 @@ namespace Tempt
         {
             ClearRenderedMap();
             UnsubscribeErosionEvents();
-            Map = null; //Wave0write
-            CanEnterSafeZonesFromMap = false; //Wave0write
-            FloorMapSourceSafeIndex = 0; //Wave0write
+            Map = null;
+            CanEnterSafeZonesFromMap = false;
+            FloorMapSourceSafeIndex = 0;
         }
 
         /// <summary>
@@ -86,29 +86,29 @@ namespace Tempt
         /// </summary>
         public void OnNodeClicked(int nodeId)
         {
-            if (Map == null || !Map.NodesById.TryGetValue(nodeId, out FloorNode node)) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (Map == null || !Map.NodesById.TryGetValue(nodeId, out FloorNode node))
+            {
+                return;
+            }
 
-            if (node.IsSafeZone) //Wave0write
-            { //Wave0write
-                if (IsSafeZoneSelectable(node)) //Wave0write
-                { //Wave0write
-                    GameSystemManager.Instance.EnterSafeZoneFromFloorMap(node.StageIndex); //Wave0write
-                } //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (node.IsSafeZone)
+            {
+                if (IsSafeZoneSelectable(node))
+                {
+                    GameSystemManager.Instance.EnterSafeZoneFromFloorMap(node.StageIndex);
+                }
+                return;
+            }
 
-            bool isRechallengeNode = IsRechallengeNode(node); //Wave0write
-            bool isProgressionNode = IsProgressionNodeSelectable(node); //Wave0write
-            bool selectable = isRechallengeNode || isProgressionNode; //Wave0write
-            if (!selectable || (!IsRechallengeMode && node.IsCleared)) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            bool isRechallengeNode = IsRechallengeNode(node);
+            bool isProgressionNode = IsProgressionNodeSelectable(node);
+            bool selectable = isRechallengeNode || isProgressionNode;
+            if (!selectable || (!IsRechallengeMode && node.IsCleared))
+            {
+                return;
+            }
 
-            GameSystemManager.Instance.StartCombatNode(node, isRechallengeNode); //Wave0write
+            GameSystemManager.Instance.StartCombatNode(node, isRechallengeNode);
         }
 
         /// <summary>
@@ -117,14 +117,14 @@ namespace Tempt
         /// </summary>
         public bool CanRetreatToSafe()
         {
-            GameRunState run = GameSystemManager.Instance.CurrentRun; //Wave0write
-            if (run == null || Map == null) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            GameRunState run = GameSystemManager.Instance.CurrentRun;
+            if (run == null || Map == null)
+            {
+                return false;
+            }
 
-            int stageIndex = StageIndexResolver.FromFloor(run.CurrentFloor, GameSystemManager.Instance.Data?.World); //Wave0write
-            return Map.IsStageCleared(stageIndex); //Wave0write
+            int stageIndex = StageIndexResolver.FromFloor(run.CurrentFloor, GameSystemManager.Instance.Data?.World);
+            return Map.IsStageCleared(stageIndex);
         }
 
         /// <summary>
@@ -132,14 +132,14 @@ namespace Tempt
         /// </summary>
         public void RequestReturnToSafe()
         {
-            if (!CanRetreatToSafe()) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (!CanRetreatToSafe())
+            {
+                return;
+            }
 
-            GameRunState run = GameSystemManager.Instance.CurrentRun; //Wave0write
-            int safeZoneIndex = System.Math.Max(0, StageIndexResolver.FromFloor(run.CurrentFloor, GameSystemManager.Instance.Data?.World) - 1); //Wave0write
-            GameSystemManager.Instance.Scenes.LoadSafeZone(safeZoneIndex); //Wave0write
+            GameRunState run = GameSystemManager.Instance.CurrentRun;
+            int safeZoneIndex = System.Math.Max(0, StageIndexResolver.FromFloor(run.CurrentFloor, GameSystemManager.Instance.Data?.World) - 1);
+            GameSystemManager.Instance.Scenes.LoadSafeZone(safeZoneIndex);
         }
 
         private bool ValidateUiRefs()
@@ -268,26 +268,26 @@ namespace Tempt
             return IsRechallengeNode(node) || IsProgressionNodeSelectable(node);
         }
 
-        private bool IsProgressionNodeSelectable(FloorNode node) //Wave0write
-        { //Wave0write
-            if (node == null || node.IsSafeZone || node.IsCleared || node.Floor != Map.NextSelectableFloor) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+        private bool IsProgressionNodeSelectable(FloorNode node)
+        {
+            if (node == null || node.IsSafeZone || node.IsCleared || node.Floor != Map.NextSelectableFloor)
+            {
+                return false;
+            }
 
-            return true; //Wave0write
-        } //Wave0write
+            return true;
+        }
 
-        private bool IsSafeZoneSelectable(FloorNode node) //Wave0write
-        { //Wave0write
-            if (node == null || !node.IsSafeZone) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+        private bool IsSafeZoneSelectable(FloorNode node)
+        {
+            if (node == null || !node.IsSafeZone)
+            {
+                return false;
+            }
 
-            GameRunState run = GameSystemManager.Instance.CurrentRun; //Wave0write
-            return CanEnterSafeZonesFromMap && run?.SafeUnlocks != null && run.SafeUnlocks.IsUnlocked(node.StageIndex); //Wave0write
-        } //Wave0write
+            GameRunState run = GameSystemManager.Instance.CurrentRun;
+            return CanEnterSafeZonesFromMap && run?.SafeUnlocks != null && run.SafeUnlocks.IsUnlocked(node.StageIndex);
+        }
 
         private bool IsRechallengeNode(FloorNode node)
         {
@@ -430,17 +430,29 @@ namespace Tempt
             ErosionStateModel erosion = run?.Erosion;
             if (erosion == null)
             {
-                return "Stage Erosion: S1 0% / S2 0% / S3 0% / S4 0% / S5 0% / S6 0%";
+                return BuildZeroStageErosionSummary(gsm?.Data?.World);
             }
 
-            return string.Format(
-                "Stage Erosion: S1 {0:0.#}% / S2 {1:0.#}% / S3 {2:0.#}% / S4 {3:0.#}% / S5 {4:0.#}% / S6 {5:0.#}%",
-                erosion.GetRate(1),
-                erosion.GetRate(2),
-                erosion.GetRate(3),
-                erosion.GetRate(4),
-                erosion.GetRate(5),
-                erosion.GetRate(6));
+            int stageCount = ErosionSystem.GetMaxStage(gsm?.Data?.World);
+            var parts = new List<string>();
+            for (int stage = 1; stage <= stageCount; stage++)
+            {
+                parts.Add(string.Format("S{0} {1:0.#}%", stage, erosion.GetRate(stage)));
+            }
+
+            return "Stage Erosion: " + string.Join(" / ", parts);
+        }
+
+        private static string BuildZeroStageErosionSummary(WorldData world)
+        {
+            int stageCount = ErosionSystem.GetMaxStage(world);
+            var parts = new List<string>();
+            for (int stage = 1; stage <= stageCount; stage++)
+            {
+                parts.Add("S" + stage + " 0%");
+            }
+
+            return "Stage Erosion: " + string.Join(" / ", parts);
         }
     }
 }

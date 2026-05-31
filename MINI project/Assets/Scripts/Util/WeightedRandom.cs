@@ -15,44 +15,34 @@ namespace Tempt
             // 동작 요약:
             // - 합산 후 [0, sum) 무작위.
             // - 누적합 비교로 인덱스 결정.
-            //TODO: int total = 0;
-            //TODO: foreach (int w in weights) total += w;
-            //TODO: int roll = UnityEngine.Random.Range(0, total);
-            //TODO: int cumulative = 0;
-            //TODO: for (int i = 0; i < weights.Count; i++)
-            //TODO: {
-            //TODO:     cumulative += weights[i];
-            //TODO:     if (roll < cumulative) return i;
-            //TODO: }
-            //TODO: return weights.Count - 1; // fallback
-            if (weights == null || weights.Count == 0) //Wave0write
-            { //Wave0write
-                return -1; //Wave0write
-            } //Wave0write
+            if (weights == null || weights.Count == 0)
+            {
+                return -1;
+            }
 
-            int total = 0; //Wave0write
-            foreach (int weight in weights) //Wave0write
-            { //Wave0write
-                total += System.Math.Max(0, weight); //Wave0write
-            } //Wave0write
+            int total = 0;
+            foreach (int weight in weights)
+            {
+                total += System.Math.Max(0, weight);
+            }
 
-            if (total <= 0) //Wave0write
-            { //Wave0write
-                return 0; //Wave0write
-            } //Wave0write
+            if (total <= 0)
+            {
+                return 0;
+            }
 
-            int roll = UnityEngine.Random.Range(0, total); //Wave0write
-            int cumulative = 0; //Wave0write
-            for (int i = 0; i < weights.Count; i++) //Wave0write
-            { //Wave0write
-                cumulative += System.Math.Max(0, weights[i]); //Wave0write
-                if (roll < cumulative) //Wave0write
-                { //Wave0write
-                    return i; //Wave0write
-                } //Wave0write
-            } //Wave0write
+            int roll = UnityEngine.Random.Range(0, total);
+            int cumulative = 0;
+            for (int i = 0; i < weights.Count; i++)
+            {
+                cumulative += System.Math.Max(0, weights[i]);
+                if (roll < cumulative)
+                {
+                    return i;
+                }
+            }
 
-            return weights.Count - 1; //Wave0write
+            return weights.Count - 1;
         }
 
         /// <summary>
@@ -61,9 +51,8 @@ namespace Tempt
         public static T Pick<T>(IList<T> items, IList<int> weights)
         {
             // 동작 요약: PickIndex(weights) → items[index] 반환.
-            //TODO: return items[PickIndex(weights)];
-            int index = PickIndex(weights); //Wave0write
-            return items != null && index >= 0 && index < items.Count ? items[index] : default; //Wave0write
+            int index = PickIndex(weights);
+            return items != null && index >= 0 && index < items.Count ? items[index] : default;
         }
 
         /// <summary>
@@ -72,15 +61,14 @@ namespace Tempt
         public static int Sample(int minInclusive, int maxInclusive)
         {
             // 동작 요약: UnityEngine.Random.Range(minInclusive, maxInclusive+1) 반환.
-            //TODO: return UnityEngine.Random.Range(minInclusive, maxInclusive + 1);
-            if (maxInclusive < minInclusive) //Wave0write
-            { //Wave0write
-                int tmp = minInclusive; //Wave0write
-                minInclusive = maxInclusive; //Wave0write
-                maxInclusive = tmp; //Wave0write
-            } //Wave0write
+            if (maxInclusive < minInclusive)
+            {
+                int tmp = minInclusive;
+                minInclusive = maxInclusive;
+                maxInclusive = tmp;
+            }
 
-            return UnityEngine.Random.Range(minInclusive, maxInclusive + 1); //Wave0write
+            return UnityEngine.Random.Range(minInclusive, maxInclusive + 1);
         }
     }
 }

@@ -26,24 +26,24 @@ namespace Tempt
         /// </summary>
         public void ApplyStartingRuneClass(RuneClass runeClass)
         {
-            GameRunState run = GameSystemManager.Instance.CurrentRun; //Wave0write
-            if (run?.Player == null) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            GameRunState run = GameSystemManager.Instance.CurrentRun;
+            if (run?.Player == null)
+            {
+                return;
+            }
 
-            if (run.Player.StartingClass == RuneClass.None) //Wave0write
-            { //Wave0write
-                run.Player.StartingClass = runeClass; //Wave0write
-                run.Player.Rune = new PlayerRuneState //Wave0write
-                { //Wave0write
-                    ClassId = runeClass, //Wave0write
-                    RunePoints = 0, //Wave0write
-                    UnlockedIds = new System.Collections.Generic.HashSet<int>(), //Wave0write
-                    Tree = RuneTree.BuildFromData(runeClass, GameSystemManager.Instance.Data.Runes.Values), //Wave0write
-                }; //Wave0write
-                run.Player.Rune.UnlockStarter(); //Wave0write
-            } //Wave0write
+            if (run.Player.StartingClass == RuneClass.None)
+            {
+                run.Player.StartingClass = runeClass;
+                run.Player.Rune = new PlayerRuneState
+                {
+                    ClassId = runeClass,
+                    RunePoints = 0,
+                    UnlockedIds = new System.Collections.Generic.HashSet<int>(),
+                    Tree = RuneTree.BuildFromData(runeClass, GameSystemManager.Instance.Data.Runes.Values),
+                };
+                run.Player.Rune.UnlockStarter();
+            }
         }
     }
 }

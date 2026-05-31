@@ -30,6 +30,7 @@ namespace Tempt
 
         private Canvas worldCanvas;
         private Image targetHighlight;
+        private Image shieldIndicator;
         private Transform effectAnchor;
         private Coroutine flashRoutine;
 
@@ -129,12 +130,30 @@ namespace Tempt
             StartFlash(new Color(0.2f, 1f, 0.45f, 1f));
         }
 
+        public void ShowShieldFx(int amount)
+        {
+            EnsureInitialized();
+            if (shieldIndicator != null)
+            {
+                shieldIndicator.enabled = amount > 0;
+            }
+        }
+
+        public void HideShieldFx()
+        {
+            if (shieldIndicator != null)
+            {
+                shieldIndicator.enabled = false;
+            }
+        }
+
         private void EnsureInitialized()
         {
             Entity = Entity != null ? Entity : GetComponent<EntityBase>();
             EnsureEffectAnchor();
             EnsureCanvas();
             EnsureTargetHighlight();
+            EnsureShieldIndicator();
             EnsureActionIcon();
             EnsureSlider(ref HpSlider, "HP", new Vector2(0f, -14f), new Color(0.85f, 0.08f, 0.08f, 1f));
             EnsureSlider(ref MpSlider, "MP", new Vector2(0f, -28f), new Color(0.12f, 0.34f, 0.95f, 1f));
@@ -223,6 +242,34 @@ namespace Tempt
             targetHighlight.color = new Color(1f, 0.82f, 0.12f, 0.28f);
             targetHighlight.raycastTarget = false;
             targetHighlight.enabled = false;
+        }
+
+        private void EnsureShieldIndicator()
+        {
+            if (shieldIndicator != null)
+            {
+                return;
+            }
+
+            Transform existing = worldCanvas.transform.Find("ShieldIndicator");
+            if (existing != null && existing.TryGetComponent(out Image existingImage))
+            {
+                shieldIndicator = existingImage;
+                shieldIndicator.enabled = false;
+                return;
+            }
+
+            GameObject shieldObject = new GameObject("ShieldIndicator");
+            shieldObject.transform.SetParent(worldCanvas.transform, false);
+
+            RectTransform rect = shieldObject.AddComponent<RectTransform>();
+            rect.anchoredPosition = new Vector2(0f, -20f);
+            rect.sizeDelta = new Vector2(126f, 52f);
+
+            shieldIndicator = shieldObject.AddComponent<Image>();
+            shieldIndicator.color = new Color(0.18f, 0.62f, 1f, 0.24f);
+            shieldIndicator.raycastTarget = false;
+            shieldIndicator.enabled = false;
         }
 
         private void EnsureActionIcon()

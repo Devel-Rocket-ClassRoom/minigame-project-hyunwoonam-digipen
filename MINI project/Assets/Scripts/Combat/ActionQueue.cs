@@ -26,36 +26,26 @@ namespace Tempt
             // - score 내림차순 정렬.
             // - Entries 갱신.
             // - Cursor = 0.
-            //TODO: Entries.Clear();
-            //TODO: const int RandomRange = 5;
-            //TODO: foreach (EntityBase entity in participants)
-            //TODO: {
-            //TODO:     if (entity.IsDead) continue;
-            //TODO:     int score = entity.Stats.SPD + WeightedRandom.Sample(-RandomRange, RandomRange);
-            //TODO:     Entries.Add(new TurnEntry { Actor = entity, Score = score });
-            //TODO: }
-            //TODO: Entries.Sort((a, b) => b.Score.CompareTo(a.Score));
-            //TODO: Cursor = 0;
-            Entries.Clear(); //Wave0write
-            if (participants == null) //Wave0write
-            { //Wave0write
-                Cursor = 0; //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            Entries.Clear();
+            if (participants == null)
+            {
+                Cursor = 0;
+                return;
+            }
 
-            const int randomRange = 5; //Wave0write
-            foreach (EntityBase entity in participants) //Wave0write
-            { //Wave0write
-                if (entity == null || entity.IsDead || entity.Stats == null) //Wave0write
-                { //Wave0write
-                    continue; //Wave0write
-                } //Wave0write
+            const int randomRange = 5;
+            foreach (EntityBase entity in participants)
+            {
+                if (entity == null || entity.IsDead || entity.Stats == null)
+                {
+                    continue;
+                }
 
-                Entries.Add(new TurnEntry { Actor = entity, Score = entity.Stats.SPD + WeightedRandom.Sample(-randomRange, randomRange) }); //Wave0write
-            } //Wave0write
+                Entries.Add(new TurnEntry { Actor = entity, Score = entity.Stats.SPD + WeightedRandom.Sample(-randomRange, randomRange) });
+            }
 
-            Entries.Sort((a, b) => b.Score.CompareTo(a.Score)); //Wave0write
-            Cursor = 0; //Wave0write
+            Entries.Sort((a, b) => b.Score.CompareTo(a.Score));
+            Cursor = 0;
         }
 
         /// <summary>
@@ -66,9 +56,7 @@ namespace Tempt
             // 동작 요약:
             // - Cursor < Entries.Count이면 Entries[Cursor] 반환.
             // - 그 외 null.
-            //TODO: if (Cursor < Entries.Count) return Entries[Cursor];
-            //TODO: return null;
-            return Cursor >= 0 && Cursor < Entries.Count ? Entries[Cursor] : null; //Wave0write
+            return Cursor >= 0 && Cursor < Entries.Count ? Entries[Cursor] : null;
         }
 
         /// <summary>
@@ -77,8 +65,7 @@ namespace Tempt
         public void ConsumeCurrent()
         {
             // 동작 요약: Cursor += 1.
-            //TODO: Cursor += 1;
-            Cursor += 1; //Wave0write
+            Cursor += 1;
         }
 
         /// <summary>
@@ -87,8 +74,7 @@ namespace Tempt
         public bool IsRoundFinished()
         {
             // 동작 요약: Cursor >= Entries.Count 반환.
-            //TODO: return Cursor >= Entries.Count;
-            return Cursor >= Entries.Count; //Wave0write
+            return Cursor >= Entries.Count;
         }
 
         /// <summary>
@@ -99,18 +85,13 @@ namespace Tempt
             // 동작 요약:
             // - Cursor 이후 항목 중 IsDead인 항목 제거.
             // - Cursor 자체는 이미 시작된 행동이므로 보존.
-            //TODO: for (int i = Entries.Count - 1; i > Cursor; i--)
-            //TODO: {
-            //TODO:     if (Entries[i].Actor.IsDead)
-            //TODO:         Entries.RemoveAt(i);
-            //TODO: }
-            for (int i = Entries.Count - 1; i > Cursor; i--) //Wave0write
-            { //Wave0write
-                if (Entries[i].Actor == null || Entries[i].Actor.IsDead) //Wave0write
-                { //Wave0write
-                    Entries.RemoveAt(i); //Wave0write
-                } //Wave0write
-            } //Wave0write
+            for (int i = Entries.Count - 1; i > Cursor; i--)
+            {
+                if (Entries[i].Actor == null || Entries[i].Actor.IsDead)
+                {
+                    Entries.RemoveAt(i);
+                }
+            }
         }
     }
 

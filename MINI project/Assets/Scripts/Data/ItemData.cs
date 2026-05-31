@@ -45,27 +45,44 @@ namespace Tempt
         /// <inheritdoc/>
         public override void Parse(string[] cells)
         {
-            // 동작 요약: ItemTable.csv 열 순서대로 파싱.
-            // - cells[0] = ItemID → Id
-            // - cells[1] = NameKey
-            // - cells[2] = Category (enum 문자열 → ItemCategory)
-            // - cells[3] = SubCategory (string: HP_Potion/MP_Potion/Offensive/Escape/Weapon/ArmorBody/ArmorArms/ArmorLegs)
-            // - cells[4] = BasePrice (int)
-            // - cells[5] = ParamValue (float)
-            // - cells[6] = DescriptionKey → DescKey
-            // - EquipSlot, EquipMod, ConsumeEffectKey, Stackable, MaxStack, IsRetreat는
-            //   추가 컬럼 또는 SubCategory 기반 기본값으로 처리
-            //TODO: Id           = int.Parse(cells[0]);
-            //TODO: NameKey      = cells[1];
-            //TODO: Category     = (ItemCategory)System.Enum.Parse(typeof(ItemCategory), cells[2]);
-            //TODO: SubCategory  = cells[3];
-            //TODO: BasePrice    = int.Parse(cells[4]);
-            //TODO: ParamValue   = float.Parse(cells[5]);
-            //TODO: DescKey      = cells[6];
-            //TODO: // Stackable/IsRetreat: Category 기반 기본값
-            //TODO: Stackable = (Category == ItemCategory.Consumable || Category == ItemCategory.Material);
-            //TODO: IsRetreat = SubCategory == "Escape";
-            //TODO: MaxStack      = cells.Length > 7 ? int.Parse(cells[7]) : (Stackable ? 99 : 1);
+            Id = cells.Length > 0 && CsvParser.TryParseInt(cells[0], out int id) ? id : 0;
+            NameKey = cells.Length > 1 ? cells[1] : string.Empty;
+            Category = cells.Length > 2 && System.Enum.TryParse(cells[2], true, out ItemCategory category) ? category : ItemCategory.Material;
+            SubCategory = cells.Length > 3 ? cells[3] : string.Empty;
+            BasePrice = cells.Length > 4 && CsvParser.TryParseInt(cells[4], out int price) ? price : 0;
+            ParamValue = cells.Length > 5 && CsvParser.TryParseFloat(cells[5], out float value) ? value : 0f;
+        }
+
+        public static ItemData FromRow(System.Collections.Generic.IDictionary<string, string> row)
+        {
+            if (!CsvParser.HasColumns(row, nameof(ItemData), "Id", "NameKey", "Category", "SubCategory", "BasePrice", "ParamValue"))
+            {
+                return null;
+            }
+
+            return new ItemData
+            {
+                Id = CsvParser.GetInt(row, "Id"),
+                NameKey = CsvParser.GetString(row, "NameKey"),
+                DescKey = CsvParser.GetString(row, "DescKey"),
+                Category = CsvParser.GetEnum(row, "Category", ItemCategory.Material),
+                SubCategory = CsvParser.GetString(row, "SubCategory"),
+                EquipSlot = CsvParser.GetEnum(row, "EquipSlot", EquipmentSlotId.None),
+                EquipMod = new EquipmentStatMod
+                {
+                    HP = CsvParser.GetInt(row, "EquipMod_HP"),
+                    MP = CsvParser.GetInt(row, "EquipMod_MP"),
+                    ATK = CsvParser.GetInt(row, "EquipMod_ATK"),
+                    DEF = CsvParser.GetInt(row, "EquipMod_DEF"),
+                    SPD = CsvParser.GetInt(row, "EquipMod_SPD"),
+                },
+                ConsumeEffectKey = CsvParser.GetString(row, "ConsumeEffectKey"),
+                ParamValue = CsvParser.GetFloat(row, "ParamValue"),
+                BasePrice = CsvParser.GetInt(row, "BasePrice"),
+                Stackable = CsvParser.GetBool(row, "Stackable"),
+                MaxStack = CsvParser.GetInt(row, "MaxStack", 1),
+                IsRetreat = CsvParser.GetBool(row, "IsRetreat"),
+            };
         }
     }
 

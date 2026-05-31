@@ -26,8 +26,21 @@ namespace Tempt
 
         private List<Skill> passiveSkills = new List<Skill>();
 
+        private static readonly PassiveEffectBinding[] PassiveEffectBindings =
+        {
+            new PassiveEffectBinding(skill => skill.DamageScale, stats => stats.BaseATK, StatType.ATK),
+            new PassiveEffectBinding(skill => skill.HealScale, stats => stats.BaseMaxHP, StatType.HP),
+            new PassiveEffectBinding(skill => skill.ShieldScale, stats => stats.BaseDEF, StatType.DEF),
+        };
+
         /// <summary>이번 라운드 동안 방어 중인가.</summary>
         public bool IsDefending { get; private set; }
+
+        /// <summary>현재 보호막 잔량.</summary>
+        public int ShieldAmount { get; private set; }
+
+        /// <summary>보호막 남은 라운드.</summary>
+        public int ShieldRoundsRemaining { get; private set; }
 
         /// <summary>사망 여부.</summary>
         public bool IsDead => Stats != null && Stats.CurrentHP <= 0;
@@ -51,26 +64,22 @@ namespace Tempt
             // - WorldUI.HideActionIcon().
             // - 패시브 효과는 전투 시작 전 SyncPassivesFromRunes()가 이미 갱신했으므로
             //   여기서 ApplyAllPassiveEffects()를 호출해 스탯에 반영한다.
-            //TODO: Stats.ClampToMax();
-            //TODO: IsDefending = false;
-            //TODO: if (ActiveSkills == null || ActiveSkills.Length != 2) ActiveSkills = new Skill[2];
-            //TODO: WorldUI?.HideActionIcon();
-            //TODO: ApplyAllPassiveEffects();
-            if (Stats == null) //Wave0write
-            { //Wave0write
-                Stats = new StatBlock(); //Wave0write
-                Stats.SetBaseStats(1, 0, 0, 0, 0); //Wave0write
-            } //Wave0write
+            if (Stats == null)
+            {
+                Stats = new StatBlock();
+                Stats.SetBaseStats(1, 0, 0, 0, 0);
+            }
 
-            Stats.ClampToMax(); //Wave0write
-            IsDefending = false; //Wave0write
-            if (ActiveSkills == null || ActiveSkills.Length != 2) //Wave0write
-            { //Wave0write
-                ActiveSkills = new Skill[2]; //Wave0write
-            } //Wave0write
+            Stats.ClampToMax();
+            IsDefending = false;
+            ClearShield();
+            if (ActiveSkills == null || ActiveSkills.Length != 2)
+            {
+                ActiveSkills = new Skill[2];
+            }
 
-            WorldUI?.HideActionIcon(); //Wave0write
-            ApplyAllPassiveEffects(); //Wave0write
+            WorldUI?.HideActionIcon();
+            ApplyAllPassiveEffects();
         }
 
         /// <summary>
@@ -78,11 +87,9 @@ namespace Tempt
         /// </summary>
         public virtual void OnRoundEnd()
         {
-            // 동작 요약: IsDefending = false; WorldUI.HideActionIcon().
-            //TODO: IsDefending = false;
-            //TODO: WorldUI?.HideActionIcon();
-            IsDefending = false; //Wave0write
-            WorldUI?.HideActionIcon(); //Wave0write
+            IsDefending = false;
+            TickShieldDuration();
+            WorldUI?.HideActionIcon();
         }
 
         /// <summary>
@@ -90,21 +97,32 @@ namespace Tempt
         /// </summary>
         public int ApplyDamage(int rawDamage)
         {
-            // 동작 요약:
-            // - Stats.TakeDamage(rawDamage, IsDefending) 호출(IsDefending이 true면 추가 경감).
-            // - WorldUI.PlayHitFx().
-            // - 실제 차감 피해 반환.
-            //TODO: int actualDamage = Stats.TakeDamage(rawDamage, IsDefending);
-            //TODO: WorldUI?.PlayHitFx();
-            //TODO: return actualDamage;
-            if (Stats == null) //Wave0write
-            { //Wave0write
-                return 0; //Wave0write
-            } //Wave0write
+            if (Stats == null)
+            {
+                return 0;
+            }
 
-            int actualDamage = Stats.TakeDamage(rawDamage, IsDefending); //Wave0write
-            WorldUI?.PlayHitFx(); //Wave0write
-            return actualDamage; //Wave0write
+            int remainingDamage = Mathf.Max(0, rawDamage);
+            if (ShieldAmount > 0 && remainingDamage > 0)
+            {
+                int absorbed = Mathf.Min(ShieldAmount, remainingDamage);
+                ShieldAmount -= absorbed;
+                remainingDamage -= absorbed;
+                if (ShieldAmount <= 0)
+                {
+                    ShieldAmount = 0;
+                    ShieldRoundsRemaining = 0;
+                    WorldUI?.HideShieldFx();
+                }
+                else
+                {
+                    WorldUI?.ShowShieldFx(ShieldAmount);
+                }
+            }
+
+            int actualDamage = Stats.TakeDamage(remainingDamage);
+            WorldUI?.PlayHitFx();
+            return actualDamage;
         }
 
         /// <summary>
@@ -116,21 +134,16 @@ namespace Tempt
             // - Stats.CurrentHP에 더하고 MaxHP로 클램프.
             // - WorldUI.PlayHealFx().
             // - 실제 회복량 반환.
-            //TODO: int before = Stats.CurrentHP;
-            //TODO: Stats.CurrentHP = Mathf.Min(Stats.CurrentHP + rawHeal, Stats.MaxHP);
-            //TODO: int actualHeal = Stats.CurrentHP - before;
-            //TODO: WorldUI?.PlayHealFx();
-            //TODO: return actualHeal;
-            if (Stats == null || rawHeal <= 0) //Wave0write
-            { //Wave0write
-                return 0; //Wave0write
-            } //Wave0write
+            if (Stats == null || rawHeal <= 0)
+            {
+                return 0;
+            }
 
-            int before = Stats.CurrentHP; //Wave0write
-            Stats.CurrentHP = Mathf.Min(Stats.CurrentHP + rawHeal, Stats.MaxHP); //Wave0write
-            int actualHeal = Stats.CurrentHP - before; //Wave0write
-            WorldUI?.PlayHealFx(); //Wave0write
-            return actualHeal; //Wave0write
+            int before = Stats.CurrentHP;
+            Stats.CurrentHP = Mathf.Min(Stats.CurrentHP + rawHeal, Stats.MaxHP);
+            int actualHeal = Stats.CurrentHP - before;
+            WorldUI?.PlayHealFx();
+            return actualHeal;
         }
 
         /// <summary>
@@ -138,16 +151,35 @@ namespace Tempt
         /// </summary>
         public void ApplyShield(int amount, int durationRounds)
         {
-            // 동작 요약: 보호막 상태 컴포넌트(미정의 시 단순 누적값) 추가.
-            //TODO: // ShieldStatet가 정의된 경우: var shield = GetComponent<ShieldStatet>() ?? gameObject.AddComponent<ShieldStatet>();
-            //TODO: // shield.Add(amount, durationRounds);
-            //TODO: // 미정의 시 임시 누적: Stats.CurrentHP += amount; Stats.ClampToMax(); // 보호막 = 임시 HP 보정
-            //TODO: WorldUI?.ShowShieldFx(amount);
-            if (Stats != null && amount > 0) //Wave0write
-            { //Wave0write
-                Stats.CurrentHP = Mathf.Min(Stats.MaxHP, Stats.CurrentHP + amount); //Wave0write
-            } //Wave0write
+            if (amount <= 0)
+            {
+                return;
+            }
 
+            ShieldAmount += amount;
+            ShieldRoundsRemaining = Mathf.Max(ShieldRoundsRemaining, Mathf.Max(1, durationRounds));
+            WorldUI?.ShowShieldFx(ShieldAmount);
+        }
+
+        private void TickShieldDuration()
+        {
+            if (ShieldRoundsRemaining <= 0)
+            {
+                return;
+            }
+
+            ShieldRoundsRemaining--;
+            if (ShieldRoundsRemaining <= 0)
+            {
+                ClearShield();
+            }
+        }
+
+        private void ClearShield()
+        {
+            ShieldAmount = 0;
+            ShieldRoundsRemaining = 0;
+            WorldUI?.HideShieldFx();
         }
 
         /// <summary>
@@ -156,18 +188,15 @@ namespace Tempt
         public void SetDefending(bool value)
         {
             // 동작 요약: IsDefending = value; 머리 위 파랑 아이콘 표시/해제.
-            //TODO: IsDefending = value;
-            //TODO: if (value) WorldUI?.ShowActionIcon(ActionIconTypet.Defend);
-            //TODO: else WorldUI?.HideActionIcon();
-            IsDefending = value; //Wave0write
-            if (value) //Wave0write
-            { //Wave0write
-                WorldUI?.ShowDefendIcon(); //Wave0write
-            } //Wave0write
-            else //Wave0write
-            { //Wave0write
-                WorldUI?.HideActionIcon(); //Wave0write
-            } //Wave0write
+            IsDefending = value;
+            if (value)
+            {
+                WorldUI?.ShowDefendIcon();
+            }
+            else
+            {
+                WorldUI?.HideActionIcon();
+            }
         }
 
         /// <summary>
@@ -176,9 +205,7 @@ namespace Tempt
         public Skill GetActiveSkill(int slotIndex)
         {
             // 동작 요약: 범위 검사 후 ActiveSkills[slotIndex] 반환.
-            //TODO: if (slotIndex < 0 || slotIndex >= ActiveSkills.Length) return null;
-            //TODO: return ActiveSkills[slotIndex];
-            return ActiveSkills != null && slotIndex >= 0 && slotIndex < ActiveSkills.Length ? ActiveSkills[slotIndex] : null; //Wave0write
+            return ActiveSkills != null && slotIndex >= 0 && slotIndex < ActiveSkills.Length ? ActiveSkills[slotIndex] : null;
         }
 
         /// <summary>
@@ -187,17 +214,15 @@ namespace Tempt
         public void SetActiveSkill(int slotIndex, Skill skill)
         {
             // 동작 요약: 범위 검사 후 ActiveSkills[slotIndex] = skill.
-            //TODO: if (slotIndex < 0 || slotIndex >= ActiveSkills.Length) return;
-            //TODO: ActiveSkills[slotIndex] = skill;
-            if (ActiveSkills == null || ActiveSkills.Length != 2) //Wave0write
-            { //Wave0write
-                ActiveSkills = new Skill[2]; //Wave0write
-            } //Wave0write
+            if (ActiveSkills == null || ActiveSkills.Length != 2)
+            {
+                ActiveSkills = new Skill[2];
+            }
 
-            if (slotIndex >= 0 && slotIndex < ActiveSkills.Length) //Wave0write
-            { //Wave0write
-                ActiveSkills[slotIndex] = skill; //Wave0write
-            } //Wave0write
+            if (slotIndex >= 0 && slotIndex < ActiveSkills.Length)
+            {
+                ActiveSkills[slotIndex] = skill;
+            }
         }
 
         /// <summary>
@@ -209,18 +234,15 @@ namespace Tempt
             // 동작 요약:
             // - skill.Data.SkillType == Passive 검증.
             // - passiveSkills에 중복 없이 추가.
-            //TODO: if (skill == null || skill.Data == null) return;
-            //TODO: if (skill.Data.SkillType != SkillType.Passive) return;
-            //TODO: if (!passiveSkills.Contains(skill)) passiveSkills.Add(skill);
-            if (skill?.Data == null || skill.Data.SkillType != SkillType.Passive) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (skill?.Data == null || skill.Data.SkillType != SkillType.Passive)
+            {
+                return;
+            }
 
-            if (!passiveSkills.Exists(s => s.Data != null && s.Data.Id == skill.Data.Id)) //Wave0write
-            { //Wave0write
-                passiveSkills.Add(skill); //Wave0write
-            } //Wave0write
+            if (!passiveSkills.Exists(s => s.Data != null && s.Data.Id == skill.Data.Id))
+            {
+                passiveSkills.Add(skill);
+            }
         }
 
         /// <summary>
@@ -229,8 +251,7 @@ namespace Tempt
         internal void ClearPassiveSkills()
         {
             // 동작 요약: passiveSkills.Clear().
-            //TODO: passiveSkills.Clear();
-            passiveSkills.Clear(); //Wave0write
+            passiveSkills.Clear();
         }
 
         /// <summary>
@@ -243,42 +264,55 @@ namespace Tempt
             // - Stats.ResetPassiveBonuses().
             // - passiveSkills 순회: 각 Skillt의 Data.EffectFormula / EffectValue 기준으로 스탯 보정 적용.
             // - StatBlockt는 기본 스탯 + 장비 보정 + 룬 보정 + 패시브 보정을 합산해 최종 스탯을 갱신한다.
-            //TODO: Stats.ResetPassiveBonuses();
-            //TODO: foreach (Skill passive in passiveSkills)
-            //TODO: {
-            //TODO:     if (passive?.Data == null) continue;
-            //TODO:     SkillData d = passive.Data;
-            //TODO:     // DamageScale → ATK 보정, HealScale → HP 보정, ShieldScale → DEF 보정 등
-            //TODO:     // 실제 매핑은 SkillData.EffectFormula 필드 확정 후 분기 처리
-            //TODO:     // 예: if (d.DamageScale > 0f) Stats.ApplyPassiveBonus(StatType.ATK, (int)(Stats.ATK * d.DamageScale));
-            //TODO: }
-            if (Stats == null) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (Stats == null)
+            {
+                return;
+            }
 
-            Stats.ResetPassiveBonuses(); //Wave0write
-            foreach (Skill passive in passiveSkills) //Wave0write
-            { //Wave0write
-                SkillData data = passive?.Data; //Wave0write
-                if (data == null) //Wave0write
-                { //Wave0write
-                    continue; //Wave0write
-                } //Wave0write
+            Stats.ResetPassiveBonuses();
+            foreach (Skill passive in passiveSkills)
+            {
+                SkillData data = passive?.Data;
+                if (data == null)
+                {
+                    continue;
+                }
 
-                if (data.DamageScale > 0f) //Wave0write
-                { //Wave0write
-                    Stats.ApplyPassiveBonus(StatType.ATK, Mathf.RoundToInt(Stats.BaseATK * data.DamageScale)); //Wave0write
-                } //Wave0write
-                if (data.HealScale > 0f) //Wave0write
-                { //Wave0write
-                    Stats.ApplyPassiveBonus(StatType.HP, Mathf.RoundToInt(Stats.BaseMaxHP * data.HealScale)); //Wave0write
-                } //Wave0write
-                if (data.ShieldScale > 0f) //Wave0write
-                { //Wave0write
-                    Stats.ApplyPassiveBonus(StatType.DEF, Mathf.RoundToInt(Stats.BaseDEF * data.ShieldScale)); //Wave0write
-                } //Wave0write
-            } //Wave0write
+                ApplyPassiveEffect(data);
+            }
+        }
+
+        private void ApplyPassiveEffect(SkillData data)
+        {
+            for (int i = 0; i < PassiveEffectBindings.Length; i++)
+            {
+                PassiveEffectBindings[i].Apply(Stats, data);
+            }
+        }
+
+        private sealed class PassiveEffectBinding
+        {
+            private readonly System.Func<SkillData, float> scaleGetter;
+            private readonly System.Func<StatBlock, int> baseValueGetter;
+            private readonly StatType statType;
+
+            public PassiveEffectBinding(System.Func<SkillData, float> scaleGetter, System.Func<StatBlock, int> baseValueGetter, StatType statType)
+            {
+                this.scaleGetter = scaleGetter;
+                this.baseValueGetter = baseValueGetter;
+                this.statType = statType;
+            }
+
+            public void Apply(StatBlock stats, SkillData data)
+            {
+                float scale = scaleGetter(data);
+                if (scale <= 0f)
+                {
+                    return;
+                }
+
+                stats.ApplyPassiveBonus(statType, Mathf.RoundToInt(baseValueGetter(stats) * scale));
+            }
         }
     }
 }

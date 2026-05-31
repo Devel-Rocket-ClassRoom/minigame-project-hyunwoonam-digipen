@@ -1,0 +1,42 @@
+{
+  "ExpToNextLevel": [
+    0,
+    10,
+    25,
+    45,
+    70,
+    100,
+    140,
+    190,
+    250,
+    320,
+    400
+  ],
+  "RunePointPerLevel": 1,
+  "ErosionCurve": {
+    "DailyBase": 1.0,
+    "ExpBase": 1.05,
+    "InflectionDay": 10
+  },
+  "ErosionMonsterMultiplier": 1.5,
+  "InflationCoef": 0.5,
+  "SellRatio": 0.5,
+  "EnhanceMultiplier": 0.1,
+  "MineDailyGain": [
+    1,
+    2,
+    3
+  ],
+  "ErosionAltarReduction": 10.0,
+  "ErosionAltarCost": 3,
+  "MinActionTimeSec": 0.1,
+  "RuneResetRefundRate": 0.8,
+  "FirstNonPlayerActionDelaySec": 2.0,
+  "AttackActionTimeSec": 0.3,
+  "SkillActionFallbackSec": 0.5,
+  "DefendActionTimeSec": 0.1,
+  "CombatGeneratedSpriteSize": 64,
+  "CombatGeneratedSpritePixelsPerUnit": 48.0,
+  "UseErosionMonsterMultiplierCurve": false,
+  "ErosionMonsterMultiplierCurvePower": 1.0
+}

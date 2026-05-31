@@ -30,35 +30,25 @@ namespace Tempt
             // - 단계별 가격 인플레이션 적용.
             // - SaveLoader.SaveSnapshot 자동 저장.
             // - 파생 컨트롤러의 SetupZoneFeatures() 호출.
-            //TODO: var gsm = GameSystemManager.Instance;
-            //TODO: var run = gsm.CurrentRun;
-            //TODO: if (run.SafeUnlocks.TryGetValue(SafeIndex, out bool unlocked) && !unlocked)
-            //TODO: {
-            //TODO:     ToastUI.Show("침식으로 안전지대 잠김");
-            //TODO:     gsm.Scenes.LoadFloorMap();
-            //TODO:     return;
-            //TODO: }
-            //TODO: gsm.UI.SetConsumablesEditable(true);
-            //TODO: gsm.Save.SaveSnapshot(run);
-            GameSystemManager gsm = GameSystemManager.Instance; //Wave0write
-            GameRunState run = gsm.CurrentRun; //Wave0write
-            if (run == null) //Wave0write
-            { //Wave0write
-                gsm.Scenes.LoadMainMenu(); //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            GameSystemManager gsm = GameSystemManager.Instance;
+            GameRunState run = gsm.CurrentRun;
+            if (run == null)
+            {
+                gsm.Scenes.LoadMainMenu();
+                return;
+            }
 
-            if (run.SafeUnlocks != null && !run.SafeUnlocks.IsUnlocked(SafeIndex)) //Wave0write
-            { //Wave0write
-                gsm.Scenes.LoadFloorMap(); //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (run.SafeUnlocks != null && !run.SafeUnlocks.IsUnlocked(SafeIndex))
+            {
+                gsm.Scenes.LoadFloorMap();
+                return;
+            }
 
-            Definition = gsm.Data?.World?.SafeZones != null && SafeIndex >= 0 && SafeIndex < gsm.Data.World.SafeZones.Count ? gsm.Data.World.SafeZones[SafeIndex] : null; //Wave0write
-            SubscribeDayChanged(gsm.Events); //Wave0write
-            UpdateDayText(run.CurrentDay); //Wave0write
-            WireEnterFloorMapButton(); //Wave0write
-            gsm.Save?.SaveSnapshot(); //Wave0write
+            Definition = gsm.Data?.World?.SafeZones != null && SafeIndex >= 0 && SafeIndex < gsm.Data.World.SafeZones.Count ? gsm.Data.World.SafeZones[SafeIndex] : null;
+            SubscribeDayChanged(gsm.Events);
+            UpdateDayText(run.CurrentDay);
+            WireEnterFloorMapButton();
+            gsm.Save?.SaveSnapshot();
             SetupZoneFeatures();
         }
 
@@ -86,8 +76,7 @@ namespace Tempt
             // 동작 요약:
             // - 플레이어가 출발 가능한 단계인지 확인.
             // - GameSystemManager.Instance.Scenes.LoadFloorMap().
-            //TODO: GameSystemManager.Instance.Scenes.LoadFloorMap();
-            GameSystemManager.Instance.LoadFloorMapFromSafe(SafeIndex); //Wave0write
+            GameSystemManager.Instance.LoadFloorMapFromSafe(SafeIndex);
         }
 
         private void SubscribeDayChanged(EventBus events)

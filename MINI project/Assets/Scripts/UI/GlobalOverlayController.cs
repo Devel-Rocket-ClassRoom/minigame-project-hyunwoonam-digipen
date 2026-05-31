@@ -12,6 +12,7 @@ namespace Tempt
         [SerializeField] private GameObject persistentRoot;
         [SerializeField] private InventoryPage inventoryPage;
         [SerializeField] private GameObject gameOverPanel;
+        [SerializeField] private QuitConfirmPopup quitConfirmPopup;
 
         private HotkeyManager subscribedHotkey;
         private bool gameOverOpen;
@@ -44,6 +45,7 @@ namespace Tempt
             DontDestroyOnLoad(persistentRoot);
             inventoryPage.OnClose();
             HideGameOver();
+            HideQuitConfirm();
         }
 
         private void OnEnable()
@@ -94,6 +96,27 @@ namespace Tempt
             gameOverInputReadyTime = Time.unscaledTime + 0.2f;
         }
 
+        public void ShowAllStagesEroded()
+        {
+            ShowGameOver();
+        }
+
+        public void ShowQuitConfirm(System.Action onConfirm)
+        {
+            if (!TryResolveQuitConfirmPopup())
+            {
+                Debug.LogError("[GlobalOverlayController] QuitConfirmPopup 을 찾을 수 없습니다.");
+                return;
+            }
+
+            quitConfirmPopup.Show(onConfirm, HideQuitConfirm);
+        }
+
+        public void HideQuitConfirm()
+        {
+            quitConfirmPopup?.Hide();
+        }
+
         public void HideGameOver()
         {
             if (!TryResolveGameOverPanel())
@@ -137,6 +160,22 @@ namespace Tempt
 
             gameOverPanel = found.gameObject;
             return true;
+        }
+
+        private bool TryResolveQuitConfirmPopup()
+        {
+            if (quitConfirmPopup != null)
+            {
+                return true;
+            }
+
+            if (persistentRoot == null)
+            {
+                return false;
+            }
+
+            quitConfirmPopup = persistentRoot.GetComponentInChildren<QuitConfirmPopup>(true);
+            return quitConfirmPopup != null;
         }
 
         private static Transform FindChildRecursive(Transform root, string childName)

@@ -23,15 +23,12 @@ namespace Tempt
         public virtual void OnPageUpdate()
         {
             // 동작 요약: 기본 구현 없음.
-            //TODO: // 파생 클래스에서 매 프레임 갱신 필요 시 override
         }
 
         /// <summary>view-only 전환/해제 시 호출.</summary>
         public virtual void OnEditableChanged(bool editable)
         {
             // 동작 요약: 편집 컨트롤(드래그/버튼) 활성/비활성 토글.
-            //TODO: // 편집 가능한 컨트롤(드래그 영역, 버튼 등)을 editable 값에 따라 활성/비활성
-            //TODO: // 파생 클래스(InventoryPage 등)에서 SetViewOnly(!editable) 호출
         }
     }
 }

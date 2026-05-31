@@ -7,6 +7,9 @@ namespace Tempt
     /// </summary>
     public sealed class MonsterData : DataTable
     {
+        /// <summary>주 출현 단계. 0이면 난이도 기반 전역 풀.</summary>
+        public int StageIndex;
+
         /// <summary>보스 여부.</summary>
         public bool IsBoss;
 
@@ -57,41 +60,50 @@ namespace Tempt
         /// <inheritdoc/>
         public override void Parse(string[] cells)
         {
-            // 동작 요약: MonsterStatusTable.csv 열 순서대로 파싱.
-            // - cells[0] = MonsterID → Id
-            // - cells[1] = NameKey
-            // - cells[2] = IsBoss (bool)
-            // - cells[3] = Difficulty (int)
-            // - cells[4] = BaseHP → MaxHP
-            // - cells[5] = BaseMP → MaxMP
-            // - cells[6] = BaseATK → ATK
-            // - cells[7] = BaseDEF → DEF
-            // - cells[8] = BaseSPD → SPD
-            // - cells[9] = RewardExp (int)
-            // - cells[10] = RewardGold (int)
-            // - cells[11] = DropTableId (int, DropTable.csv 그룹 ID. 0이면 드랍 없음)
-            // - cells[12] = SkillIds (';' 구분 int 목록)
-            // - cells[13~15] = ActionWeights (Attack/Skill/Defend 가중치)
-            // - cells[16] = PrefabKey
-            // - cells[17] = ErosionShaderKey
-            //TODO: Id         = int.Parse(cells[0]);
-            //TODO: NameKey    = cells[1];
-            //TODO: IsBoss     = bool.Parse(cells[2]);
-            //TODO: Difficulty = int.Parse(cells[3]);
-            //TODO: MaxHP      = int.Parse(cells[4]);
-            //TODO: MaxMP      = int.Parse(cells[5]);
-            //TODO: ATK        = int.Parse(cells[6]);
-            //TODO: DEF        = int.Parse(cells[7]);
-            //TODO: SPD        = int.Parse(cells[8]);
-            //TODO: RewardExp  = int.Parse(cells[9]);
-            //TODO: RewardGold = int.Parse(cells[10]);
-            //TODO: DropTableId = int.Parse(cells[11]);
-            //TODO: SkillIds = new List<int>();
-            //TODO: if (!string.IsNullOrEmpty(cells[12]))
-            //TODO:     foreach (var s in cells[12].Split(';')) SkillIds.Add(int.Parse(s.Trim()));
-            //TODO: ActionWeights = new ActionWeightTable { Attack = int.Parse(cells[13]), Skill = int.Parse(cells[14]), Defend = int.Parse(cells[15]) };
-            //TODO: PrefabKey        = cells[16];
-            //TODO: ErosionShaderKey = cells[17];
+            Id = cells.Length > 0 && CsvParser.TryParseInt(cells[0], out int id) ? id : 0;
+            NameKey = cells.Length > 1 ? cells[1] : string.Empty;
+            IsBoss = cells.Length > 2 && CsvParser.TryParseBool(cells[2], out bool isBoss) && isBoss;
+            Difficulty = cells.Length > 3 && CsvParser.TryParseInt(cells[3], out int difficulty) ? difficulty : 0;
+            MaxHP = cells.Length > 4 && CsvParser.TryParseInt(cells[4], out int hp) ? hp : 0;
+            MaxMP = cells.Length > 5 && CsvParser.TryParseInt(cells[5], out int mp) ? mp : 0;
+            ATK = cells.Length > 6 && CsvParser.TryParseInt(cells[6], out int atk) ? atk : 0;
+            DEF = cells.Length > 7 && CsvParser.TryParseInt(cells[7], out int def) ? def : 0;
+            SPD = cells.Length > 8 && CsvParser.TryParseInt(cells[8], out int spd) ? spd : 0;
+        }
+
+        public static MonsterData FromRow(IDictionary<string, string> row)
+        {
+            if (!CsvParser.HasColumns(row, nameof(MonsterData), "Id", "NameKey", "IsBoss", "Difficulty", "MaxHP", "MaxMP", "ATK", "DEF", "SPD", "RewardExp", "RewardGold", "DropTableId"))
+            {
+                return null;
+            }
+
+            return new MonsterData
+            {
+                Id = CsvParser.GetInt(row, "Id"),
+                NameKey = CsvParser.GetString(row, "NameKey"),
+                DescKey = CsvParser.GetString(row, "DescKey"),
+                StageIndex = CsvParser.GetInt(row, "StageIndex"),
+                IsBoss = CsvParser.GetBool(row, "IsBoss"),
+                Difficulty = CsvParser.GetInt(row, "Difficulty"),
+                MaxHP = CsvParser.GetInt(row, "MaxHP"),
+                MaxMP = CsvParser.GetInt(row, "MaxMP"),
+                ATK = CsvParser.GetInt(row, "ATK"),
+                DEF = CsvParser.GetInt(row, "DEF"),
+                SPD = CsvParser.GetInt(row, "SPD"),
+                RewardExp = CsvParser.GetInt(row, "RewardExp"),
+                RewardGold = CsvParser.GetInt(row, "RewardGold"),
+                DropTableId = CsvParser.GetInt(row, "DropTableId"),
+                SkillIds = CsvParser.GetIntList(row, "SkillIds"),
+                ActionWeights = new ActionWeightTable
+                {
+                    Attack = CsvParser.GetInt(row, "ActionWeight_Attack", 80),
+                    Skill = CsvParser.GetInt(row, "ActionWeight_Skill", 10),
+                    Defend = CsvParser.GetInt(row, "ActionWeight_Defend", 10),
+                },
+                PrefabKey = CsvParser.GetString(row, "PrefabKey"),
+                ErosionShaderKey = CsvParser.GetString(row, "ErosionShaderKey"),
+            };
         }
     }
 

@@ -507,7 +507,7 @@ namespace Tempt
                 return sprite;
             }
 
-            const int size = 64;
+            int size = ResolveGeneratedSpriteSize();
             Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
             texture.hideFlags = HideFlags.DontSave;
             texture.filterMode = FilterMode.Point;
@@ -540,10 +540,30 @@ namespace Tempt
             }
 
             texture.Apply();
-            sprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.18f), 48f);
+            sprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.18f), ResolveGeneratedSpritePixelsPerUnit());
             sprite.name = "GeneratedCombatUnit_" + key;
             generatedSprites[key] = sprite;
             return sprite;
+        }
+
+        private static int ResolveGeneratedSpriteSize()
+        {
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Data?.Balance != null && gsm.Data.Balance.CombatGeneratedSpriteSize > 0)
+            {
+                return gsm.Data.Balance.CombatGeneratedSpriteSize;
+            }
+
+            return 64;
+        }
+
+        private static float ResolveGeneratedSpritePixelsPerUnit()
+        {
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Data?.Balance != null && gsm.Data.Balance.CombatGeneratedSpritePixelsPerUnit > 0f)
+            {
+                return gsm.Data.Balance.CombatGeneratedSpritePixelsPerUnit;
+            }
+
+            return 48f;
         }
 
         private static Vector3 AllyPosition(int index)

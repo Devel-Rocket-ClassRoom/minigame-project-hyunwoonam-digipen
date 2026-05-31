@@ -1,6 +1,5 @@
 using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace Tempt
@@ -176,7 +175,7 @@ namespace Tempt
 
                 bool owned = run.Player.OwnedSkillIds != null && run.Player.OwnedSkillIds.Contains(skill.Id);
                 int price = Guild.GetSkillBuyPrice(skill.Id, run, data);
-                SpawnEntry(buyListRoot, skill.NameKey + "  " + price + "G" + (owned ? "  Owned" : string.Empty), () => infoPanel.Show(skill.Id, SkillDetailContext.GuildBuy));
+                UIListEntryFactory.SpawnListEntry(skillEntryPrefab, buyListRoot, skill.NameKey + "  " + price + "G" + (owned ? "  Owned" : string.Empty), () => infoPanel.Show(skill.Id, SkillDetailContext.GuildBuy), "[GuildPage] skillEntryPrefab 하위 텍스트 참조가 없습니다.");
             }
         }
 
@@ -207,7 +206,7 @@ namespace Tempt
                 }
 
                 bool equipped = slot1 == skillId || slot2 == skillId;
-                SpawnEntry(ownedListRoot, skill.NameKey + (equipped ? "  Equipped" : string.Empty), () => infoPanel.Show(skillId, SkillDetailContext.GuildSlot));
+                UIListEntryFactory.SpawnListEntry(skillEntryPrefab, ownedListRoot, skill.NameKey + (equipped ? "  Equipped" : string.Empty), () => infoPanel.Show(skillId, SkillDetailContext.GuildSlot), "[GuildPage] skillEntryPrefab 하위 텍스트 참조가 없습니다.");
             }
         }
 
@@ -270,30 +269,6 @@ namespace Tempt
             }
 
             return data.Skills.TryGetValue(skillId, out SkillData skill) ? skill.NameKey : "Missing " + skillId;
-        }
-
-        private void SpawnEntry(Transform parent, string label, UnityAction action)
-        {
-            Button entry = Instantiate(skillEntryPrefab, parent);
-            entry.gameObject.SetActive(true);
-            entry.onClick.RemoveAllListeners();
-            entry.onClick.AddListener(action);
-            TMP_Text tmp = entry.GetComponentInChildren<TMP_Text>(true);
-            if (tmp != null)
-            {
-                tmp.text = label;
-                return;
-            }
-
-            Text text = entry.GetComponentInChildren<Text>(true);
-            if (text != null)
-            {
-                text.text = label;
-                return;
-            }
-
-            Debug.LogError("[GuildPage] skillEntryPrefab 하위 텍스트 참조가 없습니다.");
-            entry.interactable = false;
         }
 
         private static void ClearList(Transform parent)

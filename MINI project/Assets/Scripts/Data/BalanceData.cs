@@ -39,6 +39,33 @@ namespace Tempt
 
         /// <summary>행동 타이밍 기본 최소(초).</summary>
         public float MinActionTimeSec;
+
+        /// <summary>룬 초기화 시 환급 비율(0~1).</summary>
+        public float RuneResetRefundRate;
+
+        /// <summary>첫 AI 행동 시작 전 대기 시간(초).</summary>
+        public float FirstNonPlayerActionDelaySec;
+
+        /// <summary>기본 공격 추가 행동 시간(초).</summary>
+        public float AttackActionTimeSec;
+
+        /// <summary>스킬 데이터에 행동 시간이 없을 때 사용할 기본 시간(초).</summary>
+        public float SkillActionFallbackSec;
+
+        /// <summary>방어 행동 추가 시간(초).</summary>
+        public float DefendActionTimeSec;
+
+        /// <summary>런타임 대체 전투 유닛 스프라이트 크기(px).</summary>
+        public int CombatGeneratedSpriteSize;
+
+        /// <summary>런타임 대체 전투 유닛 스프라이트 PPU.</summary>
+        public float CombatGeneratedSpritePixelsPerUnit;
+
+        /// <summary>침식률 비례 몬스터 배수 곡선 사용 여부.</summary>
+        public bool UseErosionMonsterMultiplierCurve;
+
+        /// <summary>침식률 배수 곡선 지수. 1이면 선형.</summary>
+        public float ErosionMonsterMultiplierCurvePower;
     }
 
     /// <summary>침식 지수함수 파라미터.</summary>

@@ -40,15 +40,6 @@ namespace Tempt
             // - BindSummaryPanel(summary) — EXP/골드/획득 아이템 목록 UI에 바인딩.
             // - overflowIds.Count > 0 → OverflowPanel 활성화, RefreshOverflowPanel().
             //   아니면 → ContinueButton 즉시 활성화.
-            //TODO: currentSummary = summary;
-            //TODO: pendingOverflowIds = overflowIds != null ? new List<int>(overflowIds) : new List<int>();
-            //TODO: onCloseCallback = onClose;
-            //TODO: gameObject.SetActive(true);
-            //TODO: BindSummaryPanel(summary);
-            //TODO: bool hasOverflow = pendingOverflowIds.Count > 0;
-            //TODO: OverflowPanel.SetActive(hasOverflow);
-            //TODO: ContinueButton.interactable = !hasOverflow;
-            //TODO: if (hasOverflow) RefreshOverflowPanel();
         }
 
         /// <summary>
@@ -57,7 +48,6 @@ namespace Tempt
         public void Hide()
         {
             // 동작 요약: gameObject.SetActive(false).
-            //TODO: gameObject.SetActive(false);
         }
 
         /// <summary>
@@ -70,16 +60,6 @@ namespace Tempt
             // - GoldLabel.text = $"+{summary.TotalGold} G".
             // - summary.DroppedItemIds 순회 → 획득 아이템 셀 생성(아이콘 + 이름).
             //   (인벤토리에 이미 넣은 것과 overflow 구분 없이 전체 드랍 목록 표시)
-            //TODO: ExpLabel.text  = $"+{summary.TotalExp} EXP";
-            //TODO: GoldLabel.text = $"+{summary.TotalGold} G";
-            //TODO: // 아이템 목록 셀 생성(기존 셀 제거 후 재생성)
-            //TODO: foreach (Transform child in ItemListParent) Destroy(child.gameObject);
-            //TODO: foreach (int id in summary.DroppedItemIds)
-            //TODO: {
-            //TODO:     ItemData data = GameSystemManager.Instance.Data.Items[id];
-            //TODO:     var cell = Instantiate(ItemCellPrefab, ItemListParent);
-            //TODO:     cell.Bind(data); // 아이콘 + 이름 표시
-            //TODO: }
         }
 
         /// <summary>
@@ -94,21 +74,6 @@ namespace Tempt
             //     * ItemData data = GameSystemManager.Instance.Data.Items[itemId].
             //     * OverflowRowt 셀 Instantiate → BindRow(row, itemId, data) 호출.
             // - pendingOverflowIds.Count == 0 → OverflowPanel 비활성, ContinueButton 활성화.
-            //TODO: foreach (Transform child in OverflowListParent) Destroy(child.gameObject);
-            //TODO: foreach (int id in pendingOverflowIds)
-            //TODO: {
-            //TODO:     ItemData data = GameSystemManager.Instance.Data.Items[id];
-            //TODO:     var row = Instantiate(OverflowRowPrefab, OverflowListParent);
-            //TODO:     int capturedId = id; // 람다 캡처
-            //TODO:     row.BindRow(data,
-            //TODO:         onTake:    () => OnOverflowTakeClicked(capturedId),
-            //TODO:         onDiscard: () => OnOverflowDiscardClicked(capturedId));
-            //TODO: }
-            //TODO: if (pendingOverflowIds.Count == 0)
-            //TODO: {
-            //TODO:     OverflowPanel.SetActive(false);
-            //TODO:     ContinueButton.interactable = true;
-            //TODO: }
         }
 
         /// <summary>
@@ -127,16 +92,6 @@ namespace Tempt
             //     * inv.TryAddEquip(new Item(data)) 성공 → 제거.
             //     * 실패 → 토스트.
             // - RefreshOverflowPanel().
-            //TODO: var inv  = GameSystemManager.Instance.CurrentRun.Player.Inventory;
-            //TODO: var data = GameSystemManager.Instance.Data.Items[itemId];
-            //TODO: bool success;
-            //TODO: if (data.Stackable)
-            //TODO:     success = inv.TryAdd(itemId, 1);
-            //TODO: else
-            //TODO:     success = inv.TryAddEquip(new Item { Data = data, Enhancement = 0 });
-            //TODO: if (!success) { ToastUI.Show("인벤토리 공간 부족"); return; }
-            //TODO: pendingOverflowIds.Remove(itemId); // 첫 번째 일치 항목만 제거
-            //TODO: RefreshOverflowPanel();
         }
 
         /// <summary>
@@ -148,8 +103,6 @@ namespace Tempt
             // - pendingOverflowIds에서 itemId 하나 제거.
             //   (드랍된 아이템은 아직 인벤토리에 없으므로 단순 제거만 하면 됨)
             // - RefreshOverflowPanel().
-            //TODO: pendingOverflowIds.Remove(itemId);
-            //TODO: RefreshOverflowPanel();
         }
 
         /// <summary>
@@ -161,9 +114,6 @@ namespace Tempt
             // - pendingOverflowIds.Count > 0 → 미처리 항목 있으면 무시(버튼이 비활성 상태여야 하므로 방어 코드).
             // - Hide().
             // - onCloseCallback?.Invoke().
-            //TODO: if (pendingOverflowIds.Count > 0) return; // 방어 코드
-            //TODO: Hide();
-            //TODO: onCloseCallback?.Invoke();
         }
     }
 }

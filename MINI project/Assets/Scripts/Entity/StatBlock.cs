@@ -1,7 +1,7 @@
 namespace Tempt
 {
     /// <summary>
-    /// 6대 핵심 스탯 + 현재 자원. EntityBaset의 런타임 수치를 표현.
+    /// 5대 핵심 스탯 + 현재 자원. EntityBaset의 런타임 수치를 표현.
     /// 8스탯 시스템은 제거됨. EXP는 CharacterBase 전용으로 분리.
     /// </summary>
     public sealed class StatBlock
@@ -186,13 +186,9 @@ namespace Tempt
         /// <summary>
         /// 입력 데미지를 적용하고 실제 차감 피해 반환.
         /// </summary>
-        public int TakeDamage(int damage, bool isDefending)
+        public int TakeDamage(int damage)
         {
-            // 동작 요약:
-            // - DamageCalculatort가 이미 방어 적용 여부를 처리한 경우 isDefending=false로 호출.
-            // - isDefending=true이면 DEF만큼 추가 경감.
-            // - 결과 데미지를 CurrentHP에서 차감.
-            int actual = isDefending ? System.Math.Max(1, damage - DEF / 2) : System.Math.Max(0, damage);
+            int actual = System.Math.Max(0, damage);
             CurrentHP = System.Math.Max(0, CurrentHP - actual);
             return actual;
         }

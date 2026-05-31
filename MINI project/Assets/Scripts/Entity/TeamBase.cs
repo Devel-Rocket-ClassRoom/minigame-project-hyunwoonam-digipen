@@ -29,38 +29,25 @@ namespace Tempt
             // - Rune.UnlockStarter().
             // - 직업별 ActionRuleKey 설정.
             // - 기본 스탯 설정.
-            //TODO: CompanionDataId = companionDataId;
-            //TODO: CompanionData data = GameSystemManager.Instance.Data.Companions[companionDataId];
-            //TODO: ActionRuleKey = data.ActionRuleKey;
-            //TODO: Rune = RuneTreeGenerator.GenerateFixedTree(data, seed);
-            //TODO: Rune.UnlockStarter();
-            //TODO: // 기본 스탯(직업 베이스)
-            //TODO: Stats.BaseMaxHP = data.BaseMaxHP;
-            //TODO: Stats.BaseMaxMP = data.BaseMaxMP;
-            //TODO: Stats.BaseATK   = data.BaseATK;
-            //TODO: Stats.BaseDEF   = data.BaseDEF;
-            //TODO: Stats.BaseSPD   = data.BaseSPD;
-            //TODO: Stats.RestoreToFull();
-            //TODO: SyncPassivesFromRunes();
-            CompanionDataId = companionDataId; //Wave0write
-            Equipment = new EquipmentSlots(); //Wave0write
-            Stats = new StatBlock(); //Wave0write
-            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Data.Companions.TryGetValue(companionDataId, out CompanionData data)) //Wave0write
-            { //Wave0write
-                ActionRuleKey = data.ActionRuleKey; //Wave0write
-                EquipmentStatMod baseStats = data.BaseStats ?? new EquipmentStatMod { HP = 70, MP = 10, ATK = 8, DEF = 2, SPD = 9 }; //Wave0write
-                Stats.SetBaseStats(baseStats.HP, baseStats.MP, baseStats.ATK, baseStats.DEF, baseStats.SPD); //Wave0write
-                Rune = new CompanionRuneState { ClassId = data.ClassId, Tree = RuneTree.BuildFromData(data.ClassId, gsm.Data.Runes.Values), FixedSequence = new System.Collections.Generic.List<int>(), UnlockedCount = 0 }; //Wave0write
-            } //Wave0write
-            else //Wave0write
-            { //Wave0write
-                ActionRuleKey = "Dealer"; //Wave0write
-                Stats.SetBaseStats(70, 10, 8, 2, 9); //Wave0write
-                Rune = new CompanionRuneState { ClassId = RuneClass.Dealer, FixedSequence = new System.Collections.Generic.List<int>() }; //Wave0write
-            } //Wave0write
+            CompanionDataId = companionDataId;
+            Equipment = new EquipmentSlots();
+            Stats = new StatBlock();
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Data.Companions.TryGetValue(companionDataId, out CompanionData data))
+            {
+                ActionRuleKey = data.ActionRuleKey;
+                EquipmentStatMod baseStats = data.BaseStats ?? new EquipmentStatMod { HP = 70, MP = 10, ATK = 8, DEF = 2, SPD = 9 };
+                Stats.SetBaseStats(baseStats.HP, baseStats.MP, baseStats.ATK, baseStats.DEF, baseStats.SPD);
+                Rune = new CompanionRuneState { ClassId = data.ClassId, Tree = RuneTree.BuildFromData(data.ClassId, gsm.Data.Runes.Values), FixedSequence = new System.Collections.Generic.List<int>(), UnlockedCount = 0 };
+            }
+            else
+            {
+                ActionRuleKey = "Dealer";
+                Stats.SetBaseStats(70, 10, 8, 2, 9);
+                Rune = new CompanionRuneState { ClassId = RuneClass.Dealer, FixedSequence = new System.Collections.Generic.List<int>() };
+            }
 
-            Stats.RestoreToFull(); //Wave0write
-            Rune.UnlockStarter(); //Wave0write
+            Stats.RestoreToFull();
+            Rune.UnlockStarter();
         }
 
         // Wave0refactor 2026-05-27: CharacterBase.LevelUp 이 이미 SyncPassivesFromRunes 를
@@ -92,15 +79,13 @@ namespace Tempt
             // 동작 요약:
             // - Rune?.FixedSequence의 앞 UnlockedCount개(해금된 노드)만 잘라 반환.
             // - Rune이 null이면 빈 목록 반환.
-            //TODO: if (Rune == null) return new System.Collections.Generic.List<int>();
-            //TODO: return Rune.FixedSequence.GetRange(0, Rune.UnlockedCount);
-            if (Rune?.FixedSequence == null) //Wave0write
-            { //Wave0write
-                return new System.Collections.Generic.List<int>(); //Wave0write
-            } //Wave0write
+            if (Rune?.FixedSequence == null)
+            {
+                return new System.Collections.Generic.List<int>();
+            }
 
-            int count = System.Math.Min(Rune.UnlockedCount, Rune.FixedSequence.Count); //Wave0write
-            return Rune.FixedSequence.GetRange(0, count); //Wave0write
+            int count = System.Math.Min(Rune.UnlockedCount, Rune.FixedSequence.Count);
+            return Rune.FixedSequence.GetRange(0, count);
         }
     }
 
@@ -138,17 +123,42 @@ namespace Tempt
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm))
             {
                 SyncPassivesFromRunes(gsm.Data);
-                if (gsm.Data.Skills.TryGetValue(1, out SkillData attackSkill))
-                {
-                    SetActiveSkill(0, new Skill(attackSkill));
-                }
-                if (gsm.Data.Skills.TryGetValue(2, out SkillData skill))
-                {
-                    SetActiveSkill(1, new Skill(skill));
-                }
+                BindStartingSkills(gsm.Data);
             }
 
             DisplayName = "Companion " + state.CompanionDataId;
+        }
+
+        private void BindStartingSkills(DataManager data)
+        {
+            if (data?.Skills == null)
+            {
+                return;
+            }
+
+            int[] skillIds = data.GetStartingSkillIds(Rune != null ? Rune.ClassId : RuneClass.Dealer);
+            BindStartingSkillSlot(data, 0, ResolveStartingSkillId(skillIds, 0, GetFallbackCompanionSkillId(data, 0)));
+            BindStartingSkillSlot(data, 1, ResolveStartingSkillId(skillIds, 1, GetFallbackCompanionSkillId(data, 1)));
+        }
+
+        private void BindStartingSkillSlot(DataManager data, int slotIndex, int skillId)
+        {
+            if (skillId != 0 && data.Skills.TryGetValue(skillId, out SkillData skill))
+            {
+                SetActiveSkill(slotIndex, new Skill(skill));
+            }
+        }
+
+        private static int ResolveStartingSkillId(int[] skillIds, int index, int fallback)
+        {
+            return skillIds != null && index < skillIds.Length && skillIds[index] != 0 ? skillIds[index] : fallback;
+        }
+
+        private static int GetFallbackCompanionSkillId(DataManager data, int slotIndex)
+        {
+            RuneClass fallbackClass = slotIndex == 0 ? RuneClass.Dealer : RuneClass.MagicDealer;
+            int[] fallbackSkills = data.GetStartingSkillIds(fallbackClass);
+            return fallbackSkills != null && fallbackSkills.Length > 0 ? fallbackSkills[0] : 0;
         }
     }
 }

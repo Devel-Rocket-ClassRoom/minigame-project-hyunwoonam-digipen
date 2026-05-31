@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Tempt
 {
     /// <summary>
@@ -5,64 +7,77 @@ namespace Tempt
     /// </summary>
     public sealed class ConsumableSlots
     {
+        public const int SlotCount = 4;
+
         /// <summary>슬롯 4칸의 아이템 ID(0=비어있음).</summary>
-        public int[] SlotItemIds = new int[4];
+        public int[] SlotItemIds = new int[SlotCount];
+
+        private delegate void ConsumableEffectHandler(ItemData data, EntityBase user);
+
+        private static readonly Dictionary<string, ConsumableEffectHandler> EffectHandlers = new Dictionary<string, ConsumableEffectHandler>
+        {
+            ["Escape"] = ApplyEscape,
+            ["HealHP"] = ApplyHealHP,
+            ["HP_Potion"] = ApplyHealHP,
+            ["HealMP"] = ApplyHealMP,
+            ["MP_Potion"] = ApplyHealMP,
+        };
 
         /// <summary>
         /// 슬롯 설정. 전투 중에는 호출 금지(UI와 도메인 양쪽에서 차단).
         /// </summary>
         public bool TrySetSlot(int slotIndex, int itemId, InventoryState inv)
         {
-            if (slotIndex < 0 || slotIndex >= SlotItemIds.Length) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            if (slotIndex < 0 || slotIndex >= SlotItemIds.Length)
+            {
+                return false;
+            }
 
-            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm)) //Wave0write
-            { //Wave0write
-                UnityEngine.Debug.LogError("[ConsumableSlots.TrySetSlot] GameSystemManager 참조가 없습니다."); //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                UnityEngine.Debug.LogError("[ConsumableSlots.TrySetSlot] GameSystemManager 참조가 없습니다.");
+                return false;
+            }
 
-            if (gsm.CombatContext != null || (gsm.Scenes != null && gsm.Scenes.CurrentSceneId == SceneId.Combat)) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            if (gsm.CombatContext != null || (gsm.Scenes != null && gsm.Scenes.CurrentSceneId == SceneId.Combat))
+            {
+                return false;
+            }
 
-            if (itemId == 0) //Wave0write
-            { //Wave0write
-                SlotItemIds[slotIndex] = 0; //Wave0write
-                gsm.Events?.RaiseInventoryChanged(); //Wave0write
-                return true; //Wave0write
-            } //Wave0write
+            if (itemId == 0)
+            {
+                SlotItemIds[slotIndex] = 0;
+                gsm.Events?.RaiseInventoryChanged();
+                return true;
+            }
 
-            if (inv == null || inv.CountOf(itemId) <= 0) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            if (inv == null || inv.CountOf(itemId) <= 0)
+            {
+                return false;
+            }
 
-            if (gsm.Data?.Items == null || !gsm.Data.Items.TryGetValue(itemId, out ItemData data)) //Wave0write
-            { //Wave0write
-                UnityEngine.Debug.LogError("[ConsumableSlots.TrySetSlot] 아이템 ID 없음: " + itemId); //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            if (gsm.Data?.Items == null || !gsm.Data.Items.TryGetValue(itemId, out ItemData data))
+            {
+                UnityEngine.Debug.LogError("[ConsumableSlots.TrySetSlot] 아이템 ID 없음: " + itemId);
+                return false;
+            }
 
-            if (data.Category != ItemCategory.Consumable) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            if (data.Category != ItemCategory.Consumable)
+            {
+                return false;
+            }
 
-            for (int i = 0; i < SlotItemIds.Length; i++) //Wave0write
-            { //Wave0write
-                if (i != slotIndex && SlotItemIds[i] == itemId) //Wave0write
-                { //Wave0write
-                    SlotItemIds[i] = 0; //Wave0write
-                } //Wave0write
-            } //Wave0write
+            for (int i = 0; i < SlotItemIds.Length; i++)
+            {
+                if (i != slotIndex && SlotItemIds[i] == itemId)
+                {
+                    SlotItemIds[i] = 0;
+                }
+            }
 
-            SlotItemIds[slotIndex] = itemId; //Wave0write
-            gsm.Events?.RaiseInventoryChanged(); //Wave0write
-            return true; //Wave0write
+            SlotItemIds[slotIndex] = itemId;
+            gsm.Events?.RaiseInventoryChanged();
+            return true;
         }
 
         /// <summary>
@@ -70,34 +85,34 @@ namespace Tempt
         /// </summary>
         public bool TryUse(int slotIndex, EntityBase user, InventoryState inv)
         {
-            if (slotIndex < 0 || slotIndex >= SlotItemIds.Length || user == null || inv == null) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            if (slotIndex < 0 || slotIndex >= SlotItemIds.Length || user == null || inv == null)
+            {
+                return false;
+            }
 
-            int itemId = SlotItemIds[slotIndex]; //Wave0write
-            if (itemId == 0 || inv.CountOf(itemId) <= 0) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            int itemId = SlotItemIds[slotIndex];
+            if (itemId == 0 || inv.CountOf(itemId) <= 0)
+            {
+                return false;
+            }
 
-            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || !gsm.Data.Items.TryGetValue(itemId, out ItemData data)) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || !gsm.Data.Items.TryGetValue(itemId, out ItemData data))
+            {
+                return false;
+            }
 
-            if (!inv.Remove(itemId, 1)) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            if (!inv.Remove(itemId, 1))
+            {
+                return false;
+            }
 
-            ApplyConsumableEffect(data, user); //Wave0write
-            if (inv.CountOf(itemId) <= 0) //Wave0write
-            { //Wave0write
-                SlotItemIds[slotIndex] = 0; //Wave0write
-            } //Wave0write
+            ApplyConsumableEffect(data, user);
+            if (inv.CountOf(itemId) <= 0)
+            {
+                SlotItemIds[slotIndex] = 0;
+            }
 
-            return true; //Wave0write
+            return true;
         }
 
         /// <summary>
@@ -105,46 +120,71 @@ namespace Tempt
         /// </summary>
         public void PruneEmptySlots(InventoryState inv)
         {
-            if (inv == null) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (inv == null)
+            {
+                return;
+            }
 
-            for (int i = 0; i < SlotItemIds.Length; i++) //Wave0write
-            { //Wave0write
-                if (SlotItemIds[i] != 0 && inv.CountOf(SlotItemIds[i]) <= 0) //Wave0write
-                { //Wave0write
-                    SlotItemIds[i] = 0; //Wave0write
-                } //Wave0write
-            } //Wave0write
+            for (int i = 0; i < SlotItemIds.Length; i++)
+            {
+                if (SlotItemIds[i] != 0 && inv.CountOf(SlotItemIds[i]) <= 0)
+                {
+                    SlotItemIds[i] = 0;
+                }
+            }
         }
 
-        private static void ApplyConsumableEffect(ItemData data, EntityBase user) //Wave0write
-        { //Wave0write
-            if (data == null || user?.Stats == null) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+        private static void ApplyConsumableEffect(ItemData data, EntityBase user)
+        {
+            if (data == null || user?.Stats == null)
+            {
+                return;
+            }
 
-            if (data.IsRetreat || data.SubCategory == "Escape" || data.ConsumeEffectKey == "Escape") //Wave0write
-            { //Wave0write
-                if (GameSystemManager.TryGetInstance(out GameSystemManager gsm)) //Wave0write
-                { //Wave0write
-                    gsm.EndCombat(CombatResult.Retreat, null); //Wave0write
-                } //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            string effectKey = ResolveEffectKey(data);
+            if (EffectHandlers.TryGetValue(effectKey, out ConsumableEffectHandler handler))
+            {
+                handler(data, user);
+                return;
+            }
 
-            int amount = UnityEngine.Mathf.RoundToInt(data.ParamValue); //Wave0write
-            if (data.SubCategory == "MP_Potion" || data.ConsumeEffectKey == "HealMP") //Wave0write
-            { //Wave0write
-                user.Stats.CurrentMP = UnityEngine.Mathf.Min(user.Stats.MaxMP, user.Stats.CurrentMP + amount); //Wave0write
-            } //Wave0write
-            else //Wave0write
-            { //Wave0write
-                user.ApplyHeal(amount); //Wave0write
-            } //Wave0write
-        } //Wave0write
+            ApplyHealHP(data, user);
+        }
+
+        private static string ResolveEffectKey(ItemData data)
+        {
+            if (data.IsRetreat || data.SubCategory == "Escape" || data.ConsumeEffectKey == "Escape")
+            {
+                return "Escape";
+            }
+
+            if (!string.IsNullOrEmpty(data.ConsumeEffectKey))
+            {
+                return data.ConsumeEffectKey;
+            }
+
+            return data.SubCategory;
+        }
+
+        private static void ApplyEscape(ItemData data, EntityBase user)
+        {
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                gsm.EndCombat(CombatResult.Retreat, null);
+            }
+        }
+
+        private static void ApplyHealHP(ItemData data, EntityBase user)
+        {
+            int amount = UnityEngine.Mathf.RoundToInt(data.ParamValue);
+            user.ApplyHeal(amount);
+        }
+
+        private static void ApplyHealMP(ItemData data, EntityBase user)
+        {
+            int amount = UnityEngine.Mathf.RoundToInt(data.ParamValue);
+            user.Stats.CurrentMP = UnityEngine.Mathf.Min(user.Stats.MaxMP, user.Stats.CurrentMP + amount);
+        }
     }
 }
 

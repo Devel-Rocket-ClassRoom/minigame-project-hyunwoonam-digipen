@@ -70,11 +70,10 @@ namespace Tempt
         public void Recruit(CompanionInstance inst)
         {
             // 동작 요약: Bench에 추가.
-            //TODO: Bench.Add(inst);
-            if (inst != null) //Wave0write
-            { //Wave0write
-                Bench.Add(inst); //Wave0write
-            } //Wave0write
+            if (inst != null)
+            {
+                Bench.Add(inst);
+            }
         }
 
         /// <summary>대기 → 파티 합류.</summary>
@@ -83,46 +82,35 @@ namespace Tempt
             // 동작 요약:
             // - Active.Count < 3 검사.
             // - Bench에서 제거 → Active로 이동.
-            //TODO: if (Active.Count >= 3) return false;
-            //TODO: var inst = Bench.Find(c => c.CompanionDataId == companionId);
-            //TODO: if (inst == null) return false;
-            //TODO: Bench.Remove(inst);
-            //TODO: Active.Add(inst);
-            //TODO: return true;
-            if (Active.Count >= 3) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            if (Active.Count >= 3)
+            {
+                return false;
+            }
 
-            CompanionInstance inst = Bench.Find(c => c.CompanionDataId == companionId); //Wave0write
-            if (inst == null) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            CompanionInstance inst = Bench.Find(c => c.CompanionDataId == companionId);
+            if (inst == null)
+            {
+                return false;
+            }
 
-            Bench.Remove(inst); //Wave0write
-            Active.Add(inst); //Wave0write
-            return true; //Wave0write
+            Bench.Remove(inst);
+            Active.Add(inst);
+            return true;
         }
 
         /// <summary>파티 → 대기 강등.</summary>
         public bool Demote(int companionId)
         {
             // 동작 요약: Active → Bench 이동.
-            //TODO: var inst = Active.Find(c => c.CompanionDataId == companionId);
-            //TODO: if (inst == null) return false;
-            //TODO: Active.Remove(inst);
-            //TODO: Bench.Add(inst);
-            //TODO: return true;
-            CompanionInstance inst = Active.Find(c => c.CompanionDataId == companionId); //Wave0write
-            if (inst == null) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            CompanionInstance inst = Active.Find(c => c.CompanionDataId == companionId);
+            if (inst == null)
+            {
+                return false;
+            }
 
-            Active.Remove(inst); //Wave0write
-            Bench.Add(inst); //Wave0write
-            return true; //Wave0write
+            Active.Remove(inst);
+            Bench.Add(inst);
+            return true;
         }
     }
 
@@ -160,37 +148,64 @@ namespace Tempt
     [System.Serializable]
     public sealed class SafeZoneUnlockState
     {
-        /// <summary>인덱스 0~5의 해금 여부.</summary>
+        /// <summary>안전지대 인덱스별 해금 여부.</summary>
         public bool[] Unlocked = new bool[6];
+
+        public SafeZoneUnlockState()
+        {
+        }
+
+        public SafeZoneUnlockState(int safeZoneCount)
+        {
+            EnsureCapacity(safeZoneCount);
+        }
+
+        public void EnsureCapacity(int safeZoneCount)
+        {
+            int targetLength = System.Math.Max(1, safeZoneCount);
+            if (Unlocked != null && Unlocked.Length == targetLength)
+            {
+                return;
+            }
+
+            bool[] next = new bool[targetLength];
+            if (Unlocked != null)
+            {
+                int copyLength = System.Math.Min(Unlocked.Length, next.Length);
+                for (int i = 0; i < copyLength; i++)
+                {
+                    next[i] = Unlocked[i];
+                }
+            }
+
+            Unlocked = next;
+        }
 
         /// <summary>해금 처리.</summary>
         public void Unlock(int index)
         {
             // 동작 요약: 인덱스 범위 검사 후 Unlocked[index] = true.
-            //TODO: if (index >= 0 && index < Unlocked.Length) Unlocked[index] = true;
-            if (index >= 0 && index < Unlocked.Length) //Wave0write
-            { //Wave0write
-                Unlocked[index] = true; //Wave0write
-            } //Wave0write
+            if (index >= 0 && index < Unlocked.Length)
+            {
+                Unlocked[index] = true;
+            }
         }
 
         /// <summary>잠금 처리(침식).</summary>
         public void Lock(int index)
         {
             // 동작 요약: Unlocked[index] = false.
-            //TODO: if (index >= 0 && index < Unlocked.Length) Unlocked[index] = false;
-            if (index >= 0 && index < Unlocked.Length) //Wave0write
-            { //Wave0write
-                Unlocked[index] = false; //Wave0write
-            } //Wave0write
+            if (index >= 0 && index < Unlocked.Length)
+            {
+                Unlocked[index] = false;
+            }
         }
 
         /// <summary>해금 여부 조회.</summary>
         public bool IsUnlocked(int index)
         {
             // 동작 요약: 범위 검사 후 Unlocked[index] 반환.
-            //TODO: return index >= 0 && index < Unlocked.Length && Unlocked[index];
-            return index >= 0 && index < Unlocked.Length && Unlocked[index]; //Wave0write
+            return index >= 0 && index < Unlocked.Length && Unlocked[index];
         }
     }
 
@@ -207,19 +222,17 @@ namespace Tempt
         public void MarkCompleted(string sequenceKey)
         {
             // 동작 요약: 중복 없이 추가.
-            //TODO: if (!CompletedSteps.Contains(sequenceKey)) CompletedSteps.Add(sequenceKey);
-            if (!string.IsNullOrEmpty(sequenceKey) && !CompletedSteps.Contains(sequenceKey)) //Wave0write
-            { //Wave0write
-                CompletedSteps.Add(sequenceKey); //Wave0write
-            } //Wave0write
+            if (!string.IsNullOrEmpty(sequenceKey) && !CompletedSteps.Contains(sequenceKey))
+            {
+                CompletedSteps.Add(sequenceKey);
+            }
         }
 
         /// <summary>완료 여부 조회.</summary>
         public bool IsCompleted(string sequenceKey)
         {
             // 동작 요약: Contains 반환.
-            //TODO: return CompletedSteps.Contains(sequenceKey);
-            return !string.IsNullOrEmpty(sequenceKey) && CompletedSteps.Contains(sequenceKey); //Wave0write
+            return !string.IsNullOrEmpty(sequenceKey) && CompletedSteps.Contains(sequenceKey);
         }
     }
 

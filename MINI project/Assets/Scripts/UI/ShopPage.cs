@@ -83,7 +83,7 @@ namespace Tempt
             foreach (ItemData itemData in buyItems)
             {
                 int price = Shop.GetBuyPrice(itemData.Id, run, data);
-                SpawnEntry(buyListRoot, itemData.NameKey + "  " + price + "G", () => infoPanel.Show(itemData.Id, ItemDetailContext.Shop));
+                UIListEntryFactory.SpawnListEntry(itemEntryPrefab, buyListRoot, itemData.NameKey + "  " + price + "G", () => infoPanel.Show(itemData.Id, ItemDetailContext.Shop), "[ShopPage] itemEntryPrefab 하위 텍스트 참조가 없습니다.");
             }
 
             InventoryState inv = run.Player.Inventory;
@@ -94,7 +94,7 @@ namespace Tempt
                 if (data.Items.TryGetValue(entry.Key, out ItemData itemData))
                 {
                     int price = Shop.GetSellPrice(entry.Key, run, data, data.Balance);
-                    SpawnEntry(sellListRoot, itemData.NameKey + " x" + entry.Value + "  " + price + "G", () => infoPanel.Show(entry.Key, ItemDetailContext.Shop));
+                    UIListEntryFactory.SpawnListEntry(itemEntryPrefab, sellListRoot, itemData.NameKey + " x" + entry.Value + "  " + price + "G", () => infoPanel.Show(entry.Key, ItemDetailContext.Shop), "[ShopPage] itemEntryPrefab 하위 텍스트 참조가 없습니다.");
                 }
             }
 
@@ -103,7 +103,7 @@ namespace Tempt
                 if (item?.Data != null)
                 {
                     int price = Shop.GetSellPrice(item.Data.Id, run, data, data.Balance);
-                    SpawnEntry(sellListRoot, item.Data.NameKey + " +" + item.Enhancement + "  " + price + "G", () => infoPanel.ShowEquip(item, ItemDetailContext.Shop));
+                    UIListEntryFactory.SpawnListEntry(itemEntryPrefab, sellListRoot, item.Data.NameKey + " +" + item.Enhancement + "  " + price + "G", () => infoPanel.ShowEquip(item, ItemDetailContext.Shop), "[ShopPage] itemEntryPrefab 하위 텍스트 참조가 없습니다.");
                 }
             }
         }
@@ -142,23 +142,6 @@ namespace Tempt
         private void OnGoldChanged(int value)
         {
             goldLabel.text = "Gold " + value;
-        }
-
-        private void SpawnEntry(Transform parent, string label, UnityEngine.Events.UnityAction action)
-        {
-            Button entry = Instantiate(itemEntryPrefab, parent);
-            entry.gameObject.SetActive(true);
-            entry.onClick.RemoveAllListeners();
-            entry.onClick.AddListener(action);
-            Text text = entry.GetComponentInChildren<Text>(true);
-            if (text == null)
-            {
-                Debug.LogError("[ShopPage] itemEntryPrefab 하위 Text 참조가 없습니다.");
-                entry.interactable = false;
-                return;
-            }
-
-            text.text = label;
         }
 
         private static void ClearList(Transform parent)

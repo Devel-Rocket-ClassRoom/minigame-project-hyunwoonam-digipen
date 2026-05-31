@@ -18,15 +18,15 @@ namespace Tempt
         public bool IsReady => CooldownRemaining <= 0;
 
         /// <summary>빈 스킬 객체 생성.</summary>
-        public Skill() //Wave0write
-        { //Wave0write
-        } //Wave0write
+        public Skill()
+        {
+        }
 
         /// <summary>정적 데이터 참조를 가진 스킬 객체 생성.</summary>
-        public Skill(SkillData data) //Wave0write
-        { //Wave0write
-            Data = data; //Wave0write
-        } //Wave0write
+        public Skill(SkillData data)
+        {
+            Data = data;
+        }
 
         /// <summary>
         /// 사용 가능 조건 검사(MP, 쿨다운).
@@ -34,8 +34,7 @@ namespace Tempt
         public bool CanUse(EntityBase user)
         {
             // 동작 요약: IsReady && user.Stats.CurrentMP >= Data.MpCost.
-            //TODO: return IsReady && user.Stats.CurrentMP >= Data.MpCost;
-            return Data != null && user?.Stats != null && IsReady && user.Stats.CurrentMP >= Data.MpCost; //Wave0write
+            return Data != null && user?.Stats != null && IsReady && user.Stats.CurrentMP >= Data.MpCost;
         }
 
         /// <summary>
@@ -44,15 +43,13 @@ namespace Tempt
         public void ConsumeForUse(EntityBase user)
         {
             // 동작 요약: user.Stats.TrySpendMP(Data.MpCost); CooldownRemaining = Data.CooldownRounds.
-            //TODO: user.Stats.TrySpendMP(Data.MpCost);
-            //TODO: CooldownRemaining = Data.CooldownRounds;
-            if (Data == null || user?.Stats == null) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (Data == null || user?.Stats == null)
+            {
+                return;
+            }
 
-            user.Stats.TrySpendMP(Data.MpCost); //Wave0write
-            CooldownRemaining = Data.CooldownRounds; //Wave0write
+            user.Stats.TrySpendMP(Data.MpCost);
+            CooldownRemaining = Data.CooldownRounds;
         }
 
         /// <summary>
@@ -61,8 +58,7 @@ namespace Tempt
         public void TickCooldown()
         {
             // 동작 요약: CooldownRemaining = max(0, CooldownRemaining - 1).
-            //TODO: CooldownRemaining = UnityEngine.Mathf.Max(0, CooldownRemaining - 1);
-            CooldownRemaining = UnityEngine.Mathf.Max(0, CooldownRemaining - 1); //Wave0write
+            CooldownRemaining = UnityEngine.Mathf.Max(0, CooldownRemaining - 1);
         }
     }
 

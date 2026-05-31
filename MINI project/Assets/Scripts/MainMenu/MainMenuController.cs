@@ -47,47 +47,47 @@ namespace Tempt
         /// <summary>New Game 클릭.</summary>
         public void OnClickNewGame()
         {
-            GameSystemManager gsm = GameSystemManager.Instance; //Wave0write
+            GameSystemManager gsm = GameSystemManager.Instance;
             if (gsm == null)
             {
                 Debug.LogError("[MainMenuController] GameSystemManager 인스턴스를 찾을 수 없습니다.");
                 return;
             }
 
-            if (gsm.Save != null && gsm.Save.HasContinue()) //Wave0write
-            { //Wave0write
-                gsm.Save.ClearContinue(); //Wave0write
-            } //Wave0write
+            if (gsm.Save != null && gsm.Save.HasContinue())
+            {
+                gsm.Save.ClearContinue();
+            }
 
-            gsm.StartNewGame(); //Wave0write
+            gsm.StartNewGame();
         }
 
         /// <summary>Continue 클릭.</summary>
         public void OnClickContinue()
         {
-            GameSystemManager gsm = GameSystemManager.Instance; //Wave0write
+            GameSystemManager gsm = GameSystemManager.Instance;
             if (gsm == null)
             {
                 Debug.LogError("[MainMenuController] GameSystemManager 인스턴스를 찾을 수 없습니다.");
                 return;
             }
 
-            gsm.ContinueGame(); //Wave0write
+            gsm.ContinueGame();
         }
 
         /// <summary>Option 클릭.</summary>
         public void OnClickOption()
         {
-            OptionHost?.Open(); //Wave0write
+            OptionHost?.Open();
         }
 
         /// <summary>Exit 클릭.</summary>
         public void OnClickExit()
         {
-            GameSystemManager gsm = GameSystemManager.Instance; //Wave0write
+            GameSystemManager gsm = GameSystemManager.Instance;
             if (gsm != null)
             {
-                gsm.QuitGame(); //Wave0write
+                gsm.QuitGame();
             }
         }
 

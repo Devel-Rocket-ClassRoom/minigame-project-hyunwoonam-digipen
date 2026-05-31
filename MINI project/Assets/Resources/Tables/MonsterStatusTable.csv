@@ -1,0 +1,13 @@
+Id,NameKey,DescKey,StageIndex,IsBoss,Difficulty,MaxHP,MaxMP,ATK,DEF,SPD,RewardExp,RewardGold,DropTableId,SkillIds,ActionWeight_Attack,ActionWeight_Skill,ActionWeight_Defend,PrefabKey,ErosionShaderKey
+1001,monster.slime,,1,false,1,24,4,7,1,8,5,5,1,900,80,10,10,MonsterDefault,
+1002,monster.imp,,2,false,2,34,6,9,2,10,7,7,1,900,80,10,10,MonsterDefault,
+1003,monster.guard,,3,false,3,46,8,12,4,9,10,10,2,900,80,10,10,MonsterDefault,
+1004,monster.knight,,4,false,4,58,10,15,5,11,14,14,2,900,80,10,10,MonsterDefault,
+1005,monster.wraith,,5,false,5,72,12,18,6,13,18,18,2,900,80,10,10,MonsterDefault,
+1006,monster.elite,,6,false,6,88,14,22,8,14,24,24,3,900,80,10,10,MonsterDefault,
+1901,monster.boss.stage1,,1,true,3,90,12,14,4,9,30,30,3,900,80,10,10,MonsterDefault,
+1902,monster.boss.stage2,,2,true,5,130,16,20,6,11,45,45,3,900,80,10,10,MonsterDefault,
+1903,monster.boss.stage3,,3,true,7,180,20,27,8,13,65,65,3,900,80,10,10,MonsterDefault,
+1904,monster.boss.stage4,,4,true,9,240,25,34,10,14,90,90,3,900,80,10,10,MonsterDefault,
+1905,monster.boss.stage5,,5,true,11,310,30,42,12,16,125,125,3,900,80,10,10,MonsterDefault,
+1906,monster.boss.final,,6,true,13,420,40,55,16,18,180,180,3,900,80,10,10,MonsterDefault,

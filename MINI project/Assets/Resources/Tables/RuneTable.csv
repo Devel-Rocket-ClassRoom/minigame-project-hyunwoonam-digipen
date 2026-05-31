@@ -1,0 +1,5 @@
+Id,NameKey,DescKey,RuneType,ClassId,RequiredRuneId,PointCost,EffectType,EffectValue
+1,rune.dealer.start,,MainNode,Dealer,0,0,AddATK,2
+2,rune.tanker.start,,MainNode,Tanker,0,0,AddDEF,2
+3,rune.magic.start,,MainNode,MagicDealer,0,0,AddMaxMP,8
+4,rune.support.start,,MainNode,Supporter,0,0,AddMaxHP,12

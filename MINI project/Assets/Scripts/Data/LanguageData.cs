@@ -18,17 +18,64 @@ namespace Tempt
         /// </summary>
         public string Get(string key, string lang)
         {
-            // 동작 요약:
-            // - Table[key][lang] 조회.
-            // - 없으면 첫 번째 언어 fallback.
-            // - 그것도 없으면 key 자체 반환(누락 경고용).
-            //TODO: if (Table.TryGetValue(key, out var langMap))
-            //TODO: {
-            //TODO:     if (langMap.TryGetValue(lang, out var text)) return text;
-            //TODO:     if (Languages.Count > 0 && langMap.TryGetValue(Languages[0], out text)) return text;
-            //TODO: }
-            //TODO: return key; // 누락 키 그대로 반환(디버그용)
-            return string.Empty;
+            if (Table != null && Table.TryGetValue(key, out Dictionary<string, string> row))
+            {
+                if (!string.IsNullOrEmpty(lang) && row.TryGetValue(lang, out string localized))
+                {
+                    return localized;
+                }
+
+                if (Languages != null && Languages.Count > 0 && row.TryGetValue(Languages[0], out string fallback))
+                {
+                    return fallback;
+                }
+            }
+
+            return key;
+        }
+
+        public static LanguageData FromRows(IList<IDictionary<string, string>> rows)
+        {
+            var data = new LanguageData
+            {
+                Languages = new List<string>(),
+                Table = new Dictionary<string, Dictionary<string, string>>(),
+            };
+
+            if (rows == null)
+            {
+                return data;
+            }
+
+            for (int i = 0; i < rows.Count; i++)
+            {
+                IDictionary<string, string> row = rows[i];
+                string key = CsvParser.GetString(row, "Key");
+                if (string.IsNullOrEmpty(key))
+                {
+                    continue;
+                }
+
+                var values = new Dictionary<string, string>();
+                foreach (KeyValuePair<string, string> pair in row)
+                {
+                    if (pair.Key == "Key")
+                    {
+                        continue;
+                    }
+
+                    if (!data.Languages.Contains(pair.Key))
+                    {
+                        data.Languages.Add(pair.Key);
+                    }
+
+                    values[pair.Key] = pair.Value;
+                }
+
+                data.Table[key] = values;
+            }
+
+            return data;
         }
     }
 }

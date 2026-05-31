@@ -5,6 +5,14 @@ namespace Tempt
     /// </summary>
     public sealed class EquipmentSlots
     {
+        private static readonly SlotBinding[] SlotBindings =
+        {
+            new SlotBinding(EquipmentSlotId.Weapon, slots => slots.Weapon, (slots, item) => slots.Weapon = item),
+            new SlotBinding(EquipmentSlotId.ArmorBody, slots => slots.ArmorBody, (slots, item) => slots.ArmorBody = item),
+            new SlotBinding(EquipmentSlotId.ArmorArms, slots => slots.ArmorArms, (slots, item) => slots.ArmorArms = item),
+            new SlotBinding(EquipmentSlotId.ArmorLegs, slots => slots.ArmorLegs, (slots, item) => slots.ArmorLegs = item),
+        };
+
         /// <summary>무기.</summary>
         public Item Weapon;
 
@@ -22,15 +30,15 @@ namespace Tempt
         /// </summary>
         public Item Equip(EquipmentSlotId slot, Item item)
         {
-            if (slot == EquipmentSlotId.None || item == null || item.Data == null || item.Data.EquipSlot != slot) //Wave0write
-            { //Wave0write
-                return null; //Wave0write
-            } //Wave0write
+            if (slot == EquipmentSlotId.None || item == null || item.Data == null || item.Data.EquipSlot != slot)
+            {
+                return null;
+            }
 
-            Item old = GetSlot(slot); //Wave0write
-            SetSlot(slot, item); //Wave0write
-            RaiseEquipmentChanged(); //Wave0write
-            return old; //Wave0write
+            Item old = GetSlot(slot);
+            SetSlot(slot, item);
+            RaiseEquipmentChanged();
+            return old;
         }
 
         /// <summary>
@@ -38,15 +46,15 @@ namespace Tempt
         /// </summary>
         public Item Unequip(EquipmentSlotId slot)
         {
-            Item old = GetSlot(slot); //Wave0write
-            if (old == null) //Wave0write
-            { //Wave0write
-                return null; //Wave0write
-            } //Wave0write
+            Item old = GetSlot(slot);
+            if (old == null)
+            {
+                return null;
+            }
 
-            SetSlot(slot, null); //Wave0write
-            RaiseEquipmentChanged(); //Wave0write
-            return old; //Wave0write
+            SetSlot(slot, null);
+            RaiseEquipmentChanged();
+            return old;
         }
 
         /// <summary>
@@ -54,59 +62,85 @@ namespace Tempt
         /// </summary>
         public EquipmentStatMod AggregateStatMod()
         {
-            var result = new EquipmentStatMod(); //Wave0write
-            AddMod(result, Weapon); //Wave0write
-            AddMod(result, ArmorBody); //Wave0write
-            AddMod(result, ArmorArms); //Wave0write
-            AddMod(result, ArmorLegs); //Wave0write
-            return result; //Wave0write
+            var result = new EquipmentStatMod();
+            for (int i = 0; i < SlotBindings.Length; i++)
+            {
+                AddMod(result, SlotBindings[i].Get(this));
+            }
+            return result;
         }
 
-        private Item GetSlot(EquipmentSlotId slot) //Wave0write
-        { //Wave0write
-            switch (slot) //Wave0write
-            { //Wave0write
-                case EquipmentSlotId.Weapon: return Weapon; //Wave0write
-                case EquipmentSlotId.ArmorBody: return ArmorBody; //Wave0write
-                case EquipmentSlotId.ArmorArms: return ArmorArms; //Wave0write
-                case EquipmentSlotId.ArmorLegs: return ArmorLegs; //Wave0write
-                default: return null; //Wave0write
-            } //Wave0write
-        } //Wave0write
+        private Item GetSlot(EquipmentSlotId slot)
+        {
+            SlotBinding binding = FindBinding(slot);
+            return binding != null ? binding.Get(this) : null;
+        }
 
-        private void SetSlot(EquipmentSlotId slot, Item item) //Wave0write
-        { //Wave0write
-            switch (slot) //Wave0write
-            { //Wave0write
-                case EquipmentSlotId.Weapon: Weapon = item; break; //Wave0write
-                case EquipmentSlotId.ArmorBody: ArmorBody = item; break; //Wave0write
-                case EquipmentSlotId.ArmorArms: ArmorArms = item; break; //Wave0write
-                case EquipmentSlotId.ArmorLegs: ArmorLegs = item; break; //Wave0write
-            } //Wave0write
-        } //Wave0write
+        private void SetSlot(EquipmentSlotId slot, Item item)
+        {
+            SlotBinding binding = FindBinding(slot);
+            binding?.Set(this, item);
+        }
 
-        private static void AddMod(EquipmentStatMod target, Item item) //Wave0write
-        { //Wave0write
-            if (target == null || item == null) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+        private static SlotBinding FindBinding(EquipmentSlotId slot)
+        {
+            for (int i = 0; i < SlotBindings.Length; i++)
+            {
+                if (SlotBindings[i].Slot == slot)
+                {
+                    return SlotBindings[i];
+                }
+            }
 
-            EquipmentStatMod mod = item.GetFinalMod(); //Wave0write
-            target.HP += mod.HP; //Wave0write
-            target.MP += mod.MP; //Wave0write
-            target.ATK += mod.ATK; //Wave0write
-            target.DEF += mod.DEF; //Wave0write
-            target.SPD += mod.SPD; //Wave0write
-        } //Wave0write
+            return null;
+        }
 
-        private static void RaiseEquipmentChanged() //Wave0write
-        { //Wave0write
-            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm)) //Wave0write
-            { //Wave0write
-                gsm.Events?.RaiseEquipmentChanged(); //Wave0write
-            } //Wave0write
-        } //Wave0write
+        private static void AddMod(EquipmentStatMod target, Item item)
+        {
+            if (target == null || item == null)
+            {
+                return;
+            }
+
+            EquipmentStatMod mod = item.GetFinalMod();
+            target.HP += mod.HP;
+            target.MP += mod.MP;
+            target.ATK += mod.ATK;
+            target.DEF += mod.DEF;
+            target.SPD += mod.SPD;
+        }
+
+        private static void RaiseEquipmentChanged()
+        {
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                gsm.Events?.RaiseEquipmentChanged();
+            }
+        }
+
+        private sealed class SlotBinding
+        {
+            public readonly EquipmentSlotId Slot;
+            private readonly System.Func<EquipmentSlots, Item> getter;
+            private readonly System.Action<EquipmentSlots, Item> setter;
+
+            public SlotBinding(EquipmentSlotId slot, System.Func<EquipmentSlots, Item> getter, System.Action<EquipmentSlots, Item> setter)
+            {
+                Slot = slot;
+                this.getter = getter;
+                this.setter = setter;
+            }
+
+            public Item Get(EquipmentSlots slots)
+            {
+                return getter(slots);
+            }
+
+            public void Set(EquipmentSlots slots, Item item)
+            {
+                setter(slots, item);
+            }
+        }
     }
 }
 

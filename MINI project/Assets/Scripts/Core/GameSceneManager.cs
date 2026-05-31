@@ -58,32 +58,32 @@ namespace Tempt
         /// <summary>메인 메뉴로 이동.</summary>
         public void LoadMainMenu()
         {
-            RequestScene(SceneId.MainMenu); //Wave0write
+            RequestScene(SceneId.MainMenu);
         }
 
         /// <summary>지정한 안전지대로 이동.</summary>
         /// <param name="safeZoneIndex">0~5.</param>
         public void LoadSafeZone(int safeZoneIndex)
         {
-            if (safeZoneIndex < 0 || safeZoneIndex > 5) //Wave0write
-            { //Wave0write
-                Debug.LogWarning("[GameSceneManager] SafeZone index out of range: " + safeZoneIndex); //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (safeZoneIndex < 0 || safeZoneIndex > 5)
+            {
+                Debug.LogWarning("[GameSceneManager] SafeZone index out of range: " + safeZoneIndex);
+                return;
+            }
 
-            RequestScene((SceneId)((int)SceneId.Safe0 + safeZoneIndex)); //Wave0write
+            RequestScene((SceneId)((int)SceneId.Safe0 + safeZoneIndex));
         }
 
         /// <summary>플로어 맵으로 이동.</summary>
         public void LoadFloorMap()
         {
-            RequestScene(SceneId.FloorMap); //Wave0write
+            RequestScene(SceneId.FloorMap);
         }
 
         /// <summary>전투 씬으로 이동.</summary>
         public void LoadCombat()
         {
-            RequestScene(SceneId.Combat); //Wave0write
+            RequestScene(SceneId.Combat);
         }
 
         /// <summary>
@@ -91,20 +91,25 @@ namespace Tempt
         /// </summary>
         private string SceneNameOf(SceneId id)
         {
-            switch (id) //Wave0write
-            { //Wave0write
-                case SceneId.Boot: return "Boot"; //Wave0write
-                case SceneId.MainMenu: return "MainMenu"; //Wave0write
-                case SceneId.Safe0: return "Safe0"; //Wave0write
-                case SceneId.Safe1: return "Safe1"; //Wave0write
-                case SceneId.Safe2: return "Safe2"; //Wave0write
-                case SceneId.Safe3: return "Safe3"; //Wave0write
-                case SceneId.Safe4: return "Safe4"; //Wave0write
-                case SceneId.Safe5: return "Safe5"; //Wave0write
-                case SceneId.FloorMap: return "FloorMap"; //Wave0write
-                case SceneId.Combat: return "Combat"; //Wave0write
-                default: throw new ArgumentOutOfRangeException(nameof(id), id, "Unknown scene id"); //Wave0write
-            } //Wave0write
+            switch (id)
+            {
+                case SceneId.Boot: return "Boot";
+                case SceneId.MainMenu: return "MainMenu";
+                case SceneId.Safe0: return "Safe0";
+                case SceneId.Safe1: return "Safe1";
+                case SceneId.Safe2: return "Safe2";
+                case SceneId.Safe3: return MineSceneOr("Safe3");
+                case SceneId.Safe4: return MineSceneOr("Safe4");
+                case SceneId.Safe5: return MineSceneOr("Safe5");
+                case SceneId.FloorMap: return "FloorMap";
+                case SceneId.Combat: return "Combat";
+                default: throw new ArgumentOutOfRangeException(nameof(id), id, "Unknown scene id");
+            }
+        }
+
+        private static string MineSceneOr(string fallback)
+        {
+            return Application.CanStreamedLevelBeLoaded("Mine") ? "Mine" : fallback;
         }
 
         // Guid5 §6 2026-05-29 — 씬 전환은 명시 FSM과 1슬롯 pending 요청으로만 처리한다.
