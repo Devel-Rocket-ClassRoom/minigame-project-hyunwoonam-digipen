@@ -5,7 +5,8 @@ namespace Tempt
     /// </summary>
     public sealed class Safe0Controller : SafeZoneControllerBase
     {
-        [UnityEngine.SerializeField] private SafeZone0SanctuaryMockupUI mockupUI;
+        [UnityEngine.SerializeField]
+        private SafeZone0SanctuaryMockupUI mockupUI;
 
         /// <summary>
         /// 최초 시작 룬 선택 UI 준비.
@@ -18,7 +19,9 @@ namespace Tempt
                 return;
             }
 
-            UnityEngine.Debug.LogError("[Safe0Controller] SafeZone0SanctuaryMockupUI 참조가 씬에 직접 할당되어 있지 않습니다.");
+            UnityEngine.Debug.LogError(
+                "[Safe0Controller] SafeZone0SanctuaryMockupUI 참조가 씬에 직접 할당되어 있지 않습니다."
+            );
         }
 
         /// <summary>
@@ -40,11 +43,37 @@ namespace Tempt
                     ClassId = runeClass,
                     RunePoints = 0,
                     UnlockedIds = new System.Collections.Generic.HashSet<int>(),
-                    Tree = RuneTree.BuildFromData(runeClass, GameSystemManager.Instance.Data.Runes.Values),
+                    Tree = RuneTree.BuildFromData(
+                        runeClass,
+                        GameSystemManager.Instance.Data.Runes.Values
+                    ),
                 };
                 run.Player.Rune.UnlockStarter();
             }
         }
+
+        public bool HasConfirmedStartingRune()
+        {
+            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                return false;
+            }
+
+            PlayerState player = gsm.CurrentRun?.Player;
+            return player != null
+                && player.StartingClass != RuneClass.None
+                && player.Rune != null
+                && player.Rune.ClassId != RuneClass.None;
+        }
+
+        public override void DepartToFloorMap()
+        {
+            if (!HasConfirmedStartingRune())
+            {
+                return;
+            }
+
+            base.DepartToFloorMap();
+        }
     }
 }
-

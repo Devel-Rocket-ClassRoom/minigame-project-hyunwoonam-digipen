@@ -12,6 +12,7 @@ namespace Tempt
             }
 
             RunProgression.AddExpToPlayer(run, data, events, summary.TotalExp);
+
             if (run != null)
             {
                 run.Gold += summary.TotalGold;
@@ -38,6 +39,7 @@ namespace Tempt
                 bool added = itemData.Stackable
                     ? run.Player.Inventory.TryAdd(itemId, 1)
                     : run.Player.Inventory.TryAddEquip(new Item { Data = itemData, Enhancement = 0 });
+
                 if (!added && overflowIds != null)
                 {
                     overflowIds.Add(itemId);

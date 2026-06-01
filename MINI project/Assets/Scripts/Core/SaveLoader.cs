@@ -32,6 +32,7 @@ namespace Tempt
             string recordPath = Path.Combine(Application.persistentDataPath, "records.json");
             Continue = File.Exists(savePath) ? JsonUtility.FromJson<SaveSnapshot>(File.ReadAllText(savePath)) : null;
             Records = File.Exists(recordPath) ? JsonUtility.FromJson<RecordBook>(File.ReadAllText(recordPath)) : new RecordBook();
+
             if (Records == null)
             {
                 Records = new RecordBook();
@@ -57,6 +58,7 @@ namespace Tempt
 
             SceneId sceneId = gsm.Scenes != null ? gsm.Scenes.CurrentSceneId : SceneId.MainMenu;
             global::Tempt.SaveSnapshot snapshot = global::Tempt.SaveSnapshot.FromGameRunStatet(gsm.CurrentRun, sceneId);
+
             if (snapshot == null)
             {
                 return;
@@ -86,6 +88,7 @@ namespace Tempt
             // - save.json 삭제 또는 빈 JSON 덮어쓰기.
             Continue = null;
             string path = Path.Combine(Application.persistentDataPath, "save.json");
+
             if (File.Exists(path))
             {
                 File.Delete(path);

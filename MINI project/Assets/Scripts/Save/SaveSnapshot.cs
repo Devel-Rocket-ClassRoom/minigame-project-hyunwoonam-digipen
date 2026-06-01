@@ -80,8 +80,21 @@ namespace Tempt
                 ShopStock = FromShopStock(run.ShopStock),
                 Gold = run.Gold,
                 ManaStone = run.ManaStone,
-                Tutorial = new TutorialSnapshot { CompletedSteps = run.Tutorial != null ? new List<string>(run.Tutorial.CompletedSteps) : new List<string>() },
-                Options = new OptionSnapshot { LanguageCode = "ko", MasterVolume = 1f, Fullscreen = true, ResolutionWidth = 1920, ResolutionHeight = 1080 },
+                Tutorial = new TutorialSnapshot
+                {
+                    CompletedSteps =
+                        run.Tutorial != null
+                            ? new List<string>(run.Tutorial.CompletedSteps)
+                            : new List<string>(),
+                },
+                Options = new OptionSnapshot
+                {
+                    LanguageCode = "ko",
+                    MasterVolume = 1f,
+                    Fullscreen = true,
+                    ResolutionWidth = 1920,
+                    ResolutionHeight = 1080,
+                },
             };
         }
 
@@ -101,7 +114,13 @@ namespace Tempt
                 ShopStock = ToShopStock(ShopStock),
                 Gold = Gold,
                 ManaStone = ManaStone,
-                Tutorial = new TutorialProgressState { CompletedSteps = Tutorial?.CompletedSteps != null ? new List<string>(Tutorial.CompletedSteps) : new List<string>() },
+                Tutorial = new TutorialProgressState
+                {
+                    CompletedSteps =
+                        Tutorial?.CompletedSteps != null
+                            ? new List<string>(Tutorial.CompletedSteps)
+                            : new List<string>(),
+                },
             };
 
             run.CurrentFloor = ResolveCurrentFloor(run.FloorMap);
@@ -111,7 +130,11 @@ namespace Tempt
 
         private static FloorMapSnapshot FromFloorMap(FloorMapModel map)
         {
-            var snapshot = new FloorMapSnapshot { NextSelectableFloor = map != null ? map.NextSelectableFloor : 0, Nodes = new List<FloorNodeSnapshot>() };
+            var snapshot = new FloorMapSnapshot
+            {
+                NextSelectableFloor = map != null ? map.NextSelectableFloor : 0,
+                Nodes = new List<FloorNodeSnapshot>(),
+            };
             if (map == null)
             {
                 return snapshot;
@@ -121,18 +144,23 @@ namespace Tempt
             {
                 foreach (FloorNode node in floorNodes)
                 {
-                    snapshot.Nodes.Add(new FloorNodeSnapshot
-                    {
-                        NodeId = node.NodeId,
-                        Floor = node.Floor,
-                        StageIndex = node.StageIndex,
-                        Difficulty = node.Difficulty,
-                        MonsterCount = node.MonsterCount,
-                        IsBoss = node.IsBoss,
-                        IsSafeZone = node.IsSafeZone,
-                        IsCleared = node.IsCleared,
-                        NextNodeIds = node.NextNodeIds != null ? new List<int>(node.NextNodeIds) : new List<int>(),
-                    });
+                    snapshot.Nodes.Add(
+                        new FloorNodeSnapshot
+                        {
+                            NodeId = node.NodeId,
+                            Floor = node.Floor,
+                            StageIndex = node.StageIndex,
+                            Difficulty = node.Difficulty,
+                            MonsterCount = node.MonsterCount,
+                            IsBoss = node.IsBoss,
+                            IsSafeZone = node.IsSafeZone,
+                            IsCleared = node.IsCleared,
+                            NextNodeIds =
+                                node.NextNodeIds != null
+                                    ? new List<int>(node.NextNodeIds)
+                                    : new List<int>(),
+                        }
+                    );
                 }
             }
 
@@ -160,7 +188,8 @@ namespace Tempt
                     IsBoss = src.IsBoss,
                     IsSafeZone = src.IsSafeZone,
                     IsCleared = src.IsCleared,
-                    NextNodeIds = src.NextNodeIds != null ? new List<int>(src.NextNodeIds) : new List<int>(),
+                    NextNodeIds =
+                        src.NextNodeIds != null ? new List<int>(src.NextNodeIds) : new List<int>(),
                 };
                 map.NodesById[node.NodeId] = node;
                 if (!map.NodesByFloor.TryGetValue(node.Floor, out List<FloorNode> floorNodes))
@@ -191,15 +220,28 @@ namespace Tempt
                 Rune = new PlayerRuneSnapshot
                 {
                     StartingClassRuneId = (int)player.StartingClass,
-                    UnlockedNodeIds = player.Rune?.UnlockedIds != null ? new List<int>(player.Rune.UnlockedIds) : new List<int>(),
+                    UnlockedNodeIds =
+                        player.Rune?.UnlockedIds != null
+                            ? new List<int>(player.Rune.UnlockedIds)
+                            : new List<int>(),
+                    NodeInvestments = FromRuneInvestments(player.Rune),
                     RunePoints = player.Rune != null ? player.Rune.RunePoints : 0,
                 },
                 Inventory = FromInventory(player.Inventory),
                 Equipment = FromEquipment(player.Equipment),
-                ConsumableSlots = player.Consumables != null ? new List<int>(player.Consumables.SlotItemIds) : CreateEmptyConsumableSlots(),
+                ConsumableSlots =
+                    player.Consumables != null
+                        ? new List<int>(player.Consumables.SlotItemIds)
+                        : CreateEmptyConsumableSlots(),
                 Locker = FromLocker(player.Locker),
-                OwnedSkillIds = player.OwnedSkillIds != null ? new List<int>(player.OwnedSkillIds) : new List<int>(),
-                ActiveSlotSkillIds = player.ActiveSlotSkillIds != null ? new List<int>(player.ActiveSlotSkillIds) : new List<int> { 0, 0 },
+                OwnedSkillIds =
+                    player.OwnedSkillIds != null
+                        ? new List<int>(player.OwnedSkillIds)
+                        : new List<int>(),
+                ActiveSlotSkillIds =
+                    player.ActiveSlotSkillIds != null
+                        ? new List<int>(player.ActiveSlotSkillIds)
+                        : new List<int> { 0, 0 },
             };
         }
 
@@ -216,12 +258,18 @@ namespace Tempt
                 Level = snapshot.Level <= 0 ? 1 : snapshot.Level,
                 Exp = snapshot.Exp,
                 Stats = ToStats(snapshot.Stats),
-                StartingClass = snapshot.Rune != null ? (RuneClass)snapshot.Rune.StartingClassRuneId : RuneClass.Dealer,
+                StartingClass =
+                    snapshot.Rune != null
+                        ? (RuneClass)snapshot.Rune.StartingClassRuneId
+                        : RuneClass.Dealer,
                 Inventory = ToInventory(snapshot.Inventory, data),
                 Equipment = ToEquipment(snapshot.Equipment, data),
                 Consumables = new ConsumableSlots(),
                 Locker = ToLocker(snapshot.Locker, data),
-                OwnedSkillIds = snapshot.OwnedSkillIds != null ? new HashSet<int>(snapshot.OwnedSkillIds) : new HashSet<int>(),
+                OwnedSkillIds =
+                    snapshot.OwnedSkillIds != null
+                        ? new HashSet<int>(snapshot.OwnedSkillIds)
+                        : new HashSet<int>(),
                 ActiveSlotSkillIds = ToActiveSlotSkillIds(snapshot.ActiveSlotSkillIds),
             };
 
@@ -229,13 +277,25 @@ namespace Tempt
             {
                 ClassId = player.StartingClass,
                 RunePoints = snapshot.Rune != null ? snapshot.Rune.RunePoints : 0,
-                UnlockedIds = snapshot.Rune?.UnlockedNodeIds != null ? new HashSet<int>(snapshot.Rune.UnlockedNodeIds) : new HashSet<int>(),
-                Tree = data != null ? RuneTree.BuildFromData(player.StartingClass, data.Runes.Values) : null,
+                UnlockedIds =
+                    snapshot.Rune?.UnlockedNodeIds != null
+                        ? new HashSet<int>(snapshot.Rune.UnlockedNodeIds)
+                        : new HashSet<int>(),
+                InvestedPointsByNode = ToRuneInvestments(snapshot.Rune),
+                Tree =
+                    data != null
+                        ? RuneTree.BuildFromData(player.StartingClass, data.Runes.Values)
+                        : null,
             };
+            player.Rune.SyncTreeStateFromProgress();
 
             if (snapshot.ConsumableSlots != null)
             {
-                for (int i = 0; i < player.Consumables.SlotItemIds.Length && i < snapshot.ConsumableSlots.Count; i++)
+                for (
+                    int i = 0;
+                    i < player.Consumables.SlotItemIds.Length && i < snapshot.ConsumableSlots.Count;
+                    i++
+                )
                 {
                     player.Consumables.SlotItemIds[i] = snapshot.ConsumableSlots[i];
                 }
@@ -260,6 +320,54 @@ namespace Tempt
             return result;
         }
 
+        private static List<RuneNodeInvestmentSnapshot> FromRuneInvestments(PlayerRuneState rune)
+        {
+            var result = new List<RuneNodeInvestmentSnapshot>();
+            if (rune?.InvestedPointsByNode == null)
+            {
+                return result;
+            }
+
+            foreach (KeyValuePair<int, int> pair in rune.InvestedPointsByNode)
+            {
+                if (pair.Value <= 0)
+                {
+                    continue;
+                }
+
+                result.Add(
+                    new RuneNodeInvestmentSnapshot
+                    {
+                        NodeId = pair.Key,
+                        InvestedPoints = pair.Value,
+                    }
+                );
+            }
+
+            return result;
+        }
+
+        private static Dictionary<int, int> ToRuneInvestments(PlayerRuneSnapshot snapshot)
+        {
+            var result = new Dictionary<int, int>();
+            if (snapshot?.NodeInvestments == null)
+            {
+                return result;
+            }
+
+            foreach (RuneNodeInvestmentSnapshot investment in snapshot.NodeInvestments)
+            {
+                if (investment == null || investment.NodeId == 0 || investment.InvestedPoints <= 0)
+                {
+                    continue;
+                }
+
+                result[investment.NodeId] = investment.InvestedPoints;
+            }
+
+            return result;
+        }
+
         private static List<int> CreateEmptyConsumableSlots()
         {
             var result = new List<int>();
@@ -273,7 +381,18 @@ namespace Tempt
 
         private static StatBlockSnapshot FromStats(StatBlock stats)
         {
-            return stats == null ? null : new StatBlockSnapshot { MaxHP = stats.MaxHP, CurrentHP = stats.CurrentHP, MaxMP = stats.MaxMP, CurrentMP = stats.CurrentMP, ATK = stats.ATK, DEF = stats.DEF, SPD = stats.SPD };
+            return stats == null
+                ? null
+                : new StatBlockSnapshot
+                {
+                    MaxHP = stats.MaxHP,
+                    CurrentHP = stats.CurrentHP,
+                    MaxMP = stats.MaxMP,
+                    CurrentMP = stats.CurrentMP,
+                    ATK = stats.ATK,
+                    DEF = stats.DEF,
+                    SPD = stats.SPD,
+                };
         }
 
         private static StatBlock ToStats(StatBlockSnapshot snapshot)
@@ -286,7 +405,13 @@ namespace Tempt
                 return stats;
             }
 
-            stats.SetBaseStats(snapshot.MaxHP, snapshot.MaxMP, snapshot.ATK, snapshot.DEF, snapshot.SPD);
+            stats.SetBaseStats(
+                snapshot.MaxHP,
+                snapshot.MaxMP,
+                snapshot.ATK,
+                snapshot.DEF,
+                snapshot.SPD
+            );
             stats.CurrentHP = snapshot.CurrentHP;
             stats.CurrentMP = snapshot.CurrentMP;
             stats.ClampToMax();
@@ -295,7 +420,11 @@ namespace Tempt
 
         private static InventorySnapshot FromInventory(InventoryState inv)
         {
-            var snapshot = new InventorySnapshot { StackableItems = new List<InventoryEntry>(), EquipItems = new List<EquipItemEntry>() };
+            var snapshot = new InventorySnapshot
+            {
+                StackableItems = new List<InventoryEntry>(),
+                EquipItems = new List<EquipItemEntry>(),
+            };
             if (inv == null)
             {
                 return snapshot;
@@ -303,14 +432,18 @@ namespace Tempt
 
             foreach (KeyValuePair<int, int> entry in inv.StackableItems)
             {
-                snapshot.StackableItems.Add(new InventoryEntry { ItemId = entry.Key, Count = entry.Value });
+                snapshot.StackableItems.Add(
+                    new InventoryEntry { ItemId = entry.Key, Count = entry.Value }
+                );
             }
 
             foreach (Item item in inv.EquipItems)
             {
                 if (item?.Data != null)
                 {
-                    snapshot.EquipItems.Add(new EquipItemEntry { ItemId = item.Data.Id, Enhancement = item.Enhancement });
+                    snapshot.EquipItems.Add(
+                        new EquipItemEntry { ItemId = item.Data.Id, Enhancement = item.Enhancement }
+                    );
                 }
             }
 
@@ -339,7 +472,9 @@ namespace Tempt
                 {
                     if (data.Items.TryGetValue(entry.ItemId, out ItemData itemData))
                     {
-                        inv.EquipItems.Add(new Item { Data = itemData, Enhancement = entry.Enhancement });
+                        inv.EquipItems.Add(
+                            new Item { Data = itemData, Enhancement = entry.Enhancement }
+                        );
                     }
                 }
             }
@@ -354,11 +489,14 @@ namespace Tempt
                 WeaponId = equipment?.Weapon?.Data != null ? equipment.Weapon.Data.Id : 0,
                 WeaponEnhancement = equipment?.Weapon != null ? equipment.Weapon.Enhancement : 0,
                 ArmorBodyId = equipment?.ArmorBody?.Data != null ? equipment.ArmorBody.Data.Id : 0,
-                ArmorBodyEnhancement = equipment?.ArmorBody != null ? equipment.ArmorBody.Enhancement : 0,
+                ArmorBodyEnhancement =
+                    equipment?.ArmorBody != null ? equipment.ArmorBody.Enhancement : 0,
                 ArmorArmsId = equipment?.ArmorArms?.Data != null ? equipment.ArmorArms.Data.Id : 0,
-                ArmorArmsEnhancement = equipment?.ArmorArms != null ? equipment.ArmorArms.Enhancement : 0,
+                ArmorArmsEnhancement =
+                    equipment?.ArmorArms != null ? equipment.ArmorArms.Enhancement : 0,
                 ArmorLegsId = equipment?.ArmorLegs?.Data != null ? equipment.ArmorLegs.Data.Id : 0,
-                ArmorLegsEnhancement = equipment?.ArmorLegs != null ? equipment.ArmorLegs.Enhancement : 0,
+                ArmorLegsEnhancement =
+                    equipment?.ArmorLegs != null ? equipment.ArmorLegs.Enhancement : 0,
             };
         }
 
@@ -371,15 +509,32 @@ namespace Tempt
             }
 
             equipment.Weapon = CreateItem(snapshot.WeaponId, snapshot.WeaponEnhancement, data);
-            equipment.ArmorBody = CreateItem(snapshot.ArmorBodyId, snapshot.ArmorBodyEnhancement, data);
-            equipment.ArmorArms = CreateItem(snapshot.ArmorArmsId, snapshot.ArmorArmsEnhancement, data);
-            equipment.ArmorLegs = CreateItem(snapshot.ArmorLegsId, snapshot.ArmorLegsEnhancement, data);
+            equipment.ArmorBody = CreateItem(
+                snapshot.ArmorBodyId,
+                snapshot.ArmorBodyEnhancement,
+                data
+            );
+            equipment.ArmorArms = CreateItem(
+                snapshot.ArmorArmsId,
+                snapshot.ArmorArmsEnhancement,
+                data
+            );
+            equipment.ArmorLegs = CreateItem(
+                snapshot.ArmorLegsId,
+                snapshot.ArmorLegsEnhancement,
+                data
+            );
             return equipment;
         }
 
         private static LockerSnapshot FromLocker(LockerState locker)
         {
-            var snapshot = new LockerSnapshot { Unlocked = locker != null && locker.Unlocked, StackableItems = new List<InventoryEntry>(), EquipItems = new List<EquipItemEntry>() };
+            var snapshot = new LockerSnapshot
+            {
+                Unlocked = locker != null && locker.Unlocked,
+                StackableItems = new List<InventoryEntry>(),
+                EquipItems = new List<EquipItemEntry>(),
+            };
             if (locker == null)
             {
                 return snapshot;
@@ -387,14 +542,18 @@ namespace Tempt
 
             foreach (KeyValuePair<int, int> entry in locker.StackableItems)
             {
-                snapshot.StackableItems.Add(new InventoryEntry { ItemId = entry.Key, Count = entry.Value });
+                snapshot.StackableItems.Add(
+                    new InventoryEntry { ItemId = entry.Key, Count = entry.Value }
+                );
             }
 
             foreach (Item item in locker.EquipItems)
             {
                 if (item?.Data != null)
                 {
-                    snapshot.EquipItems.Add(new EquipItemEntry { ItemId = item.Data.Id, Enhancement = item.Enhancement });
+                    snapshot.EquipItems.Add(
+                        new EquipItemEntry { ItemId = item.Data.Id, Enhancement = item.Enhancement }
+                    );
                 }
             }
 
@@ -435,7 +594,11 @@ namespace Tempt
 
         private static Item CreateItem(int itemId, int enhancement, DataManager data)
         {
-            if (itemId == 0 || data == null || !data.Items.TryGetValue(itemId, out ItemData itemData))
+            if (
+                itemId == 0
+                || data == null
+                || !data.Items.TryGetValue(itemId, out ItemData itemData)
+            )
             {
                 return null;
             }
@@ -445,14 +608,20 @@ namespace Tempt
 
         private static RosterSnapshot FromRoster(CompanionRosterState roster)
         {
-            var snapshot = new RosterSnapshot { Active = new List<CompanionSnapshot>(), Bench = new List<CompanionSnapshot>() };
+            var snapshot = new RosterSnapshot
+            {
+                Active = new List<CompanionSnapshot>(),
+                Bench = new List<CompanionSnapshot>(),
+            };
             if (roster == null)
             {
                 return snapshot;
             }
 
-            foreach (CompanionInstance inst in roster.Active) snapshot.Active.Add(FromCompanion(inst));
-            foreach (CompanionInstance inst in roster.Bench) snapshot.Bench.Add(FromCompanion(inst));
+            foreach (CompanionInstance inst in roster.Active)
+                snapshot.Active.Add(FromCompanion(inst));
+            foreach (CompanionInstance inst in roster.Bench)
+                snapshot.Bench.Add(FromCompanion(inst));
             return snapshot;
         }
 
@@ -464,8 +633,12 @@ namespace Tempt
                 return roster;
             }
 
-            if (snapshot.Active != null) foreach (CompanionSnapshot src in snapshot.Active) roster.Active.Add(ToCompanion(src));
-            if (snapshot.Bench != null) foreach (CompanionSnapshot src in snapshot.Bench) roster.Bench.Add(ToCompanion(src));
+            if (snapshot.Active != null)
+                foreach (CompanionSnapshot src in snapshot.Active)
+                    roster.Active.Add(ToCompanion(src));
+            if (snapshot.Bench != null)
+                foreach (CompanionSnapshot src in snapshot.Bench)
+                    roster.Bench.Add(ToCompanion(src));
             return roster;
         }
 
@@ -476,7 +649,10 @@ namespace Tempt
                 CompanionId = inst.CompanionDataId,
                 Level = inst.Level,
                 Exp = inst.Exp,
-                FixedRuneSequence = inst.Rune?.FixedSequence != null ? new List<int>(inst.Rune.FixedSequence) : new List<int>(),
+                FixedRuneSequence =
+                    inst.Rune?.FixedSequence != null
+                        ? new List<int>(inst.Rune.FixedSequence)
+                        : new List<int>(),
                 UnlockedCount = inst.Rune != null ? inst.Rune.UnlockedCount : 0,
                 Stats = FromStats(inst.Stats),
                 Equipment = FromEquipment(inst.Equipment),
@@ -491,7 +667,14 @@ namespace Tempt
                 Level = src.Level <= 0 ? 1 : src.Level,
                 Exp = src.Exp,
                 Stats = ToStats(src.Stats),
-                Rune = new CompanionRuneState { FixedSequence = src.FixedRuneSequence != null ? new List<int>(src.FixedRuneSequence) : new List<int>(), UnlockedCount = src.UnlockedCount },
+                Rune = new CompanionRuneState
+                {
+                    FixedSequence =
+                        src.FixedRuneSequence != null
+                            ? new List<int>(src.FixedRuneSequence)
+                            : new List<int>(),
+                    UnlockedCount = src.UnlockedCount,
+                },
                 Equipment = new EquipmentSlots(),
             };
         }
@@ -519,14 +702,27 @@ namespace Tempt
         private static ErosionStateModel ToErosion(ErosionSnapshot snapshot, WorldData world)
         {
             int currentStage = snapshot != null ? snapshot.CurrentEroddingStage : 1;
-            int stageCount = snapshot?.StageRates != null && snapshot.StageRates.Count > 0 ? snapshot.StageRates.Count : ErosionSystem.GetMaxStage(world);
-            var model = new ErosionStateModel { IsActivated = snapshot != null && snapshot.ErosionStarted, CurrentEroddingStage = System.Math.Max(1, System.Math.Min(stageCount, currentStage)) };
+            int stageCount =
+                snapshot?.StageRates != null && snapshot.StageRates.Count > 0
+                    ? snapshot.StageRates.Count
+                    : ErosionSystem.GetMaxStage(world);
+            var model = new ErosionStateModel
+            {
+                IsActivated = snapshot != null && snapshot.ErosionStarted,
+                CurrentEroddingStage = System.Math.Max(
+                    1,
+                    System.Math.Min(stageCount, currentStage)
+                ),
+            };
             model.EnsureStageCount(stageCount);
             bool allStagesFullyEroded = true;
             for (int i = 1; i <= stageCount; i++)
             {
                 int listIndex = i - 1;
-                model.StageRates[i] = snapshot?.StageRates != null && listIndex < snapshot.StageRates.Count ? snapshot.StageRates[listIndex] : 0f;
+                model.StageRates[i] =
+                    snapshot?.StageRates != null && listIndex < snapshot.StageRates.Count
+                        ? snapshot.StageRates[listIndex]
+                        : 0f;
                 if (model.StageRates[i] < 100f)
                 {
                     allStagesFullyEroded = false;
@@ -555,7 +751,9 @@ namespace Tempt
 
         private static SafeZoneUnlockState ToSafeUnlocks(List<bool> values)
         {
-            var state = new SafeZoneUnlockState(values != null && values.Count > 0 ? values.Count : 6);
+            var state = new SafeZoneUnlockState(
+                values != null && values.Count > 0 ? values.Count : 6
+            );
             for (int i = 0; i < state.Unlocked.Length; i++)
             {
                 state.Unlocked[i] = values != null && i < values.Count && values[i];
@@ -579,15 +777,17 @@ namespace Tempt
                     continue;
                 }
 
-                result.Add(new ShopStockEntrySnapshot
-                {
-                    ItemId = entry.ItemId,
-                    Available = entry.Available,
-                    RemainingCount = entry.RemainingCount,
-                    InitialCount = entry.InitialCount,
-                    UnitPrice = entry.UnitPrice,
-                    UnlockKey = entry.UnlockKey,
-                });
+                result.Add(
+                    new ShopStockEntrySnapshot
+                    {
+                        ItemId = entry.ItemId,
+                        Available = entry.Available,
+                        RemainingCount = entry.RemainingCount,
+                        InitialCount = entry.InitialCount,
+                        UnitPrice = entry.UnitPrice,
+                        UnlockKey = entry.UnlockKey,
+                    }
+                );
             }
 
             return result;
@@ -605,15 +805,17 @@ namespace Tempt
                         continue;
                     }
 
-                    state.Entries.Add(new ShopStockEntry
-                    {
-                        ItemId = src.ItemId,
-                        Available = src.Available,
-                        RemainingCount = src.RemainingCount,
-                        InitialCount = src.InitialCount,
-                        UnitPrice = src.UnitPrice,
-                        UnlockKey = src.UnlockKey,
-                    });
+                    state.Entries.Add(
+                        new ShopStockEntry
+                        {
+                            ItemId = src.ItemId,
+                            Available = src.Available,
+                            RemainingCount = src.RemainingCount,
+                            InitialCount = src.InitialCount,
+                            UnitPrice = src.UnitPrice,
+                            UnlockKey = src.UnlockKey,
+                        }
+                    );
                 }
             }
 
@@ -629,12 +831,14 @@ namespace Tempt
         private static int ResolveHighestClearedFloor(FloorMapModel map)
         {
             int highest = 0;
-            if (map == null) return highest;
+            if (map == null)
+                return highest;
             foreach (List<FloorNode> nodes in map.NodesByFloor.Values)
             {
                 foreach (FloorNode node in nodes)
                 {
-                    if (!node.IsSafeZone && node.IsCleared && node.Floor > highest) highest = node.Floor;
+                    if (!node.IsSafeZone && node.IsCleared && node.Floor > highest)
+                        highest = node.Floor;
                 }
             }
 
@@ -764,8 +968,19 @@ namespace Tempt
         /// <summary>해금된 룬 노드 ID 목록.</summary>
         public List<int> UnlockedNodeIds;
 
+        /// <summary>노드별 투자 포인트 목록.</summary>
+        public List<RuneNodeInvestmentSnapshot> NodeInvestments;
+
         /// <summary>현재 보유 룬 포인트(레벨업으로 적립).</summary>
         public int RunePoints;
+    }
+
+    [System.Serializable]
+    public sealed class RuneNodeInvestmentSnapshot
+    {
+        public int NodeId;
+
+        public int InvestedPoints;
     }
 
     /// <summary>인벤토리 직렬화.</summary>
@@ -963,4 +1178,3 @@ namespace Tempt
         public int ResolutionHeight;
     }
 }
-

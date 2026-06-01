@@ -38,7 +38,9 @@ namespace Tempt
                 ClassId = pickedClass,
                 RunePoints = 0,
                 UnlockedIds = new System.Collections.Generic.HashSet<int>(),
-                Tree = GameSystemManager.TryGetInstance(out GameSystemManager gsm) ? RuneTree.BuildFromData(pickedClass, gsm.Data.Runes.Values) : null,
+                Tree = GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                    ? RuneTree.BuildFromData(pickedClass, gsm.Data.Runes.Values)
+                    : null,
             };
             Rune.UnlockStarter();
             if (gsm != null)
@@ -91,9 +93,12 @@ namespace Tempt
             }
 
             Stats.ResetEquipmentBonuses();
-            Stats.ApplyEquipmentBonus(Equipment != null ? Equipment.AggregateStatMod() : new EquipmentStatMod());
+            Stats.ApplyEquipmentBonus(
+                Equipment != null ? Equipment.AggregateStatMod() : new EquipmentStatMod()
+            );
             Stats.ResetRuneBonuses();
-            EquipmentStatMod runeMod = Rune != null ? Rune.AggregateStatMod() : new EquipmentStatMod();
+            EquipmentStatMod runeMod =
+                Rune != null ? Rune.AggregateStatMod() : new EquipmentStatMod();
             Stats.ApplyRuneBonus(StatType.HP, runeMod.HP);
             Stats.ApplyRuneBonus(StatType.MP, runeMod.MP);
             Stats.ApplyRuneBonus(StatType.ATK, runeMod.ATK);
@@ -123,7 +128,11 @@ namespace Tempt
 
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm))
             {
-                Rune?.AddRunePoint(gsm.Data?.Balance?.RunePointPerLevel ?? 1);
+                if (Rune != null)
+                {
+                    Rune.AddRunePoint(gsm.Data?.Balance?.RunePointPerLevel ?? 1);
+                    gsm.Events?.RaiseRunePointsChanged(Rune.RunePoints);
+                }
             }
         }
 
@@ -131,9 +140,11 @@ namespace Tempt
         protected override System.Collections.Generic.IReadOnlyList<int> GetUnlockedRuneNodeIds()
         {
             // 동작 요약:
-            // - Rune?.UnlockedIds(HashSet<int>)를 List<int>로 변환하여 반환.
+            // - 마스터 완료된 룬 노드 ID를 반환한다. 부분 투자 노드는 패시브 해금 대상이 아니다.
             // - Rune이 null이면 빈 목록 반환.
-            return Rune?.UnlockedIds != null ? new System.Collections.Generic.List<int>(Rune.UnlockedIds) : new System.Collections.Generic.List<int>();
+            return Rune != null
+                ? Rune.GetMasteredNodeIds()
+                : new System.Collections.Generic.List<int>();
         }
 
         /// <summary>
@@ -183,7 +194,9 @@ namespace Tempt
             }
             else
             {
-                UnityEngine.Debug.LogError("[Player.BindState] GameSystemManager 참조가 없어 ActiveSkills 를 바인딩할 수 없습니다.");
+                UnityEngine.Debug.LogError(
+                    "[Player.BindState] GameSystemManager 참조가 없어 ActiveSkills 를 바인딩할 수 없습니다."
+                );
             }
 
             RecalcBonusStats();
@@ -193,7 +206,9 @@ namespace Tempt
         {
             if (state?.ActiveSlotSkillIds == null || state.ActiveSlotSkillIds.Length != 2)
             {
-                UnityEngine.Debug.LogError("[Player.BindState] PlayerState.ActiveSlotSkillIds 가 없거나 길이가 2가 아닙니다.");
+                UnityEngine.Debug.LogError(
+                    "[Player.BindState] PlayerState.ActiveSlotSkillIds 가 없거나 길이가 2가 아닙니다."
+                );
                 ActiveSkills[0] = null;
                 ActiveSkills[1] = null;
                 return;
@@ -201,7 +216,9 @@ namespace Tempt
 
             if (data?.Skills == null)
             {
-                UnityEngine.Debug.LogError("[Player.BindState] DataManager.Skills 참조가 없습니다.");
+                UnityEngine.Debug.LogError(
+                    "[Player.BindState] DataManager.Skills 참조가 없습니다."
+                );
                 return;
             }
 
@@ -220,7 +237,12 @@ namespace Tempt
                 }
                 else
                 {
-                    UnityEngine.Debug.LogError("[Player.BindState] ActiveSlotSkillIds[" + slot + "] 데이터 없음: " + skillId);
+                    UnityEngine.Debug.LogError(
+                        "[Player.BindState] ActiveSlotSkillIds["
+                            + slot
+                            + "] 데이터 없음: "
+                            + skillId
+                    );
                     ActiveSkills[slot] = null;
                 }
             }
@@ -263,4 +285,3 @@ namespace Tempt
         }
     }
 }
-

@@ -95,6 +95,7 @@ namespace Tempt
 
             Bench.Remove(inst);
             Active.Add(inst);
+
             return true;
         }
 
@@ -110,6 +111,7 @@ namespace Tempt
 
             Active.Remove(inst);
             Bench.Add(inst);
+
             return true;
         }
     }
@@ -163,15 +165,18 @@ namespace Tempt
         public void EnsureCapacity(int safeZoneCount)
         {
             int targetLength = System.Math.Max(1, safeZoneCount);
+
             if (Unlocked != null && Unlocked.Length == targetLength)
             {
                 return;
             }
 
             bool[] next = new bool[targetLength];
+
             if (Unlocked != null)
             {
                 int copyLength = System.Math.Min(Unlocked.Length, next.Length);
+
                 for (int i = 0; i < copyLength; i++)
                 {
                     next[i] = Unlocked[i];
@@ -252,6 +257,7 @@ namespace Tempt
         {
             var state = new ShopStockState();
             state.EnsureDefaultSafe1Stock();
+
             return state;
         }
 
@@ -281,6 +287,7 @@ namespace Tempt
             for (int i = 0; i < Entries.Count; i++)
             {
                 ShopStockEntry entry = Entries[i];
+
                 if (entry != null && entry.ItemId == itemId)
                 {
                     return entry;
@@ -300,12 +307,14 @@ namespace Tempt
             for (int i = 0; i < Entries.Count; i++)
             {
                 ShopStockEntry entry = Entries[i];
+
                 if (entry == null || entry.UnlockKey != unlockKey)
                 {
                     continue;
                 }
 
                 entry.Available = true;
+
                 if (!entry.IsUnlimited && entry.RemainingCount <= 0)
                 {
                     entry.RemainingCount = System.Math.Max(1, entry.InitialCount);
@@ -354,6 +363,7 @@ namespace Tempt
             }
 
             RemainingCount = System.Math.Max(0, RemainingCount - 1);
+
             if (RemainingCount <= 0)
             {
                 Available = false;

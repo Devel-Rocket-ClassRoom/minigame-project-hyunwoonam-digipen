@@ -41,9 +41,10 @@ namespace Tempt
                 for (int i = 0; i < world.SafeZones.Count; i++)
                 {
                     SafeZoneDef safeZone = world.SafeZones[i];
+
                     if (safeZone != null && floor == safeZone.FloorNumber)
                     {
-                    return SafeStageForIndex(safeZone.Index, world);
+                        return SafeStageForIndex(safeZone.Index, world);
                     }
                 }
             }
@@ -69,6 +70,7 @@ namespace Tempt
         {
             floorStart = 0;
             floorEnd = 0;
+
             if (world?.Stages == null)
             {
                 Debug.LogError("[StageIndexResolver] WorldData.Stages 참조가 없습니다.");
@@ -78,6 +80,7 @@ namespace Tempt
             for (int i = 0; i < world.Stages.Count; i++)
             {
                 StageDef stageDef = world.Stages[i];
+
                 if (stageDef != null && stageDef.StageIndex == stage)
                 {
                     floorStart = stageDef.FloorStart;
@@ -113,6 +116,7 @@ namespace Tempt
                 for (int i = 0; i < world.Stages.Count; i++)
                 {
                     StageDef stageDef = world.Stages[i];
+
                     if (stageDef != null && stageDef.StageIndex == stage)
                     {
                         return stageDef.UnlocksSafeZoneIndex;
@@ -131,6 +135,7 @@ namespace Tempt
             }
 
             int maxStage = ErosionSystem.GetMaxStage(world);
+
             return Mathf.Clamp(safeIndex, 1, maxStage);
         }
     }

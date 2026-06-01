@@ -29,6 +29,7 @@ namespace Tempt
             }
 
             float total = GetBalanceValue(balance => balance.MinActionTimeSec, DefaultMinBaseSec);
+
             switch (action.Type)
             {
                 case CombatActionType.Attack:
@@ -52,6 +53,7 @@ namespace Tempt
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Data?.Balance != null)
             {
                 float value = getter(gsm.Data.Balance);
+
                 return value > 0f ? value : fallback;
             }
 

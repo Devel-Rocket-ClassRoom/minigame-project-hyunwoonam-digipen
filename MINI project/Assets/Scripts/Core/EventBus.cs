@@ -48,6 +48,18 @@ namespace Tempt
         /// <summary>보유 스킬 풀 또는 ActiveSlotSkillIds 변경.</summary>
         public event Action OnSkillsChanged;
 
+        /// <summary>룬 노드 해금. (nodeId, remainingPoints)</summary>
+        public event Action<int, int> OnRuneNodeUnlocked;
+
+        /// <summary>룬 포인트 변경. (currentPoints)</summary>
+        public event Action<int> OnRunePointsChanged;
+
+        /// <summary>룬 직업 변경. (newClass)</summary>
+        public event Action<RuneClass> OnRuneClassChanged;
+
+        /// <summary>룬 트리 리셋. (refundedPoints, currentPoints)</summary>
+        public event Action<int, int> OnRuneReset;
+
         /// <summary>동료 모집/해고. (companionId, joined)</summary>
         public event Action<int, bool> OnRosterChanged;
 
@@ -141,6 +153,30 @@ namespace Tempt
             OnSkillsChanged?.Invoke();
         }
 
+        /// <summary>룬 노드 해금 발행.</summary>
+        public void RaiseRuneNodeUnlocked(int nodeId, int remainingPoints)
+        {
+            OnRuneNodeUnlocked?.Invoke(nodeId, remainingPoints);
+        }
+
+        /// <summary>룬 포인트 변경 발행.</summary>
+        public void RaiseRunePointsChanged(int currentPoints)
+        {
+            OnRunePointsChanged?.Invoke(currentPoints);
+        }
+
+        /// <summary>룬 직업 변경 발행.</summary>
+        public void RaiseRuneClassChanged(RuneClass newClass)
+        {
+            OnRuneClassChanged?.Invoke(newClass);
+        }
+
+        /// <summary>룬 트리 리셋 발행.</summary>
+        public void RaiseRuneReset(int refundedPoints, int currentPoints)
+        {
+            OnRuneReset?.Invoke(refundedPoints, currentPoints);
+        }
+
         /// <summary>동료 변경 발행.</summary>
         public void RaiseRosterChanged(int companionId, bool joined)
         {
@@ -156,4 +192,3 @@ namespace Tempt
         }
     }
 }
-

@@ -16,8 +16,11 @@ namespace Tempt
         /// <summary>이 안전지대 정의(WorldData.SafeZones[SafeIndex]).</summary>
         public SafeZoneDef Definition;
 
-        [SerializeField] private TextMeshProUGUI dayLabel;
-        [SerializeField] private Button enterFloorMapButton;
+        [SerializeField]
+        private TextMeshProUGUI dayLabel;
+
+        [SerializeField]
+        private Button enterFloorMapButton;
 
         /// <inheritdoc/>
         public override void OnEnter()
@@ -44,7 +47,12 @@ namespace Tempt
                 return;
             }
 
-            Definition = gsm.Data?.World?.SafeZones != null && SafeIndex >= 0 && SafeIndex < gsm.Data.World.SafeZones.Count ? gsm.Data.World.SafeZones[SafeIndex] : null;
+            Definition =
+                gsm.Data?.World?.SafeZones != null
+                && SafeIndex >= 0
+                && SafeIndex < gsm.Data.World.SafeZones.Count
+                    ? gsm.Data.World.SafeZones[SafeIndex]
+                    : null;
             SubscribeDayChanged(gsm.Events);
             UpdateDayText(run.CurrentDay);
             WireEnterFloorMapButton();
@@ -71,7 +79,7 @@ namespace Tempt
         /// <summary>
         /// 플로어 맵으로 출발.
         /// </summary>
-        public void DepartToFloorMap()
+        public virtual void DepartToFloorMap()
         {
             // 동작 요약:
             // - 플레이어가 출발 가능한 단계인지 확인.
@@ -132,4 +140,3 @@ namespace Tempt
         }
     }
 }
-

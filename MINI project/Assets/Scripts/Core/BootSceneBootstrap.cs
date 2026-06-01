@@ -7,8 +7,10 @@ namespace Tempt
     /// </summary>
     public sealed class BootSceneBootstrap : MonoBehaviour
     {
-        [SerializeField] private GameSystemManager gameSystemManager;
-        [SerializeField] private bool loadMainMenuOnStart = true;
+        [SerializeField] 
+        private GameSystemManager gameSystemManager;
+        [SerializeField] 
+        private bool loadMainMenuOnStart = true;
 
         private static BootSceneBootstrap instance;
 

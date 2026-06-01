@@ -9,10 +9,12 @@ namespace Tempt
         public static void Validate(DataManager data)
         {
             var errors = new List<string>();
+
             if (data == null)
             {
                 errors.Add("DataManager is null.");
                 FailIfNeeded(errors);
+
                 return;
             }
 
@@ -25,14 +27,38 @@ namespace Tempt
 
         private static void ValidateRequiredTables(DataManager data, List<string> errors)
         {
-            if (data.Monsters == null || data.Monsters.Count == 0) errors.Add("Monsters table is empty.");
-            if (data.Skills == null || data.Skills.Count == 0) errors.Add("Skills table is empty.");
-            if (data.Items == null || data.Items.Count == 0) errors.Add("Items table is empty.");
-            if (data.Runes == null || data.Runes.Count == 0) errors.Add("Runes table is empty.");
-            if (data.DropTables == null) errors.Add("DropTables table is null.");
-            if (data.World == null) errors.Add("World data is null.");
-            if (data.Balance == null) errors.Add("Balance data is null.");
-            if (data.Language == null) errors.Add("Language data is null.");
+            if (data.Monsters == null || data.Monsters.Count == 0)
+            { 
+                errors.Add("Monsters table is empty.");
+            }
+            if (data.Skills == null || data.Skills.Count == 0)
+            { 
+                errors.Add("Skills table is empty.");
+            }
+            if (data.Items == null || data.Items.Count == 0) 
+            { 
+                errors.Add("Items table is empty."); 
+            }
+            if (data.Runes == null || data.Runes.Count == 0) 
+            { 
+                errors.Add("Runes table is empty.");
+            }
+            if (data.DropTables == null)
+            { 
+                errors.Add("DropTables table is null.");
+            }
+            if (data.World == null) 
+            { 
+                errors.Add("World data is null."); 
+            }
+            if (data.Balance == null) 
+            { 
+                errors.Add("Balance data is null.");
+            }
+            if (data.Language == null) 
+            { 
+                errors.Add("Language data is null.");
+            }
         }
 
         private static void ValidateReferences(DataManager data, List<string> errors)
@@ -60,6 +86,7 @@ namespace Tempt
                     for (int i = 0; i < monster.SkillIds.Count; i++)
                     {
                         int skillId = monster.SkillIds[i];
+
                         if (data.Skills == null || !data.Skills.ContainsKey(skillId))
                         {
                             errors.Add("Monster " + monster.Id + " references missing SkillId " + skillId + ".");
@@ -81,6 +108,7 @@ namespace Tempt
                     for (int i = 0; i < group.Value.Count; i++)
                     {
                         DropEntry entry = group.Value[i];
+
                         if (entry == null)
                         {
                             errors.Add("DropTable " + group.Key + " has null entry.");
@@ -192,8 +220,14 @@ namespace Tempt
                         continue;
                     }
 
-                    if (skill.MpCost < 0) errors.Add("Skill " + skill.Id + " has negative MpCost.");
-                    if (skill.CooldownRounds < 0) errors.Add("Skill " + skill.Id + " has negative CooldownRounds.");
+                    if (skill.MpCost < 0)
+                    { 
+                        errors.Add("Skill " + skill.Id + " has negative MpCost.");
+                    }
+                    if (skill.CooldownRounds < 0) 
+                    { 
+                        errors.Add("Skill " + skill.Id + " has negative CooldownRounds.");
+                    }
                 }
             }
         }
@@ -221,9 +255,18 @@ namespace Tempt
             }
             else
             {
-                if (balance.ErosionCurve.DailyBase <= 0f) errors.Add("Balance.ErosionCurve.DailyBase must be greater than 0.");
-                if (balance.ErosionCurve.ExpBase <= 1f) errors.Add("Balance.ErosionCurve.ExpBase must be greater than 1.");
-                if (balance.ErosionCurve.InflectionDay < 0) errors.Add("Balance.ErosionCurve.InflectionDay must be non-negative.");
+                if (balance.ErosionCurve.DailyBase <= 0f) 
+                { 
+                    errors.Add("Balance.ErosionCurve.DailyBase must be greater than 0.");
+                }
+                if (balance.ErosionCurve.ExpBase <= 1f)
+                { 
+                    errors.Add("Balance.ErosionCurve.ExpBase must be greater than 1.");
+                }
+                if (balance.ErosionCurve.InflectionDay < 0)
+                { 
+                    errors.Add("Balance.ErosionCurve.InflectionDay must be non-negative."); 
+                }
             }
         }
 

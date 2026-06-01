@@ -37,20 +37,101 @@ namespace Tempt
         /// </summary>
         public float EffectValue;
 
+        /// <summary>트리 UI 행. 위에서 아래로 증가한다.</summary>
+        public int TreeRow;
+
+        /// <summary>트리 UI 열. 왼쪽에서 오른쪽으로 증가한다.</summary>
+        public int TreeCol;
+
         /// <inheritdoc/>
         public override void Parse(string[] cells)
         {
             Id = cells.Length > 0 && CsvParser.TryParseInt(cells[0], out int id) ? id : 0;
             NameKey = cells.Length > 1 ? cells[1] : string.Empty;
-            RuneType = cells.Length > 2 && System.Enum.TryParse(cells[2], true, out RuneNodeType runeType) ? runeType : RuneNodeType.MainNode;
-            RequiredRuneId = cells.Length > 3 && CsvParser.TryParseInt(cells[3], out int required) ? required : 0;
-            EffectType = cells.Length > 4 && System.Enum.TryParse(cells[4], true, out RuneEffectType effectType) ? effectType : RuneEffectType.AddMaxHP;
-            EffectValue = cells.Length > 5 && CsvParser.TryParseFloat(cells[5], out float effectValue) ? effectValue : 0f;
+            if (cells.Length >= 9)
+            {
+                DescKey = cells.Length > 2 ? cells[2] : string.Empty;
+                RuneType =
+                    cells.Length > 3
+                    && System.Enum.TryParse(cells[3], true, out RuneNodeType runeType)
+                        ? runeType
+                        : RuneNodeType.MainNode;
+                ClassId =
+                    cells.Length > 4 && System.Enum.TryParse(cells[4], true, out RuneClass classId)
+                        ? classId
+                        : RuneClass.None;
+                RequiredRuneId =
+                    cells.Length > 5 && CsvParser.TryParseInt(cells[5], out int required)
+                        ? required
+                        : 0;
+                PointCost =
+                    cells.Length > 6 && CsvParser.TryParseInt(cells[6], out int pointCost)
+                        ? pointCost
+                        : 1;
+                EffectType =
+                    cells.Length > 7
+                    && System.Enum.TryParse(cells[7], true, out RuneEffectType effectType)
+                        ? effectType
+                        : RuneEffectType.AddMaxHP;
+                EffectValue =
+                    cells.Length > 8 && CsvParser.TryParseFloat(cells[8], out float effectValue)
+                        ? effectValue
+                        : 0f;
+                TreeRow =
+                    cells.Length > 9 && CsvParser.TryParseInt(cells[9], out int treeRow)
+                        ? treeRow
+                        : 0;
+                TreeCol =
+                    cells.Length > 10 && CsvParser.TryParseInt(cells[10], out int treeCol)
+                        ? treeCol
+                        : 0;
+                return;
+            }
+
+            RuneType =
+                cells.Length > 2
+                && System.Enum.TryParse(cells[2], true, out RuneNodeType legacyRuneType)
+                    ? legacyRuneType
+                    : RuneNodeType.MainNode;
+            RequiredRuneId =
+                cells.Length > 3 && CsvParser.TryParseInt(cells[3], out int legacyRequired)
+                    ? legacyRequired
+                    : 0;
+            EffectType =
+                cells.Length > 4
+                && System.Enum.TryParse(cells[4], true, out RuneEffectType legacyEffectType)
+                    ? legacyEffectType
+                    : RuneEffectType.AddMaxHP;
+            EffectValue =
+                cells.Length > 5 && CsvParser.TryParseFloat(cells[5], out float legacyEffectValue)
+                    ? legacyEffectValue
+                    : 0f;
+            TreeRow =
+                cells.Length > 6 && CsvParser.TryParseInt(cells[6], out int legacyTreeRow)
+                    ? legacyTreeRow
+                    : 0;
+            TreeCol =
+                cells.Length > 7 && CsvParser.TryParseInt(cells[7], out int legacyTreeCol)
+                    ? legacyTreeCol
+                    : 0;
         }
 
         public static RuneData FromRow(IDictionary<string, string> row)
         {
-            if (!CsvParser.HasColumns(row, nameof(RuneData), "Id", "NameKey", "RuneType", "ClassId", "RequiredRuneId", "PointCost", "EffectType", "EffectValue"))
+            if (
+                !CsvParser.HasColumns(
+                    row,
+                    nameof(RuneData),
+                    "Id",
+                    "NameKey",
+                    "RuneType",
+                    "ClassId",
+                    "RequiredRuneId",
+                    "PointCost",
+                    "EffectType",
+                    "EffectValue"
+                )
+            )
             {
                 return null;
             }
@@ -66,6 +147,8 @@ namespace Tempt
                 PointCost = CsvParser.GetInt(row, "PointCost", 1),
                 EffectType = CsvParser.GetEnum(row, "EffectType", RuneEffectType.AddMaxHP),
                 EffectValue = CsvParser.GetFloat(row, "EffectValue"),
+                TreeRow = CsvParser.GetInt(row, "TreeRow"),
+                TreeCol = CsvParser.GetInt(row, "TreeCol"),
             };
         }
     }
@@ -132,4 +215,3 @@ namespace Tempt
         Supporter,
     }
 }
-

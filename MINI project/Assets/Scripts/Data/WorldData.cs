@@ -5,6 +5,7 @@ namespace Tempt
     /// <summary>
     /// 월드 전체 구조 정의. 단계 / 안전지대 / 노드 생성 규칙.
     /// </summary>
+    [System.Serializable]
     public sealed class WorldData
     {
         /// <summary>단계 정의(1~6).</summary>
@@ -21,6 +22,7 @@ namespace Tempt
     }
 
     /// <summary>한 단계 정의.</summary>
+    [System.Serializable]
     public sealed class StageDef
     {
         /// <summary>단계 번호(1~6).</summary>
@@ -46,6 +48,7 @@ namespace Tempt
     }
 
     /// <summary>안전지대 정의.</summary>
+    [System.Serializable]
     public sealed class SafeZoneDef
     {
         /// <summary>인덱스(0~5).</summary>
@@ -65,6 +68,7 @@ namespace Tempt
     }
 
     /// <summary>플로어 맵 생성 규칙.</summary>
+    [System.Serializable]
     public sealed class FloorGenRule
     {
         /// <summary>최대 층(설계 49층).</summary>
@@ -86,4 +90,3 @@ namespace Tempt
         public int MonstersMax;
     }
 }
-

@@ -31,6 +31,8 @@
   "ErosionAltarCost": 3,
   "MinActionTimeSec": 0.1,
   "RuneResetRefundRate": 0.8,
+  "RuneResetCostGold": 1,
+  "RuneClassChangeCostGold": 1,
   "FirstNonPlayerActionDelaySec": 2.0,
   "AttackActionTimeSec": 0.3,
   "SkillActionFallbackSec": 0.5,

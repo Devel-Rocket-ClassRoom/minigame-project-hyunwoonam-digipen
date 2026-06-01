@@ -53,15 +53,43 @@ namespace Tempt
         /// </summary>
         public void LoadAll()
         {
-            monsters = ToDictionary(CsvParser.Parse("Tables/MonsterStatusTable", MonsterData.FromRow), BuildFallbackMonsters(), "MonsterStatusTable");
-            skills = ToDictionary(CsvParser.Parse("Tables/SkillTable", SkillData.FromRow), BuildFallbackSkills(), "SkillTable");
-            items = ToDictionary(CsvParser.Parse("Tables/ItemTable", ItemData.FromRow), BuildFallbackItems(), "ItemTable");
-            runes = ToDictionary(CsvParser.Parse("Tables/RuneTable", RuneData.FromRow), BuildFallbackRunes(), "RuneTable");
-            companions = ToDictionary(CsvParser.Parse("Tables/Companions", CompanionData.FromRow), new Dictionary<int, CompanionData>(), "Companions", true);
-            dropTables = ToDropTableDictionary(CsvParser.Parse("Tables/DropTable", DropEntry.FromRow), BuildFallbackDropTables(), "DropTable");
+            monsters = ToDictionary(
+                CsvParser.Parse("Tables/MonsterStatusTable", MonsterData.FromRow),
+                BuildFallbackMonsters(),
+                "MonsterStatusTable"
+            );
+            skills = ToDictionary(
+                CsvParser.Parse("Tables/SkillTable", SkillData.FromRow),
+                BuildFallbackSkills(),
+                "SkillTable"
+            );
+            items = ToDictionary(
+                CsvParser.Parse("Tables/ItemTable", ItemData.FromRow),
+                BuildFallbackItems(),
+                "ItemTable"
+            );
+            runes = ToDictionary(
+                CsvParser.Parse("Tables/RuneTable", RuneData.FromRow),
+                BuildFallbackRunes(),
+                "RuneTable"
+            );
+            companions = ToDictionary(
+                CsvParser.Parse("Tables/Companions", CompanionData.FromRow),
+                new Dictionary<int, CompanionData>(),
+                "Companions",
+                true
+            );
+            dropTables = ToDropTableDictionary(
+                CsvParser.Parse("Tables/DropTable", DropEntry.FromRow),
+                BuildFallbackDropTables(),
+                "DropTable"
+            );
             world = LoadJson("Tables/World", BuildFallbackWorld(), "World");
             balance = LoadJson("Tables/Balance", BuildFallbackBalance(), "Balance");
-            ApplyPlayerLevelTable(balance, CsvParser.Parse<int>("Tables/PlayerLevelTable", PlayerLevelFromRow));
+            ApplyPlayerLevelTable(
+                balance,
+                CsvParser.Parse<int>("Tables/PlayerLevelTable", PlayerLevelFromRow)
+            );
             language = LoadLanguage();
             CsvParser.Parse("Tables/ActionWeightTable", ActionWeightFromRow);
             DataValidator.Validate(this);
@@ -79,12 +107,14 @@ namespace Tempt
             // - monsters에서 Difficulty 일치 + IsBoss == false 항목 필터링.
             // - WeightedRandomt로 count개 선택(중복 허용 여부는 World.MonsterPoolDuplicateAllowed).
             var result = new List<int>();
+
             if (monsters == null || monsters.Count == 0 || count <= 0)
             {
                 return result;
             }
 
             var pool = new List<MonsterData>();
+
             foreach (MonsterData monster in monsters.Values)
             {
                 if (!monster.IsBoss && monster.Difficulty == difficulty)
@@ -127,6 +157,7 @@ namespace Tempt
             //   드랍 수량 = Random.Range(MinCount, MaxCount + 1).
             // - DroppedItemStack 목록으로 수집하여 반환.
             var result = new List<DroppedItemStack>();
+
             if (dropTableId == 0 || dropTables == null)
             {
                 return result;
@@ -146,11 +177,14 @@ namespace Tempt
 
                 int min = System.Math.Max(1, entry.MinCount);
                 int max = System.Math.Max(min, entry.MaxCount);
-                result.Add(new DroppedItemStack
-                {
-                    ItemId = entry.ItemId,
-                    Count = UnityEngine.Random.Range(min, max + 1),
-                });
+
+                result.Add(
+                    new DroppedItemStack
+                    {
+                        ItemId = entry.ItemId,
+                        Count = UnityEngine.Random.Range(min, max + 1),
+                    }
+                );
             }
 
             return result;
@@ -166,17 +200,26 @@ namespace Tempt
             // 동작 요약:
             // - balance.InflationCoef 사용해 price = base * (1 + erosionRate * coef).
             float coef = balance != null ? balance.InflationCoef : 0f;
+
             return 1f + UnityEngine.Mathf.Clamp01(erosionRate / 100f) * coef;
         }
 
-        private static Dictionary<int, T> ToDictionary<T>(IList<T> rows, Dictionary<int, T> fallback, string tableName, bool allowEmpty = false) where T : DataTable
+        private static Dictionary<int, T> ToDictionary<T>(
+            IList<T> rows,
+            Dictionary<int, T> fallback,
+            string tableName,
+            bool allowEmpty = false
+        )
+            where T : DataTable
         {
             var result = new Dictionary<int, T>();
+
             if (rows != null)
             {
                 for (int i = 0; i < rows.Count; i++)
                 {
                     T row = rows[i];
+
                     if (row == null)
                     {
                         continue;
@@ -184,7 +227,9 @@ namespace Tempt
 
                     if (result.ContainsKey(row.Id))
                     {
-                        Debug.LogError("[DataManager] Duplicate Id in " + tableName + ": " + row.Id);
+                        Debug.LogError(
+                            "[DataManager] Duplicate Id in " + tableName + ": " + row.Id
+                        );
                         continue;
                     }
 
@@ -194,21 +239,30 @@ namespace Tempt
 
             if (result.Count == 0 && !allowEmpty)
             {
-                Debug.LogWarning("[DataManager] " + tableName + " load failed or empty. Using fallback data.");
+                Debug.LogWarning(
+                    "[DataManager] " + tableName + " load failed or empty. Using fallback data."
+                );
+
                 return fallback;
             }
 
             return result;
         }
 
-        private static Dictionary<int, List<DropEntry>> ToDropTableDictionary(IList<DropEntry> rows, Dictionary<int, List<DropEntry>> fallback, string tableName)
+        private static Dictionary<int, List<DropEntry>> ToDropTableDictionary(
+            IList<DropEntry> rows,
+            Dictionary<int, List<DropEntry>> fallback,
+            string tableName
+        )
         {
             var result = new Dictionary<int, List<DropEntry>>();
+
             if (rows != null)
             {
                 for (int i = 0; i < rows.Count; i++)
                 {
                     DropEntry row = rows[i];
+
                     if (row == null)
                     {
                         continue;
@@ -226,26 +280,35 @@ namespace Tempt
 
             if (result.Count == 0)
             {
-                Debug.LogWarning("[DataManager] " + tableName + " load failed or empty. Using fallback data.");
+                Debug.LogWarning(
+                    "[DataManager] " + tableName + " load failed or empty. Using fallback data."
+                );
                 return fallback;
             }
 
             return result;
         }
 
-        private static T LoadJson<T>(string resourcePath, T fallback, string tableName) where T : class
+        private static T LoadJson<T>(string resourcePath, T fallback, string tableName)
+            where T : class
         {
             TextAsset asset = Resources.Load<TextAsset>(resourcePath);
             if (asset == null)
             {
-                Debug.LogWarning("[DataManager] " + tableName + ".json missing. Using fallback data.");
+                Debug.LogWarning(
+                    "[DataManager] " + tableName + ".json missing. Using fallback data."
+                );
                 return fallback;
             }
 
             T parsed = JsonUtility.FromJson<T>(asset.text);
+
             if (parsed == null)
             {
-                Debug.LogWarning("[DataManager] " + tableName + ".json parse failed. Using fallback data.");
+                Debug.LogWarning(
+                    "[DataManager] " + tableName + ".json parse failed. Using fallback data."
+                );
+
                 return fallback;
             }
 
@@ -266,7 +329,9 @@ namespace Tempt
         {
             if (target == null || levels == null || levels.Count == 0)
             {
-                Debug.LogWarning("[DataManager] PlayerLevelTable load failed or empty. Keeping Balance.ExpToNextLevel.");
+                Debug.LogWarning(
+                    "[DataManager] PlayerLevelTable load failed or empty. Keeping Balance.ExpToNextLevel."
+                );
                 return;
             }
 
@@ -275,13 +340,25 @@ namespace Tempt
 
         private static LanguageData LoadLanguage()
         {
-            IList<IDictionary<string, string>> rows = CsvParser.Parse<IDictionary<string, string>>("Tables/LocalizationTable", row => new Dictionary<string, string>(row));
+            IList<IDictionary<string, string>> rows = CsvParser.Parse<IDictionary<string, string>>(
+                "Tables/LocalizationTable",
+                row => new Dictionary<string, string>(row)
+            );
             return LanguageData.FromRows(rows);
         }
 
         private static ActionWeightTable ActionWeightFromRow(IDictionary<string, string> row)
         {
-            if (!CsvParser.HasColumns(row, nameof(ActionWeightTable), "Key", "Attack", "Skill", "Defend"))
+            if (
+                !CsvParser.HasColumns(
+                    row,
+                    nameof(ActionWeightTable),
+                    "Key",
+                    "Attack",
+                    "Skill",
+                    "Defend"
+                )
+            )
             {
                 return null;
             }
@@ -307,12 +384,54 @@ namespace Tempt
             AddMonster(table, 1902, "monster.boss.stage2", true, 5, 130, 16, 20, 6, 11, 45, 45, 3);
             AddMonster(table, 1903, "monster.boss.stage3", true, 7, 180, 20, 27, 8, 13, 65, 65, 3);
             AddMonster(table, 1904, "monster.boss.stage4", true, 9, 240, 25, 34, 10, 14, 90, 90, 3);
-            AddMonster(table, 1905, "monster.boss.stage5", true, 11, 310, 30, 42, 12, 16, 125, 125, 3);
-            AddMonster(table, 1906, "monster.boss.final", true, 13, 420, 40, 55, 16, 18, 180, 180, 3);
+            AddMonster(
+                table,
+                1905,
+                "monster.boss.stage5",
+                true,
+                11,
+                310,
+                30,
+                42,
+                12,
+                16,
+                125,
+                125,
+                3
+            );
+            AddMonster(
+                table,
+                1906,
+                "monster.boss.final",
+                true,
+                13,
+                420,
+                40,
+                55,
+                16,
+                18,
+                180,
+                180,
+                3
+            );
             return table;
         }
 
-        private static void AddMonster(Dictionary<int, MonsterData> table, int id, string nameKey, bool isBoss, int difficulty, int hp, int mp, int atk, int def, int spd, int exp, int gold, int dropTableId)
+        private static void AddMonster(
+            Dictionary<int, MonsterData> table,
+            int id,
+            string nameKey,
+            bool isBoss,
+            int difficulty,
+            int hp,
+            int mp,
+            int atk,
+            int def,
+            int spd,
+            int exp,
+            int gold,
+            int dropTableId
+        )
         {
             table[id] = new MonsterData
             {
@@ -329,7 +448,12 @@ namespace Tempt
                 RewardGold = gold,
                 DropTableId = dropTableId,
                 SkillIds = new List<int> { 900 },
-                ActionWeights = new ActionWeightTable { Attack = 80, Skill = 10, Defend = 10 },
+                ActionWeights = new ActionWeightTable
+                {
+                    Attack = 80,
+                    Skill = 10,
+                    Defend = 10,
+                },
                 PrefabKey = string.Empty,
                 ErosionShaderKey = string.Empty,
             };
@@ -341,14 +465,111 @@ namespace Tempt
         {
             return new Dictionary<int, SkillData>
             {
-                [1] = new SkillData { Id = 1, NameKey = "skill.slash", SkillType = SkillType.Active, AcquireType = AcquireType.Default, MpCost = 0, DamageScale = 1.2f, TargetType = SkillTargetType.EnemySingle, ActionDuration = 0.35f, EffectKey = "Destruction_air_normal" },
-                [2] = new SkillData { Id = 2, NameKey = "skill.fire", SkillType = SkillType.Active, AcquireType = AcquireType.Default, MpCost = 4, DamageScale = 0.85f, TargetType = SkillTargetType.EnemyAll, ActionDuration = 0.5f, CooldownRounds = 1, EffectKey = "explosion_3" },
-                [3] = new SkillData { Id = 3, NameKey = "skill.heal", SkillType = SkillType.Active, AcquireType = AcquireType.Default, MpCost = 3, HealScale = 1.1f, TargetType = SkillTargetType.AllySingle, ActionDuration = 0.45f, EffectKey = "Destruction_air_blue" },
-                [4] = new SkillData { Id = 4, NameKey = "skill.power_strike", SkillType = SkillType.Active, AcquireType = AcquireType.Shop, PurchasePrice = 1, MpCost = 5, DamageScale = 2.0f, TargetType = SkillTargetType.EnemySingle, ActionDuration = 0.45f, CooldownRounds = 1, EffectKey = "Shotgun_hit_normal" },
-                [5] = new SkillData { Id = 5, NameKey = "skill.cleave", SkillType = SkillType.Active, AcquireType = AcquireType.Shop, PurchasePrice = 1, MpCost = 5, DamageScale = 1.25f, TargetType = SkillTargetType.EnemyAll, ActionDuration = 0.5f, CooldownRounds = 1, EffectKey = "Destruction_air_normal" },
-                [6] = new SkillData { Id = 6, NameKey = "skill.execution", SkillType = SkillType.Active, AcquireType = AcquireType.Shop, PurchasePrice = 2, MpCost = 8, DamageScale = 2.8f, TargetType = SkillTargetType.EnemySingle, ActionDuration = 0.55f, CooldownRounds = 2, EffectKey = "Shotgun_hit_normal" },
-                [7] = new SkillData { Id = 7, NameKey = "skill.flame_burst", SkillType = SkillType.Active, AcquireType = AcquireType.Shop, PurchasePrice = 2, MpCost = 7, DamageScale = 1.7f, TargetType = SkillTargetType.EnemyAll, ActionDuration = 0.6f, CooldownRounds = 2, EffectKey = "explosion_3" },
-                [900] = new SkillData { Id = 900, NameKey = "skill.bite", SkillType = SkillType.Active, AcquireType = AcquireType.MonsterOnly, MpCost = 0, DamageScale = 1.05f, TargetType = SkillTargetType.EnemySingle, ActionDuration = 0.35f, EffectKey = "Destruction_air_blue" },
+                [1] = new SkillData
+                {
+                    Id = 1,
+                    NameKey = "skill.slash",
+                    SkillType = SkillType.Active,
+                    AcquireType = AcquireType.Default,
+                    MpCost = 0,
+                    DamageScale = 1.2f,
+                    TargetType = SkillTargetType.EnemySingle,
+                    ActionDuration = 0.35f,
+                    EffectKey = "Destruction_air_normal",
+                },
+                [2] = new SkillData
+                {
+                    Id = 2,
+                    NameKey = "skill.fire",
+                    SkillType = SkillType.Active,
+                    AcquireType = AcquireType.Default,
+                    MpCost = 4,
+                    DamageScale = 0.85f,
+                    TargetType = SkillTargetType.EnemyAll,
+                    ActionDuration = 0.5f,
+                    CooldownRounds = 1,
+                    EffectKey = "explosion_3",
+                },
+                [3] = new SkillData
+                {
+                    Id = 3,
+                    NameKey = "skill.heal",
+                    SkillType = SkillType.Active,
+                    AcquireType = AcquireType.Default,
+                    MpCost = 3,
+                    HealScale = 1.1f,
+                    TargetType = SkillTargetType.AllySingle,
+                    ActionDuration = 0.45f,
+                    EffectKey = "Destruction_air_blue",
+                },
+                [4] = new SkillData
+                {
+                    Id = 4,
+                    NameKey = "skill.power_strike",
+                    SkillType = SkillType.Active,
+                    AcquireType = AcquireType.Shop,
+                    PurchasePrice = 1,
+                    MpCost = 5,
+                    DamageScale = 2.0f,
+                    TargetType = SkillTargetType.EnemySingle,
+                    ActionDuration = 0.45f,
+                    CooldownRounds = 1,
+                    EffectKey = "Shotgun_hit_normal",
+                },
+                [5] = new SkillData
+                {
+                    Id = 5,
+                    NameKey = "skill.cleave",
+                    SkillType = SkillType.Active,
+                    AcquireType = AcquireType.Shop,
+                    PurchasePrice = 1,
+                    MpCost = 5,
+                    DamageScale = 1.25f,
+                    TargetType = SkillTargetType.EnemyAll,
+                    ActionDuration = 0.5f,
+                    CooldownRounds = 1,
+                    EffectKey = "Destruction_air_normal",
+                },
+                [6] = new SkillData
+                {
+                    Id = 6,
+                    NameKey = "skill.execution",
+                    SkillType = SkillType.Active,
+                    AcquireType = AcquireType.Shop,
+                    PurchasePrice = 2,
+                    MpCost = 8,
+                    DamageScale = 2.8f,
+                    TargetType = SkillTargetType.EnemySingle,
+                    ActionDuration = 0.55f,
+                    CooldownRounds = 2,
+                    EffectKey = "Shotgun_hit_normal",
+                },
+                [7] = new SkillData
+                {
+                    Id = 7,
+                    NameKey = "skill.flame_burst",
+                    SkillType = SkillType.Active,
+                    AcquireType = AcquireType.Shop,
+                    PurchasePrice = 2,
+                    MpCost = 7,
+                    DamageScale = 1.7f,
+                    TargetType = SkillTargetType.EnemyAll,
+                    ActionDuration = 0.6f,
+                    CooldownRounds = 2,
+                    EffectKey = "explosion_3",
+                },
+                [900] = new SkillData
+                {
+                    Id = 900,
+                    NameKey = "skill.bite",
+                    SkillType = SkillType.Active,
+                    AcquireType = AcquireType.MonsterOnly,
+                    MpCost = 0,
+                    DamageScale = 1.05f,
+                    TargetType = SkillTargetType.EnemySingle,
+                    ActionDuration = 0.35f,
+                    EffectKey = "Destruction_air_blue",
+                },
             };
         }
 
@@ -359,11 +580,16 @@ namespace Tempt
         {
             switch (cls)
             {
-                case RuneClass.Dealer:      return new int[] { 1, 0 };
-                case RuneClass.Tanker:      return new int[] { 1, 0 };
-                case RuneClass.MagicDealer: return new int[] { 2, 0 };
-                case RuneClass.Supporter:   return new int[] { 3, 0 };
-                default:                    return new int[] { 0, 0 };
+                case RuneClass.Dealer:
+                    return new int[] { 1, 0 };
+                case RuneClass.Tanker:
+                    return new int[] { 1, 0 };
+                case RuneClass.MagicDealer:
+                    return new int[] { 2, 0 };
+                case RuneClass.Supporter:
+                    return new int[] { 3, 0 };
+                default:
+                    return new int[] { 0, 0 };
             }
         }
 
@@ -371,15 +597,121 @@ namespace Tempt
         {
             return new Dictionary<int, ItemData>
             {
-                [1] = new ItemData { Id = 1, NameKey = "item.hp_potion", Category = ItemCategory.Consumable, SubCategory = "HP_Potion", ConsumeEffectKey = "HealHP", ParamValue = 30f, BasePrice = 1, Stackable = true, MaxStack = 99 },
-                [2] = new ItemData { Id = 2, NameKey = "item.mp_potion", Category = ItemCategory.Consumable, SubCategory = "MP_Potion", ConsumeEffectKey = "HealMP", ParamValue = 12f, BasePrice = 1, Stackable = true, MaxStack = 99 },
-                [3] = new ItemData { Id = 3, NameKey = "item.escape", Category = ItemCategory.Consumable, SubCategory = "Escape", ConsumeEffectKey = "Escape", ParamValue = 0f, BasePrice = 30, Stackable = true, MaxStack = 10, IsRetreat = true },
-                [101] = new ItemData { Id = 101, NameKey = "item.training_sword", Category = ItemCategory.Equipment, SubCategory = "Weapon", EquipSlot = EquipmentSlotId.Weapon, EquipMod = new EquipmentStatMod { ATK = 3 }, ParamValue = 3f, BasePrice = 40, Stackable = false, MaxStack = 1 },
-                [201] = new ItemData { Id = 201, NameKey = "item.cloth_armor", Category = ItemCategory.Equipment, SubCategory = "ArmorBody", EquipSlot = EquipmentSlotId.ArmorBody, EquipMod = new EquipmentStatMod { HP = 10, DEF = 1 }, ParamValue = 1f, BasePrice = 35, Stackable = false, MaxStack = 1 },
-                [901] = new ItemData { Id = 901, NameKey = "test.weapon", Category = ItemCategory.Equipment, SubCategory = "Weapon", EquipSlot = EquipmentSlotId.Weapon, EquipMod = new EquipmentStatMod { ATK = 5 }, ParamValue = 5f, BasePrice = 1, Stackable = false, MaxStack = 1 },
-                [902] = new ItemData { Id = 902, NameKey = "test.body", Category = ItemCategory.Equipment, SubCategory = "ArmorBody", EquipSlot = EquipmentSlotId.ArmorBody, EquipMod = new EquipmentStatMod { HP = 15, DEF = 2 }, ParamValue = 2f, BasePrice = 1, Stackable = false, MaxStack = 1 },
-                [903] = new ItemData { Id = 903, NameKey = "test.arms", Category = ItemCategory.Equipment, SubCategory = "ArmorArms", EquipSlot = EquipmentSlotId.ArmorArms, EquipMod = new EquipmentStatMod { ATK = 1, DEF = 1 }, ParamValue = 1f, BasePrice = 1, Stackable = false, MaxStack = 1 },
-                [904] = new ItemData { Id = 904, NameKey = "test.legs", Category = ItemCategory.Equipment, SubCategory = "ArmorLegs", EquipSlot = EquipmentSlotId.ArmorLegs, EquipMod = new EquipmentStatMod { SPD = 2, DEF = 1 }, ParamValue = 2f, BasePrice = 1, Stackable = false, MaxStack = 1 },
+                [1] = new ItemData
+                {
+                    Id = 1,
+                    NameKey = "item.hp_potion",
+                    Category = ItemCategory.Consumable,
+                    SubCategory = "HP_Potion",
+                    ConsumeEffectKey = "HealHP",
+                    ParamValue = 30f,
+                    BasePrice = 1,
+                    Stackable = true,
+                    MaxStack = 99,
+                },
+                [2] = new ItemData
+                {
+                    Id = 2,
+                    NameKey = "item.mp_potion",
+                    Category = ItemCategory.Consumable,
+                    SubCategory = "MP_Potion",
+                    ConsumeEffectKey = "HealMP",
+                    ParamValue = 12f,
+                    BasePrice = 1,
+                    Stackable = true,
+                    MaxStack = 99,
+                },
+                [3] = new ItemData
+                {
+                    Id = 3,
+                    NameKey = "item.escape",
+                    Category = ItemCategory.Consumable,
+                    SubCategory = "Escape",
+                    ConsumeEffectKey = "Escape",
+                    ParamValue = 0f,
+                    BasePrice = 30,
+                    Stackable = true,
+                    MaxStack = 10,
+                    IsRetreat = true,
+                },
+                [101] = new ItemData
+                {
+                    Id = 101,
+                    NameKey = "item.training_sword",
+                    Category = ItemCategory.Equipment,
+                    SubCategory = "Weapon",
+                    EquipSlot = EquipmentSlotId.Weapon,
+                    EquipMod = new EquipmentStatMod { ATK = 3 },
+                    ParamValue = 3f,
+                    BasePrice = 40,
+                    Stackable = false,
+                    MaxStack = 1,
+                },
+                [201] = new ItemData
+                {
+                    Id = 201,
+                    NameKey = "item.cloth_armor",
+                    Category = ItemCategory.Equipment,
+                    SubCategory = "ArmorBody",
+                    EquipSlot = EquipmentSlotId.ArmorBody,
+                    EquipMod = new EquipmentStatMod { HP = 10, DEF = 1 },
+                    ParamValue = 1f,
+                    BasePrice = 35,
+                    Stackable = false,
+                    MaxStack = 1,
+                },
+                [901] = new ItemData
+                {
+                    Id = 901,
+                    NameKey = "test.weapon",
+                    Category = ItemCategory.Equipment,
+                    SubCategory = "Weapon",
+                    EquipSlot = EquipmentSlotId.Weapon,
+                    EquipMod = new EquipmentStatMod { ATK = 5 },
+                    ParamValue = 5f,
+                    BasePrice = 1,
+                    Stackable = false,
+                    MaxStack = 1,
+                },
+                [902] = new ItemData
+                {
+                    Id = 902,
+                    NameKey = "test.body",
+                    Category = ItemCategory.Equipment,
+                    SubCategory = "ArmorBody",
+                    EquipSlot = EquipmentSlotId.ArmorBody,
+                    EquipMod = new EquipmentStatMod { HP = 15, DEF = 2 },
+                    ParamValue = 2f,
+                    BasePrice = 1,
+                    Stackable = false,
+                    MaxStack = 1,
+                },
+                [903] = new ItemData
+                {
+                    Id = 903,
+                    NameKey = "test.arms",
+                    Category = ItemCategory.Equipment,
+                    SubCategory = "ArmorArms",
+                    EquipSlot = EquipmentSlotId.ArmorArms,
+                    EquipMod = new EquipmentStatMod { ATK = 1, DEF = 1 },
+                    ParamValue = 1f,
+                    BasePrice = 1,
+                    Stackable = false,
+                    MaxStack = 1,
+                },
+                [904] = new ItemData
+                {
+                    Id = 904,
+                    NameKey = "test.legs",
+                    Category = ItemCategory.Equipment,
+                    SubCategory = "ArmorLegs",
+                    EquipSlot = EquipmentSlotId.ArmorLegs,
+                    EquipMod = new EquipmentStatMod { SPD = 2, DEF = 1 },
+                    ParamValue = 2f,
+                    BasePrice = 1,
+                    Stackable = false,
+                    MaxStack = 1,
+                },
             };
         }
 
@@ -387,10 +719,50 @@ namespace Tempt
         {
             return new Dictionary<int, RuneData>
             {
-                [1] = new RuneData { Id = 1, NameKey = "rune.dealer.start", RuneType = RuneNodeType.MainNode, ClassId = RuneClass.Dealer, RequiredRuneId = 0, PointCost = 0, EffectType = RuneEffectType.AddATK, EffectValue = 2f },
-                [2] = new RuneData { Id = 2, NameKey = "rune.tanker.start", RuneType = RuneNodeType.MainNode, ClassId = RuneClass.Tanker, RequiredRuneId = 0, PointCost = 0, EffectType = RuneEffectType.AddDEF, EffectValue = 2f },
-                [3] = new RuneData { Id = 3, NameKey = "rune.magic.start", RuneType = RuneNodeType.MainNode, ClassId = RuneClass.MagicDealer, RequiredRuneId = 0, PointCost = 0, EffectType = RuneEffectType.AddMaxMP, EffectValue = 8f },
-                [4] = new RuneData { Id = 4, NameKey = "rune.support.start", RuneType = RuneNodeType.MainNode, ClassId = RuneClass.Supporter, RequiredRuneId = 0, PointCost = 0, EffectType = RuneEffectType.AddMaxHP, EffectValue = 12f },
+                [1] = new RuneData
+                {
+                    Id = 1,
+                    NameKey = "rune.dealer.start",
+                    RuneType = RuneNodeType.MainNode,
+                    ClassId = RuneClass.Dealer,
+                    RequiredRuneId = 0,
+                    PointCost = 0,
+                    EffectType = RuneEffectType.AddATK,
+                    EffectValue = 2f,
+                },
+                [2] = new RuneData
+                {
+                    Id = 2,
+                    NameKey = "rune.tanker.start",
+                    RuneType = RuneNodeType.MainNode,
+                    ClassId = RuneClass.Tanker,
+                    RequiredRuneId = 0,
+                    PointCost = 0,
+                    EffectType = RuneEffectType.AddDEF,
+                    EffectValue = 2f,
+                },
+                [3] = new RuneData
+                {
+                    Id = 3,
+                    NameKey = "rune.magic.start",
+                    RuneType = RuneNodeType.MainNode,
+                    ClassId = RuneClass.MagicDealer,
+                    RequiredRuneId = 0,
+                    PointCost = 0,
+                    EffectType = RuneEffectType.AddMaxMP,
+                    EffectValue = 8f,
+                },
+                [4] = new RuneData
+                {
+                    Id = 4,
+                    NameKey = "rune.support.start",
+                    RuneType = RuneNodeType.MainNode,
+                    ClassId = RuneClass.Supporter,
+                    RequiredRuneId = 0,
+                    PointCost = 0,
+                    EffectType = RuneEffectType.AddMaxHP,
+                    EffectValue = 12f,
+                },
             };
         }
 
@@ -398,9 +770,60 @@ namespace Tempt
         {
             return new Dictionary<int, List<DropEntry>>
             {
-                [1] = new List<DropEntry> { new DropEntry { Id = 1001, DropTableId = 1, ItemId = 1, MinCount = 1, MaxCount = 1, DropRate = 0.5f } },
-                [2] = new List<DropEntry> { new DropEntry { Id = 2001, DropTableId = 2, ItemId = 1, MinCount = 1, MaxCount = 2, DropRate = 0.45f }, new DropEntry { Id = 2002, DropTableId = 2, ItemId = 2, MinCount = 1, MaxCount = 1, DropRate = 0.25f } },
-                [3] = new List<DropEntry> { new DropEntry { Id = 3001, DropTableId = 3, ItemId = 101, MinCount = 1, MaxCount = 1, DropRate = 0.2f }, new DropEntry { Id = 3002, DropTableId = 3, ItemId = 201, MinCount = 1, MaxCount = 1, DropRate = 0.2f } },
+                [1] = new List<DropEntry>
+                {
+                    new DropEntry
+                    {
+                        Id = 1001,
+                        DropTableId = 1,
+                        ItemId = 1,
+                        MinCount = 1,
+                        MaxCount = 1,
+                        DropRate = 0.5f,
+                    },
+                },
+                [2] = new List<DropEntry>
+                {
+                    new DropEntry
+                    {
+                        Id = 2001,
+                        DropTableId = 2,
+                        ItemId = 1,
+                        MinCount = 1,
+                        MaxCount = 2,
+                        DropRate = 0.45f,
+                    },
+                    new DropEntry
+                    {
+                        Id = 2002,
+                        DropTableId = 2,
+                        ItemId = 2,
+                        MinCount = 1,
+                        MaxCount = 1,
+                        DropRate = 0.25f,
+                    },
+                },
+                [3] = new List<DropEntry>
+                {
+                    new DropEntry
+                    {
+                        Id = 3001,
+                        DropTableId = 3,
+                        ItemId = 101,
+                        MinCount = 1,
+                        MaxCount = 1,
+                        DropRate = 0.2f,
+                    },
+                    new DropEntry
+                    {
+                        Id = 3002,
+                        DropTableId = 3,
+                        ItemId = 201,
+                        MinCount = 1,
+                        MaxCount = 1,
+                        DropRate = 0.2f,
+                    },
+                },
             };
         }
 
@@ -419,21 +842,105 @@ namespace Tempt
                 },
                 Stages = new List<StageDef>
                 {
-                    new StageDef { StageIndex = 1, FloorStart = 1, FloorEnd = 2, BossFloor = 3, UnlocksSafeZoneIndex = 1, DifficultyMin = 1, DifficultyMax = 2 },
-                    new StageDef { StageIndex = 2, FloorStart = 5, FloorEnd = 10, BossFloor = 11, UnlocksSafeZoneIndex = 2, DifficultyMin = 2, DifficultyMax = 4 },
-                    new StageDef { StageIndex = 3, FloorStart = 13, FloorEnd = 18, BossFloor = 19, UnlocksSafeZoneIndex = 3, DifficultyMin = 3, DifficultyMax = 6 },
-                    new StageDef { StageIndex = 4, FloorStart = 21, FloorEnd = 28, BossFloor = 29, UnlocksSafeZoneIndex = 4, DifficultyMin = 4, DifficultyMax = 8 },
-                    new StageDef { StageIndex = 5, FloorStart = 31, FloorEnd = 38, BossFloor = 39, UnlocksSafeZoneIndex = 5, DifficultyMin = 5, DifficultyMax = 10 },
-                    new StageDef { StageIndex = 6, FloorStart = 41, FloorEnd = 48, BossFloor = 49, UnlocksSafeZoneIndex = 5, DifficultyMin = 6, DifficultyMax = 12 },
+                    new StageDef
+                    {
+                        StageIndex = 1,
+                        FloorStart = 1,
+                        FloorEnd = 2,
+                        BossFloor = 3,
+                        UnlocksSafeZoneIndex = 1,
+                        DifficultyMin = 1,
+                        DifficultyMax = 2,
+                    },
+                    new StageDef
+                    {
+                        StageIndex = 2,
+                        FloorStart = 5,
+                        FloorEnd = 10,
+                        BossFloor = 11,
+                        UnlocksSafeZoneIndex = 2,
+                        DifficultyMin = 2,
+                        DifficultyMax = 4,
+                    },
+                    new StageDef
+                    {
+                        StageIndex = 3,
+                        FloorStart = 13,
+                        FloorEnd = 18,
+                        BossFloor = 19,
+                        UnlocksSafeZoneIndex = 3,
+                        DifficultyMin = 3,
+                        DifficultyMax = 6,
+                    },
+                    new StageDef
+                    {
+                        StageIndex = 4,
+                        FloorStart = 21,
+                        FloorEnd = 28,
+                        BossFloor = 29,
+                        UnlocksSafeZoneIndex = 4,
+                        DifficultyMin = 4,
+                        DifficultyMax = 8,
+                    },
+                    new StageDef
+                    {
+                        StageIndex = 5,
+                        FloorStart = 31,
+                        FloorEnd = 38,
+                        BossFloor = 39,
+                        UnlocksSafeZoneIndex = 5,
+                        DifficultyMin = 5,
+                        DifficultyMax = 10,
+                    },
+                    new StageDef
+                    {
+                        StageIndex = 6,
+                        FloorStart = 41,
+                        FloorEnd = 48,
+                        BossFloor = 49,
+                        UnlocksSafeZoneIndex = 5,
+                        DifficultyMin = 6,
+                        DifficultyMax = 12,
+                    },
                 },
                 SafeZones = new List<SafeZoneDef>
                 {
-                    new SafeZoneDef { Index = 0, FloorNumber = 0, FeatureKeys = new List<string>() },
-                    new SafeZoneDef { Index = 1, FloorNumber = 4, FeatureKeys = new List<string> { "Inn", "Shop", "Guild", "Temple" } },
-                    new SafeZoneDef { Index = 2, FloorNumber = 12, FeatureKeys = new List<string> { "ErosionAltar" } },
-                    new SafeZoneDef { Index = 3, FloorNumber = 20, FeatureKeys = new List<string> { "Mine" } },
-                    new SafeZoneDef { Index = 4, FloorNumber = 30, FeatureKeys = new List<string> { "Mine" } },
-                    new SafeZoneDef { Index = 5, FloorNumber = 40, FeatureKeys = new List<string> { "Mine" } },
+                    new SafeZoneDef
+                    {
+                        Index = 0,
+                        FloorNumber = 0,
+                        FeatureKeys = new List<string>(),
+                    },
+                    new SafeZoneDef
+                    {
+                        Index = 1,
+                        FloorNumber = 4,
+                        FeatureKeys = new List<string> { "Inn", "Shop", "Guild", "Temple" },
+                    },
+                    new SafeZoneDef
+                    {
+                        Index = 2,
+                        FloorNumber = 12,
+                        FeatureKeys = new List<string> { "ErosionAltar" },
+                    },
+                    new SafeZoneDef
+                    {
+                        Index = 3,
+                        FloorNumber = 20,
+                        FeatureKeys = new List<string> { "Mine" },
+                    },
+                    new SafeZoneDef
+                    {
+                        Index = 4,
+                        FloorNumber = 30,
+                        FeatureKeys = new List<string> { "Mine" },
+                    },
+                    new SafeZoneDef
+                    {
+                        Index = 5,
+                        FloorNumber = 40,
+                        FeatureKeys = new List<string> { "Mine" },
+                    },
                 },
                 MonsterPoolWeights = new List<int> { 1, 1, 1 },
             };
@@ -445,7 +952,12 @@ namespace Tempt
             {
                 ExpToNextLevel = new List<int> { 0, 10, 25, 45, 70, 100, 140, 190, 250, 320, 400 },
                 RunePointPerLevel = 1,
-                ErosionCurve = new ErosionCurve { DailyBase = 1f, ExpBase = 1.05f, InflectionDay = 10 },
+                ErosionCurve = new ErosionCurve
+                {
+                    DailyBase = 1f,
+                    ExpBase = 1.05f,
+                    InflectionDay = 10,
+                },
                 ErosionMonsterMultiplier = 1.5f,
                 InflationCoef = 0.5f,
                 SellRatio = 0.5f,
@@ -455,6 +967,8 @@ namespace Tempt
                 ErosionAltarCost = 3,
                 MinActionTimeSec = 0.1f,
                 RuneResetRefundRate = 0.8f,
+                RuneResetCostGold = 1,
+                RuneClassChangeCostGold = 1,
                 FirstNonPlayerActionDelaySec = 2f,
                 AttackActionTimeSec = 0.3f,
                 SkillActionFallbackSec = 0.5f,
@@ -467,4 +981,3 @@ namespace Tempt
         }
     }
 }
-

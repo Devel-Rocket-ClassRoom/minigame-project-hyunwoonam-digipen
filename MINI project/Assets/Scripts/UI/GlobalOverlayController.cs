@@ -9,24 +9,50 @@ namespace Tempt
     {
         private static GlobalOverlayController current;
 
-        [SerializeField] private GameObject persistentRoot;
-        [SerializeField] private InventoryPage inventoryPage;
-        [SerializeField] private GameObject gameOverPanel;
-        [SerializeField] private QuitConfirmPopup quitConfirmPopup;
+        [SerializeField]
+        private GameObject persistentRoot;
 
-        private HotkeyManager subscribedHotkey;
+        [SerializeField]
+        private InventoryPage inventoryPage;
+
+        [SerializeField]
+        private GameObject runePageRoot;
+
+        [SerializeField]
+        private GameObject skillPageRoot;
+
+        [SerializeField]
+        private GameObject statRunePageRoot;
+
+        [SerializeField]
+        private RuneTreeView runeTreeView;
+
+        [SerializeField]
+        private GameObject gameOverPanel;
+
+        [SerializeField]
+        private QuitConfirmPopup quitConfirmPopup;
+
         private bool gameOverOpen;
         private float gameOverInputReadyTime;
 
-        public bool HasHotkeySubscription => subscribedHotkey != null;
-
         public bool IsInventoryOpen => inventoryPage != null && inventoryPage.IsOpen;
+
+        public bool IsRuneOpen => runePageRoot != null && runePageRoot.activeSelf;
+
+        public bool IsSkillOpen => skillPageRoot != null && skillPageRoot.activeSelf;
+
+        public bool IsStatRuneOpen => statRunePageRoot != null && statRunePageRoot.activeSelf;
+
+        public bool IsQuitConfirmOpen => quitConfirmPopup != null && quitConfirmPopup.IsOpen;
 
         public static bool TryGetInstance(out GlobalOverlayController controller)
         {
             if (current == null)
             {
-                current = FindFirstObjectByType<GlobalOverlayController>(FindObjectsInactive.Include);
+                current = FindFirstObjectByType<GlobalOverlayController>(
+                    FindObjectsInactive.Include
+                );
             }
 
             controller = current;
@@ -44,28 +70,15 @@ namespace Tempt
 
             DontDestroyOnLoad(persistentRoot);
             inventoryPage.OnClose();
+            HideRunePage();
+            HideSkillPage();
+            HideStatRunePage();
             HideGameOver();
             HideQuitConfirm();
         }
 
-        private void OnEnable()
-        {
-            TrySubscribe();
-        }
-
-        private void Start()
-        {
-            TrySubscribe();
-        }
-
-        private void OnDisable()
-        {
-            Unsubscribe();
-        }
-
         private void OnDestroy()
         {
-            Unsubscribe();
             if (current == this)
             {
                 current = null;
@@ -91,6 +104,9 @@ namespace Tempt
             }
 
             inventoryPage.OnClose();
+            HideRunePage();
+            HideSkillPage();
+            HideStatRunePage();
             gameOverPanel.SetActive(true);
             gameOverOpen = true;
             gameOverInputReadyTime = Time.unscaledTime + 0.2f;
@@ -103,9 +119,16 @@ namespace Tempt
 
         public void ShowQuitConfirm(System.Action onConfirm)
         {
+            if (TryCloseTopEscapePanel())
+            {
+                return;
+            }
+
             if (!TryResolveQuitConfirmPopup())
             {
-                Debug.LogError("[GlobalOverlayController] QuitConfirmPopup 을 찾을 수 없습니다.");
+                Debug.LogError(
+                    "[GlobalOverlayController] ExitGamePanel / QuitConfirmPopup 을 찾을 수 없습니다."
+                );
                 return;
             }
 
@@ -115,6 +138,51 @@ namespace Tempt
         public void HideQuitConfirm()
         {
             quitConfirmPopup?.Hide();
+        }
+
+        public bool TryCloseTopEscapePanel()
+        {
+            if (quitConfirmPopup != null && quitConfirmPopup.IsOpen)
+            {
+                HideQuitConfirm();
+                return true;
+            }
+
+            if (inventoryPage != null && inventoryPage.IsOpen)
+            {
+                inventoryPage.OnClose();
+                return true;
+            }
+
+            if (IsRuneOpen)
+            {
+                HideRunePage();
+                return true;
+            }
+
+            if (IsSkillOpen)
+            {
+                HideSkillPage();
+                return true;
+            }
+
+            if (IsStatRuneOpen)
+            {
+                HideStatRunePage();
+                return true;
+            }
+
+            if (TryCloseSafe1Panel())
+            {
+                return true;
+            }
+
+            if (TryCloseSafe0Panel())
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public void HideGameOver()
@@ -129,11 +197,86 @@ namespace Tempt
             gameOverOpen = false;
         }
 
+        public void ShowRunePage()
+        {
+            if (!TryResolveRunePage())
+            {
+                Debug.LogError(
+                    "[GlobalOverlayController] RuneTreePanel / RuneTreeView 참조가 Boot 씬에서 직접 할당되어 있지 않습니다."
+                );
+                return;
+            }
+
+            inventoryPage.OnClose();
+            HideSkillPage();
+            HideStatRunePage();
+            runePageRoot.SetActive(true);
+            BindRuneTree();
+        }
+
+        public void HideRunePage()
+        {
+            if (runePageRoot != null)
+            {
+                runePageRoot.SetActive(false);
+            }
+        }
+
+        public void ShowSkillPage()
+        {
+            if (!TryResolveSkillPage())
+            {
+                Debug.LogError(
+                    "[GlobalOverlayController] SkillsPanel / MainSkillsPanel 을 찾을 수 없습니다."
+                );
+                return;
+            }
+
+            inventoryPage.OnClose();
+            HideRunePage();
+            HideStatRunePage();
+            skillPageRoot.SetActive(true);
+        }
+
+        public void HideSkillPage()
+        {
+            if (skillPageRoot != null)
+            {
+                skillPageRoot.SetActive(false);
+            }
+        }
+
+        public void ShowStatRunePage()
+        {
+            if (!TryResolveStatRunePage())
+            {
+                Debug.LogError(
+                    "[GlobalOverlayController] StatusPanel / StatRunePanel 을 찾을 수 없습니다."
+                );
+                return;
+            }
+
+            inventoryPage.OnClose();
+            HideRunePage();
+            HideSkillPage();
+            statRunePageRoot.SetActive(true);
+        }
+
+        public void HideStatRunePage()
+        {
+            if (statRunePageRoot != null)
+            {
+                statRunePageRoot.SetActive(false);
+            }
+        }
+
         private bool ValidateReferences()
         {
             if (persistentRoot == null || inventoryPage == null)
             {
-                Debug.LogError("[GlobalOverlayController] persistentRoot / inventoryPage 참조가 Boot 씬에서 직접 할당되어야 합니다.");
+                Debug.LogError(
+                    "[GlobalOverlayController] persistentRoot / inventoryPage 참조가 Boot 씬에서 직접 할당되어야 합니다."
+                );
                 return false;
             }
 
@@ -175,7 +318,94 @@ namespace Tempt
             }
 
             quitConfirmPopup = persistentRoot.GetComponentInChildren<QuitConfirmPopup>(true);
+            if (quitConfirmPopup != null)
+            {
+                return true;
+            }
+
+            Transform exitGamePanel = FindChildRecursive(persistentRoot.transform, "ExitGamePanel");
+            if (exitGamePanel == null)
+            {
+                return false;
+            }
+
+            quitConfirmPopup = exitGamePanel.GetComponent<QuitConfirmPopup>();
+            if (quitConfirmPopup == null)
+            {
+                quitConfirmPopup = exitGamePanel.gameObject.AddComponent<QuitConfirmPopup>();
+            }
+
             return quitConfirmPopup != null;
+        }
+
+        private bool TryResolveRunePage()
+        {
+            if (runePageRoot != null && runeTreeView != null)
+            {
+                return true;
+            }
+
+            if (persistentRoot == null)
+            {
+                return false;
+            }
+
+            if (runePageRoot == null)
+            {
+                Transform found = FindChildRecursive(persistentRoot.transform, "RuneTreePanel");
+                runePageRoot = found != null ? found.gameObject : null;
+            }
+
+            if (runeTreeView == null && runePageRoot != null)
+            {
+                runeTreeView = runePageRoot.GetComponentInChildren<RuneTreeView>(true);
+            }
+
+            return runePageRoot != null && runeTreeView != null;
+        }
+
+        private bool TryResolveSkillPage()
+        {
+            if (skillPageRoot != null)
+            {
+                return true;
+            }
+
+            if (persistentRoot == null)
+            {
+                return false;
+            }
+
+            Transform found = FindChildRecursive(persistentRoot.transform, "SkillsPanel");
+            if (found == null)
+            {
+                found = FindChildRecursive(persistentRoot.transform, "MainSkillsPanel");
+            }
+
+            skillPageRoot = found != null ? found.gameObject : null;
+            return skillPageRoot != null;
+        }
+
+        private bool TryResolveStatRunePage()
+        {
+            if (statRunePageRoot != null)
+            {
+                return true;
+            }
+
+            if (persistentRoot == null)
+            {
+                return false;
+            }
+
+            Transform found = FindChildRecursive(persistentRoot.transform, "StatusPanel");
+            if (found == null)
+            {
+                found = FindChildRecursive(persistentRoot.transform, "StatRunePanel");
+            }
+
+            statRunePageRoot = found != null ? found.gameObject : null;
+            return statRunePageRoot != null;
         }
 
         private static Transform FindChildRecursive(Transform root, string childName)
@@ -202,48 +432,153 @@ namespace Tempt
             return null;
         }
 
-        private void TrySubscribe()
+        public void HandleTogglePage(HotkeyPageId pageId)
         {
-            if (!enabled || subscribedHotkey != null)
+            if (IsSafe0RuneSelectionBlocking())
             {
                 return;
             }
 
-            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.Hotkey == null)
+            if (pageId == HotkeyPageId.Inventory)
             {
+                ToggleInventoryPage();
                 return;
             }
 
-            subscribedHotkey = gsm.Hotkey;
-            subscribedHotkey.OnTogglePage += HandleTogglePage;
+            if (pageId == HotkeyPageId.Skill)
+            {
+                ToggleSkillPage();
+                return;
+            }
+
+            if (pageId == HotkeyPageId.StatRune)
+            {
+                ToggleStatRunePage();
+                return;
+            }
+
+            if (pageId == HotkeyPageId.Rune)
+            {
+                ToggleRunePage();
+            }
         }
 
-        private void Unsubscribe()
+        private void ToggleInventoryPage()
         {
-            if (subscribedHotkey == null)
-            {
-                return;
-            }
-
-            subscribedHotkey.OnTogglePage -= HandleTogglePage;
-            subscribedHotkey = null;
-        }
-
-        private void HandleTogglePage(HotkeyPageId pageId)
-        {
-            if (pageId != HotkeyPageId.Inventory)
-            {
-                return;
-            }
-
             if (inventoryPage.IsOpen)
             {
                 inventoryPage.OnClose();
             }
             else
             {
+                HideRunePage();
+                HideSkillPage();
+                HideStatRunePage();
                 inventoryPage.OnOpen();
             }
+        }
+
+        private void ToggleRunePage()
+        {
+            if (IsRuneOpen)
+            {
+                HideRunePage();
+            }
+            else
+            {
+                ShowRunePage();
+            }
+        }
+
+        private void ToggleSkillPage()
+        {
+            if (IsSkillOpen)
+            {
+                HideSkillPage();
+            }
+            else
+            {
+                ShowSkillPage();
+            }
+        }
+
+        private void ToggleStatRunePage()
+        {
+            if (IsStatRuneOpen)
+            {
+                HideStatRunePage();
+            }
+            else
+            {
+                ShowStatRunePage();
+            }
+        }
+
+        private void BindRuneTree()
+        {
+            if (!TryResolveRunePage())
+            {
+                return;
+            }
+
+            if (
+                !GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                || gsm.CurrentRun?.Player?.Rune == null
+            )
+            {
+                runeTreeView.Bind(null, RuneTreeView.Mode.ViewUnlock, true);
+                return;
+            }
+
+            runeTreeView.Bind(
+                gsm.CurrentRun.Player.Rune,
+                RuneTreeView.Mode.ViewUnlock,
+                IsCombatScene()
+            );
+        }
+
+        private static bool TryCloseSafe1Panel()
+        {
+            SafeZone1FacilityMockupUI safe1Ui = FindFirstObjectByType<SafeZone1FacilityMockupUI>(
+                FindObjectsInactive.Include
+            );
+            return safe1Ui != null && safe1Ui.TryCloseTopPanel();
+        }
+
+        private static bool TryCloseSafe0Panel()
+        {
+            SafeZone0SanctuaryMockupUI safe0Ui = FindFirstObjectByType<SafeZone0SanctuaryMockupUI>(
+                FindObjectsInactive.Include
+            );
+            return safe0Ui != null && safe0Ui.TryCloseTopPanel();
+        }
+
+        private static bool IsSafe0RuneSelectionBlocking()
+        {
+            if (
+                !GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                || gsm.Scenes == null
+                || gsm.Scenes.CurrentSceneId != SceneId.Safe0
+            )
+            {
+                return false;
+            }
+
+            SafeZone0SanctuaryMockupUI safe0Ui = FindFirstObjectByType<SafeZone0SanctuaryMockupUI>(
+                FindObjectsInactive.Exclude
+            );
+            return safe0Ui != null
+                && safe0Ui.isActiveAndEnabled
+                && safe0Ui.IsRuneSelectionBlocking();
+        }
+
+        private static bool IsCombatScene()
+        {
+            return GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                && (
+                    gsm.CombatContext != null
+                    || (gsm.Scenes != null && gsm.Scenes.CurrentSceneId == SceneId.Combat)
+                );
         }
     }
 }

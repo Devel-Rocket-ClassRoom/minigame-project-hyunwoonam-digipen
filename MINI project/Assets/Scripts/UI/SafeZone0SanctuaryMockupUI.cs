@@ -7,7 +7,8 @@ namespace Tempt
 {
     public sealed class SafeZone0SanctuaryMockupUI : MonoBehaviour
     {
-        [SerializeField] private Safe0Controller controller;
+        [SerializeField]
+        private Safe0Controller controller;
 
         private readonly List<Button> runeButtons = new List<Button>();
 
@@ -38,7 +39,14 @@ namespace Tempt
             WireButtons();
             selectedRuneIndex = 0;
             SetRuneSelection(0);
-            ShowRuneSelect();
+            if (IsStartingRuneConfirmed())
+            {
+                HideRuneSelect();
+            }
+            else
+            {
+                ShowRuneSelect();
+            }
         }
 
         public void ShowRuneSelect()
@@ -47,24 +55,30 @@ namespace Tempt
             SetPanelActive(blackStelePanel, false);
             SetPanelActive(graveyardPanel, false);
             SetHotspotsInteractable(false);
+            SetEnterFloorMapInteractable(false);
         }
 
         public void ConfirmRune()
         {
             if (controller == null)
             {
-                Debug.LogError("[SafeZone0SanctuaryMockupUI] Safe0Controller 참조가 씬에 직접 할당되어 있지 않습니다.");
+                Debug.LogError(
+                    "[SafeZone0SanctuaryMockupUI] Safe0Controller 참조가 씬에 직접 할당되어 있지 않습니다."
+                );
                 return;
             }
 
             controller.ApplyStartingRuneClass(RuneClassFromSelection(selectedRuneIndex));
-            SetPanelActive(runeSelectPanel, false);
-            SetHotspotsInteractable(true);
+            if (IsStartingRuneConfirmed())
+            {
+                HideRuneSelect();
+            }
         }
 
         public void OpenBlackStele()
         {
-            if (runeSelectPanel != null && runeSelectPanel.activeSelf) return;
+            if (runeSelectPanel != null && runeSelectPanel.activeSelf)
+                return;
             SetPanelActive(blackStelePanel, true);
             SetPanelActive(graveyardPanel, false);
         }
@@ -76,7 +90,8 @@ namespace Tempt
 
         public void OpenGraveyard()
         {
-            if (runeSelectPanel != null && runeSelectPanel.activeSelf) return;
+            if (runeSelectPanel != null && runeSelectPanel.activeSelf)
+                return;
             SetPanelActive(graveyardPanel, true);
             SetPanelActive(blackStelePanel, false);
         }
@@ -86,11 +101,43 @@ namespace Tempt
             SetPanelActive(graveyardPanel, false);
         }
 
+        public bool TryCloseTopPanel()
+        {
+            CacheHierarchy();
+
+            if (blackStelePanel != null && blackStelePanel.activeSelf)
+            {
+                CloseBlackStele();
+                return true;
+            }
+
+            if (graveyardPanel != null && graveyardPanel.activeSelf)
+            {
+                CloseGraveyard();
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool IsRuneSelectionBlocking()
+        {
+            return !IsStartingRuneConfirmed();
+        }
+
         public void EnterFloorMap()
         {
             if (controller == null)
             {
-                Debug.LogError("[SafeZone0SanctuaryMockupUI] Safe0Controller 참조가 씬에 직접 할당되어 있지 않습니다.");
+                Debug.LogError(
+                    "[SafeZone0SanctuaryMockupUI] Safe0Controller 참조가 씬에 직접 할당되어 있지 않습니다."
+                );
+                return;
+            }
+
+            if (IsRuneSelectionBlocking())
+            {
+                ShowRuneSelect();
                 return;
             }
 
@@ -105,10 +152,12 @@ namespace Tempt
                 bool selected = i == selectedRuneIndex;
                 Button button = runeButtons[i];
                 Graphic graphic = button.targetGraphic;
-                if (graphic != null) graphic.color = selected ? selectedCard : normalCard;
+                if (graphic != null)
+                    graphic.color = selected ? selectedCard : normalCard;
 
                 Outline outline = button.GetComponent<Outline>();
-                if (outline != null) outline.effectColor = selected ? selectedBorder : normalBorder;
+                if (outline != null)
+                    outline.effectColor = selected ? selectedBorder : normalBorder;
 
                 TextMeshProUGUI[] texts = button.GetComponentsInChildren<TextMeshProUGUI>(true);
                 foreach (TextMeshProUGUI text in texts)
@@ -131,7 +180,9 @@ namespace Tempt
 
             blackSteleHotspot = FindButton("BackgroundHotspots/BlackSteleHotspotButton");
             graveyardHotspot = FindButton("BackgroundHotspots/GraveyardHotspotButton");
-            confirmRuneButton = FindButton("Panels/RuneSelectPanel/SelectedRuneDetail/DetailCard/ConfirmRuneButton");
+            confirmRuneButton = FindButton(
+                "Panels/RuneSelectPanel/SelectedRuneDetail/DetailCard/ConfirmRuneButton"
+            );
             enterFloorMapButton = FindButton("EnterFloorMapButton");
 
             Transform grid = transform.Find("Panels/RuneSelectPanel/RuneCardGrid");
@@ -201,6 +252,32 @@ namespace Tempt
             return target != null ? target.GetComponent<Button>() : null;
         }
 
+        private void HideRuneSelect()
+        {
+            SetPanelActive(runeSelectPanel, false);
+            SetHotspotsInteractable(true);
+            SetEnterFloorMapInteractable(true);
+        }
+
+        private bool IsStartingRuneConfirmed()
+        {
+            if (controller != null)
+            {
+                return controller.HasConfirmedStartingRune();
+            }
+
+            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                return false;
+            }
+
+            PlayerState player = gsm.CurrentRun?.Player;
+            return player != null
+                && player.StartingClass != RuneClass.None
+                && player.Rune != null
+                && player.Rune.ClassId != RuneClass.None;
+        }
+
         private static RuneClass RuneClassFromSelection(int index)
         {
             switch (index)
@@ -218,13 +295,24 @@ namespace Tempt
 
         private void SetHotspotsInteractable(bool interactable)
         {
-            if (blackSteleHotspot != null) blackSteleHotspot.interactable = interactable;
-            if (graveyardHotspot != null) graveyardHotspot.interactable = interactable;
+            if (blackSteleHotspot != null)
+                blackSteleHotspot.interactable = interactable;
+            if (graveyardHotspot != null)
+                graveyardHotspot.interactable = interactable;
+        }
+
+        private void SetEnterFloorMapInteractable(bool interactable)
+        {
+            if (enterFloorMapButton != null)
+            {
+                enterFloorMapButton.interactable = interactable;
+            }
         }
 
         private static void SetPanelActive(GameObject panel, bool active)
         {
-            if (panel != null) panel.SetActive(active);
+            if (panel != null)
+                panel.SetActive(active);
         }
     }
 }

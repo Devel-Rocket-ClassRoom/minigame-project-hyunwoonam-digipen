@@ -5,6 +5,7 @@ namespace Tempt
     /// <summary>
     /// 게임 전역 밸런스 곡선. JSON.
     /// </summary>
+    [System.Serializable]
     public sealed class BalanceData
     {
         /// <summary>레벨별 필요 EXP 표(인덱스 = 레벨, 값 = 필요량).</summary>
@@ -43,6 +44,12 @@ namespace Tempt
         /// <summary>룬 초기화 시 환급 비율(0~1).</summary>
         public float RuneResetRefundRate;
 
+        /// <summary>룬 트리 초기화 골드 비용.</summary>
+        public int RuneResetCostGold;
+
+        /// <summary>룬 직업 변경 골드 비용.</summary>
+        public int RuneClassChangeCostGold;
+
         /// <summary>첫 AI 행동 시작 전 대기 시간(초).</summary>
         public float FirstNonPlayerActionDelaySec;
 
@@ -69,6 +76,7 @@ namespace Tempt
     }
 
     /// <summary>침식 지수함수 파라미터.</summary>
+    [System.Serializable]
     public sealed class ErosionCurve
     {
         /// <summary>일일 기본 증가량(초기).</summary>
@@ -81,4 +89,3 @@ namespace Tempt
         public int InflectionDay;
     }
 }
-

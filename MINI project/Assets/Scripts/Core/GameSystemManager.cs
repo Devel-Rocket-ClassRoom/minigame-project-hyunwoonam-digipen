@@ -81,13 +81,16 @@ namespace Tempt
             Scenes = GetComponent<GameSceneManager>();
             if (Scenes == null)
             {
-                Debug.LogError("[GameSystemManager] GameSceneManager 컴포넌트가 같은 GameObject에 필요합니다.");
+                Debug.LogError(
+                    "[GameSystemManager] GameSceneManager 컴포넌트가 같은 GameObject에 필요합니다."
+                );
                 enabled = false;
                 return;
             }
 
             Hotkey = new HotkeyManager();
             Hotkey.BindGlobalKeys();
+            Hotkey.OnTogglePage += RequestTogglePage;
             Hotkey.OnRequestQuit += RequestQuitConfirm;
         }
 
@@ -106,6 +109,7 @@ namespace Tempt
 
                 if (Hotkey != null)
                 {
+                    Hotkey.OnTogglePage -= RequestTogglePage;
                     Hotkey.OnRequestQuit -= RequestQuitConfirm;
                 }
 
@@ -132,7 +136,6 @@ namespace Tempt
 
             Hotkey?.PollInput();
         }
-
 
         /// <summary>
         /// 새 게임을 시작한다. 메인 메뉴의 New Game 버튼에서 호출.
@@ -198,13 +201,18 @@ namespace Tempt
             stats.RestoreToFull();
 
             var player = new PlayerState
-            { 
-                Name = "Player", 
+            {
+                Name = "Player",
                 Level = 1,
                 Exp = 0,
                 Stats = stats,
                 StartingClass = RuneClass.None,
-                Rune = new PlayerRuneState { ClassId = RuneClass.None, RunePoints = 0, UnlockedIds = new System.Collections.Generic.HashSet<int>() },
+                Rune = new PlayerRuneState
+                {
+                    ClassId = RuneClass.None,
+                    RunePoints = 0,
+                    UnlockedIds = new System.Collections.Generic.HashSet<int>(),
+                },
                 Inventory = new InventoryState(),
                 Equipment = new EquipmentSlots(),
                 Consumables = new ConsumableSlots(),
@@ -213,18 +221,25 @@ namespace Tempt
 
             player.Inventory.Add(1, 2);
             player.Inventory.Add(3, 1);
+
             AddStartingEquipment(player.Inventory, 901);
             AddStartingEquipment(player.Inventory, 902);
             AddStartingEquipment(player.Inventory, 903);
             AddStartingEquipment(player.Inventory, 904);
+
             player.Consumables.SlotItemIds[0] = 1;
             player.Consumables.SlotItemIds[1] = 3;
+
             return player;
         }
 
         private void AddStartingEquipment(InventoryState inventory, int itemId)
         {
-            if (inventory == null || Data?.Items == null || !Data.Items.TryGetValue(itemId, out ItemData itemData))
+            if (
+                inventory == null
+                || Data?.Items == null
+                || !Data.Items.TryGetValue(itemId, out ItemData itemData)
+            )
             {
                 Debug.LogError("[GameSystemManager] 시작 테스트 장비 ID 없음: " + itemId);
                 return;
@@ -232,7 +247,9 @@ namespace Tempt
 
             if (itemData.Category != ItemCategory.Equipment || itemData.Stackable)
             {
-                Debug.LogError("[GameSystemManager] 시작 테스트 장비가 Equipment가 아닙니다: " + itemId);
+                Debug.LogError(
+                    "[GameSystemManager] 시작 테스트 장비가 Equipment가 아닙니다: " + itemId
+                );
                 return;
             }
 
@@ -260,11 +277,13 @@ namespace Tempt
             }
 
             CurrentRun = Save.Continue.ToGameRunStatet(Data);
-            AttachErosionToCurrentRun();
-            CombatContext = null;
-            SceneId sceneId = Save.Continue.Location != null ? Save.Continue.Location.SceneId : SceneId.Safe0;
-            Scenes.RequestScene(sceneId);
 
+            AttachErosionToCurrentRun();
+
+            CombatContext = null;
+            SceneId sceneId =
+                Save.Continue.Location != null ? Save.Continue.Location.SceneId : SceneId.Safe0;
+            Scenes.RequestScene(sceneId);
         }
 
         /// <summary>
@@ -295,8 +314,12 @@ namespace Tempt
 
             int rechallengeMaxFloor = floorMapRechallengeMaxFloor;
             int rechallengeReturnSafeIndex = floorMapRechallengeReturnSafeIndex;
-            bool rechallengeSelectable = isRechallenget && node.Floor > 0 && node.Floor <= rechallengeMaxFloor;
-            bool selectable = isRechallenget ? rechallengeSelectable : node.Floor == CurrentRun.FloorMap.NextSelectableFloor;
+            bool rechallengeSelectable =
+                isRechallenget && node.Floor > 0 && node.Floor <= rechallengeMaxFloor;
+            bool selectable = isRechallenget
+                ? rechallengeSelectable
+                : node.Floor == CurrentRun.FloorMap.NextSelectableFloor;
+
             if (!selectable || (!isRechallenget && node.IsCleared))
             {
                 return;
@@ -318,18 +341,21 @@ namespace Tempt
 
             Save?.SaveSnapshot();
             Scenes.LoadCombat();
-
         }
 
         /// <summary>안전지대에서 안전지대 이동 가능 상태로 플로어맵을 연다.</summary>
         public void LoadFloorMapFromSafe(int safeIndex)
         {
             ArmFloorMapSafeTravel(safeIndex);
+
             if (CanOpenRechallengeFromSafe(safeIndex, out int maxFloor))
             {
                 floorMapRechallengeRequested = true;
                 floorMapRechallengeMaxFloor = maxFloor;
-                floorMapRechallengeReturnSafeIndex = System.Math.Max(0, System.Math.Min(5, safeIndex));
+                floorMapRechallengeReturnSafeIndex = System.Math.Max(
+                    0,
+                    System.Math.Min(5, safeIndex)
+                );
             }
             else
             {
@@ -357,6 +383,7 @@ namespace Tempt
             sourceSafeIndex = floorMapSafeTravelRequested ? floorMapSafeTravelSourceSafeIndex : 0;
             bool requested = floorMapSafeTravelRequested;
             floorMapSafeTravelRequested = false;
+
             return requested;
         }
 
@@ -365,8 +392,11 @@ namespace Tempt
         {
             maxFloor = floorMapRechallengeRequested ? floorMapRechallengeMaxFloor : 0;
             returnSafeIndex = floorMapRechallengeRequested ? floorMapRechallengeReturnSafeIndex : 0;
+
             bool requested = floorMapRechallengeRequested && maxFloor > 0;
+
             floorMapRechallengeRequested = false;
+
             return requested;
         }
 
@@ -378,7 +408,11 @@ namespace Tempt
                 return;
             }
 
-            if (safeIndex < 0 || safeIndex >= GetSafeZoneCount() || !CurrentRun.SafeUnlocks.IsUnlocked(safeIndex))
+            if (
+                safeIndex < 0
+                || safeIndex >= GetSafeZoneCount()
+                || !CurrentRun.SafeUnlocks.IsUnlocked(safeIndex)
+            )
             {
                 return;
             }
@@ -401,7 +435,10 @@ namespace Tempt
         private void ArmFloorMapSafeTravel(int safeIndex)
         {
             floorMapSafeTravelRequested = true;
-            floorMapSafeTravelSourceSafeIndex = System.Math.Max(0, System.Math.Min(GetSafeZoneCount() - 1, safeIndex));
+            floorMapSafeTravelSourceSafeIndex = System.Math.Max(
+                0,
+                System.Math.Min(GetSafeZoneCount() - 1, safeIndex)
+            );
         }
 
         private int ResolveRechallengeMaxFloor(int safeIndex)
@@ -469,6 +506,7 @@ namespace Tempt
                 for (int i = 0; i < Data.World.SafeZones.Count; i++)
                 {
                     SafeZoneDef safeZone = Data.World.SafeZones[i];
+
                     if (safeZone != null && safeZone.Index == safeIndex)
                     {
                         return safeZone.FloorNumber;
@@ -553,25 +591,35 @@ namespace Tempt
 
             if (result == CombatResult.Defeat)
             {
-                Save?.AppendGrave(CurrentRun.Player != null ? CurrentRun.Player.Name : "Player", System.DateTime.Now);
+                Save?.AppendGrave(
+                    CurrentRun.Player != null ? CurrentRun.Player.Name : "Player",
+                    System.DateTime.Now
+                );
                 Save?.ClearContinue();
                 CurrentRun = null;
                 CombatContext = null;
                 ShowGameOverOverlay();
                 Scenes.LoadMainMenu();
+
                 return;
             }
 
             if (result == CombatResult.Retreat)
             {
-                int safeIndex = CombatContext != null ? System.Math.Max(0, CombatContext.Node.StageIndex - 1) : 0;
+                int safeIndex =
+                    CombatContext != null
+                        ? System.Math.Max(0, CombatContext.Node.StageIndex - 1)
+                        : 0;
                 CombatContext = null;
                 Save?.SaveSnapshot();
                 Scenes.LoadSafeZone(safeIndex);
+
                 return;
             }
 
-            NodeRewardSummary summary = controller != null ? controller.CollectNodeRewards() : new NodeRewardSummary();
+            NodeRewardSummary summary =
+                controller != null ? controller.CollectNodeRewards() : new NodeRewardSummary();
+
             if (summary == null)
             {
                 summary = new NodeRewardSummary();
@@ -581,6 +629,7 @@ namespace Tempt
             RewardGrant.ApplyCombatRewards(CurrentRun, Data, Events, summary, overflowIds);
 
             System.Action closeAction = () => FinishVictoryAfterReward();
+
             if (controller?.Hud?.RewardPage != null)
             {
                 controller.Hud.RewardPage.Show(summary, overflowIds, closeAction);
@@ -604,14 +653,16 @@ namespace Tempt
             // - Scenes.LoadMainMenu().
             if (CurrentRun != null)
             {
-                Save?.AppendClearRecord(CurrentRun.Player != null ? CurrentRun.Player.Name : "Player", System.DateTime.Now);
+                Save?.AppendClearRecord(
+                    CurrentRun.Player != null ? CurrentRun.Player.Name : "Player",
+                    System.DateTime.Now
+                );
             }
 
             Save?.ClearContinue();
             CurrentRun = null;
             CombatContext = null;
             Scenes.LoadMainMenu();
-
         }
 
         /// <summary>
@@ -633,13 +684,18 @@ namespace Tempt
 #else
             Application.Quit();
 #endif
-
         }
 
         private void FinishVictoryAfterReward()
         {
             CombatContext context = CombatContext;
-            VictoryFlowDecision decision = VictoryFlowResolver.Resolve(context, CurrentRun, Data?.World, GetSafeZoneCount() - 1);
+            VictoryFlowDecision decision = VictoryFlowResolver.Resolve(
+                context,
+                CurrentRun,
+                Data?.World,
+                GetSafeZoneCount() - 1
+            );
+
             if (decision.CompleteRun)
             {
                 CompleteRun();
@@ -651,10 +707,17 @@ namespace Tempt
             if (decision.LoadSafeZone)
             {
                 int safeIndex = decision.SafeIndex;
+
                 CurrentRun.SafeUnlocks.Unlock(safeIndex);
                 Events?.RaiseSafeZoneLockChanged(safeIndex, false);
-                bool shouldActivateErosionAfterSafeEntry = decision.ShouldActivateErosion && safeIndex >= SafeIndexForErosionStart;
-                if (decision.ShouldResetErosion || Erosion?.IsStageFullyEroded(decision.StageIndex) == true)
+
+                bool shouldActivateErosionAfterSafeEntry =
+                    decision.ShouldActivateErosion && safeIndex >= SafeIndexForErosionStart;
+
+                if (
+                    decision.ShouldResetErosion
+                    || Erosion?.IsStageFullyEroded(decision.StageIndex) == true
+                )
                 {
                     Erosion?.Reset(decision.StageIndex);
                 }
@@ -667,6 +730,7 @@ namespace Tempt
                 {
                     Erosion?.Activate();
                 }
+
                 CurrentRun.CurrentFloor = ResolveSafeZoneFloor(safeIndex);
                 Save?.SaveSnapshot();
                 Scenes.LoadSafeZone(safeIndex);
@@ -686,7 +750,9 @@ namespace Tempt
             }
             else
             {
-                Debug.LogError("[GameSystemManager] GlobalOverlayController 를 찾을 수 없어 GameOver 패널을 표시할 수 없습니다.");
+                Debug.LogError(
+                    "[GameSystemManager] GlobalOverlayController 를 찾을 수 없어 GameOver 패널을 표시할 수 없습니다."
+                );
             }
         }
 
@@ -701,6 +767,7 @@ namespace Tempt
             CurrentRun.Erosion.EnsureStageCount(ErosionSystem.GetMaxStage(Data?.World));
             CurrentRun.SafeUnlocks?.EnsureCapacity(GetSafeZoneCount());
             Erosion = new ErosionSystem(CurrentRun.Erosion, Events, Data?.Balance, Data?.World);
+
             SubscribeErosionEvents();
         }
 
@@ -712,7 +779,22 @@ namespace Tempt
                 return;
             }
 
-            Debug.LogError("[GameSystemManager] GlobalOverlayController 를 찾을 수 없어 종료 확인 팝업을 표시할 수 없습니다.");
+            Debug.LogError(
+                "[GameSystemManager] GlobalOverlayController 를 찾을 수 없어 종료 확인 팝업을 표시할 수 없습니다."
+            );
+        }
+
+        public void RequestTogglePage(HotkeyPageId pageId)
+        {
+            if (GlobalOverlayController.TryGetInstance(out GlobalOverlayController overlay))
+            {
+                overlay.HandleTogglePage(pageId);
+                return;
+            }
+
+            Debug.LogError(
+                "[GameSystemManager] GlobalOverlayController 를 찾을 수 없어 단축키 페이지를 열 수 없습니다."
+            );
         }
 
         private void SubscribeErosionEvents()
@@ -755,14 +837,19 @@ namespace Tempt
 
         private int GetSafeZoneCount()
         {
-            return Data?.World?.SafeZones != null && Data.World.SafeZones.Count > 0 ? Data.World.SafeZones.Count : 6;
+            return Data?.World?.SafeZones != null && Data.World.SafeZones.Count > 0
+                ? Data.World.SafeZones.Count
+                : 6;
         }
 
         private void HandleAllStagesEroded()
         {
             if (CurrentRun != null)
             {
-                Save?.AppendGrave(CurrentRun.Player != null ? CurrentRun.Player.Name : "Player", System.DateTime.Now);
+                Save?.AppendGrave(
+                    CurrentRun.Player != null ? CurrentRun.Player.Name : "Player",
+                    System.DateTime.Now
+                );
             }
 
             Save?.ClearContinue();
@@ -780,7 +867,9 @@ namespace Tempt
             }
             else
             {
-                Debug.LogError("[GameSystemManager] GlobalOverlayController 를 찾을 수 없어 전체 침식 게임오버 패널을 표시할 수 없습니다.");
+                Debug.LogError(
+                    "[GameSystemManager] GlobalOverlayController 를 찾을 수 없어 전체 침식 게임오버 패널을 표시할 수 없습니다."
+                );
             }
         }
     }
@@ -843,7 +932,6 @@ namespace Tempt
 
         /// <summary>재도전 전투 종료 후 복귀할 안전지대 인덱스.</summary>
         public int RechallengeReturnSafeIndex;
-
     }
 
     /// <summary>전투 결과.</summary>

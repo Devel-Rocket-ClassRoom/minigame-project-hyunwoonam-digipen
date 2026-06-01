@@ -27,6 +27,7 @@ namespace Tempt
             // - Entries 갱신.
             // - Cursor = 0.
             Entries.Clear();
+
             if (participants == null)
             {
                 Cursor = 0;
@@ -34,6 +35,7 @@ namespace Tempt
             }
 
             const int randomRange = 5;
+
             foreach (EntityBase entity in participants)
             {
                 if (entity == null || entity.IsDead || entity.Stats == null)

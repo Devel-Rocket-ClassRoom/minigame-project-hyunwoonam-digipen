@@ -34,6 +34,11 @@ namespace Tempt
                 OnTogglePage?.Invoke(HotkeyPageId.StatRune);
             }
 
+            if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.R))
+            {
+                OnTogglePage?.Invoke(HotkeyPageId.Rune);
+            }
+
             if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.Escape))
             {
                 OnRequestQuit?.Invoke();
@@ -62,6 +67,8 @@ namespace Tempt
 
         /// <summary>S: 스탯/룬 확인.</summary>
         StatRune,
+
+        /// <summary>R: 룬 트리 확인.</summary>
+        Rune,
     }
 }
-
