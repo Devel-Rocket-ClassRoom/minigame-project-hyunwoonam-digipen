@@ -1,0 +1,132 @@
+{
+  "Stages": [
+    {
+      "StageIndex": 1,
+      "FloorStart": 1,
+      "FloorEnd": 2,
+      "BossFloor": 3,
+      "UnlocksSafeZoneIndex": 1,
+      "DifficultyMin": 1,
+      "DifficultyMax": 2
+    },
+    {
+      "StageIndex": 2,
+      "FloorStart": 5,
+      "FloorEnd": 10,
+      "BossFloor": 11,
+      "UnlocksSafeZoneIndex": 2,
+      "DifficultyMin": 2,
+      "DifficultyMax": 4
+    },
+    {
+      "StageIndex": 3,
+      "FloorStart": 13,
+      "FloorEnd": 18,
+      "BossFloor": 19,
+      "UnlocksSafeZoneIndex": 3,
+      "DifficultyMin": 3,
+      "DifficultyMax": 6
+    },
+    {
+      "StageIndex": 4,
+      "FloorStart": 21,
+      "FloorEnd": 28,
+      "BossFloor": 29,
+      "UnlocksSafeZoneIndex": 4,
+      "DifficultyMin": 4,
+      "DifficultyMax": 8
+    },
+    {
+      "StageIndex": 5,
+      "FloorStart": 31,
+      "FloorEnd": 38,
+      "BossFloor": 39,
+      "UnlocksSafeZoneIndex": 5,
+      "DifficultyMin": 5,
+      "DifficultyMax": 10
+    },
+    {
+      "StageIndex": 6,
+      "FloorStart": 41,
+      "FloorEnd": 48,
+      "BossFloor": 49,
+      "UnlocksSafeZoneIndex": 5,
+      "DifficultyMin": 6,
+      "DifficultyMax": 12
+    }
+  ],
+  "SafeZones": [
+    {
+      "Index": 0,
+      "FloorNumber": 0,
+      "FeatureKeys": [],
+      "BgmKey": "",
+      "TintShaderKey": ""
+    },
+    {
+      "Index": 1,
+      "FloorNumber": 4,
+      "FeatureKeys": [
+        "Inn",
+        "Shop",
+        "Guild",
+        "Temple"
+      ],
+      "BgmKey": "",
+      "TintShaderKey": ""
+    },
+    {
+      "Index": 2,
+      "FloorNumber": 12,
+      "FeatureKeys": [
+        "ErosionAltar"
+      ],
+      "BgmKey": "",
+      "TintShaderKey": ""
+    },
+    {
+      "Index": 3,
+      "FloorNumber": 20,
+      "FeatureKeys": [
+        "Mine"
+      ],
+      "BgmKey": "",
+      "TintShaderKey": ""
+    },
+    {
+      "Index": 4,
+      "FloorNumber": 30,
+      "FeatureKeys": [
+        "Mine"
+      ],
+      "BgmKey": "",
+      "TintShaderKey": ""
+    },
+    {
+      "Index": 5,
+      "FloorNumber": 40,
+      "FeatureKeys": [
+        "Mine"
+      ],
+      "BgmKey": "",
+      "TintShaderKey": ""
+    }
+  ],
+  "FloorGen": {
+    "MaxFloor": 49,
+    "MinNodesPerFloor": 1,
+    "MaxNodesPerFloor": 3,
+    "TutorialNodeCounts": [
+      1,
+      2,
+      1
+    ],
+    "MonstersMin": 1,
+    "MonstersMax": 3
+  },
+  "MonsterPoolWeights": [
+    1,
+    1,
+    1
+  ]
+}

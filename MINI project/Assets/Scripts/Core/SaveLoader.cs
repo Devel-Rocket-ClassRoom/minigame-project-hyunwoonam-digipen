@@ -28,22 +28,15 @@ namespace Tempt
             // - 파일이 없으면 빈 객체 생성.
             // - Continue.FloorMap은 seed가 아니라 저장된 전체 노드 목록을 포함한다.
             // - 실제 FloorMapModel 복원은 GameSystemManager.ContinueGame() 또는 별도 복원 헬퍼가 담당.
-            //TODO: string savePath    = System.IO.Path.Combine(UnityEngine.Application.persistentDataPath, "save.json");
-            //TODO: string recordPath  = System.IO.Path.Combine(UnityEngine.Application.persistentDataPath, "records.json");
-            //TODO: Continue = System.IO.File.Exists(savePath)
-            //TODO:     ? UnityEngine.JsonUtility.FromJson<SaveSnapshot>(System.IO.File.ReadAllText(savePath))
-            //TODO:     : null;
-            //TODO: Records = System.IO.File.Exists(recordPath)
-            //TODO:     ? UnityEngine.JsonUtility.FromJson<RecordBook>(System.IO.File.ReadAllText(recordPath))
-            //TODO:     : new RecordBook();
-            string savePath = Path.Combine(Application.persistentDataPath, "save.json"); //Wave0write
-            string recordPath = Path.Combine(Application.persistentDataPath, "records.json"); //Wave0write
-            Continue = File.Exists(savePath) ? JsonUtility.FromJson<SaveSnapshot>(File.ReadAllText(savePath)) : null; //Wave0write
-            Records = File.Exists(recordPath) ? JsonUtility.FromJson<RecordBook>(File.ReadAllText(recordPath)) : new RecordBook(); //Wave0write
-            if (Records == null) //Wave0write
-            { //Wave0write
-                Records = new RecordBook(); //Wave0write
-            } //Wave0write
+            string savePath = Path.Combine(Application.persistentDataPath, "save.json");
+            string recordPath = Path.Combine(Application.persistentDataPath, "records.json");
+            Continue = File.Exists(savePath) ? JsonUtility.FromJson<SaveSnapshot>(File.ReadAllText(savePath)) : null;
+            Records = File.Exists(recordPath) ? JsonUtility.FromJson<RecordBook>(File.ReadAllText(recordPath)) : new RecordBook();
+
+            if (Records == null)
+            {
+                Records = new RecordBook();
+            }
         }
 
         /// <summary>
@@ -58,28 +51,22 @@ namespace Tempt
             // - seed 저장/seed 기반 재생성은 사용하지 않음.
             // - JSON 저장.
             // - Continue = snapshot 저장.
-            //TODO: var run = GameSystemManager.Instance.CurrentRun;
-            //TODO: if (run == null) return;
-            //TODO: var snapshot = SaveSnapshot.FromGameRunStatet(run, GameSystemManager.Instance.Scenes.CurrentSceneId);
-            //TODO: string json = UnityEngine.JsonUtility.ToJson(snapshot, prettyPrint: false);
-            //TODO: string path = System.IO.Path.Combine(UnityEngine.Application.persistentDataPath, "save.json");
-            //TODO: System.IO.File.WriteAllText(path, json);
-            //TODO: Continue = snapshot;
-            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.CurrentRun == null) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.CurrentRun == null)
+            {
+                return;
+            }
 
-            SceneId sceneId = gsm.Scenes != null ? gsm.Scenes.CurrentSceneId : SceneId.MainMenu; //Wave0write
-            global::Tempt.SaveSnapshot snapshot = global::Tempt.SaveSnapshot.FromGameRunStatet(gsm.CurrentRun, sceneId); //Wave0write
-            if (snapshot == null) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            SceneId sceneId = gsm.Scenes != null ? gsm.Scenes.CurrentSceneId : SceneId.MainMenu;
+            global::Tempt.SaveSnapshot snapshot = global::Tempt.SaveSnapshot.FromGameRunStatet(gsm.CurrentRun, sceneId);
 
-            string path = Path.Combine(Application.persistentDataPath, "save.json"); //Wave0write
-            File.WriteAllText(path, JsonUtility.ToJson(snapshot, true)); //Wave0write
-            Continue = snapshot; //Wave0write
+            if (snapshot == null)
+            {
+                return;
+            }
+
+            string path = Path.Combine(Application.persistentDataPath, "save.json");
+            File.WriteAllText(path, JsonUtility.ToJson(snapshot, true));
+            Continue = snapshot;
         }
 
         /// <summary>
@@ -88,8 +75,7 @@ namespace Tempt
         public bool HasContinue()
         {
             // 동작 요약: Continue != null && !Continue.IsCompleted 반환.
-            //TODO: return Continue != null && !Continue.IsCompleted;
-            return Continue != null && !Continue.IsCompleted; //Wave0write
+            return Continue != null && !Continue.IsCompleted;
         }
 
         /// <summary>
@@ -100,15 +86,13 @@ namespace Tempt
             // 동작 요약:
             // - Continue = null.
             // - save.json 삭제 또는 빈 JSON 덮어쓰기.
-            //TODO: Continue = null;
-            //TODO: string path = System.IO.Path.Combine(UnityEngine.Application.persistentDataPath, "save.json");
-            //TODO: if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
-            Continue = null; //Wave0write
-            string path = Path.Combine(Application.persistentDataPath, "save.json"); //Wave0write
-            if (File.Exists(path)) //Wave0write
-            { //Wave0write
-                File.Delete(path); //Wave0write
-            } //Wave0write
+            Continue = null;
+            string path = Path.Combine(Application.persistentDataPath, "save.json");
+
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
         }
 
         /// <summary>
@@ -119,11 +103,9 @@ namespace Tempt
             // 동작 요약:
             // - Records.Graves에 새 항목 추가.
             // - records.json 저장.
-            //TODO: Records.Graves.Add(new RecordEntry { Name = playerName, TimestampIso = when.ToString("o") });
-            //TODO: SaveRecords();
-            EnsureRecords(); //Wave0write
-            Records.Graves.Add(new RecordEntry { Name = playerName, TimestampIso = when.ToString("o") }); //Wave0write
-            SaveRecords(); //Wave0write
+            EnsureRecords();
+            Records.Graves.Add(new RecordEntry { Name = playerName, TimestampIso = when.ToString("o") });
+            SaveRecords();
         }
 
         /// <summary>
@@ -134,39 +116,36 @@ namespace Tempt
             // 동작 요약:
             // - Records.Clears에 새 항목 추가.
             // - records.json 저장.
-            //TODO: Records.Clears.Add(new RecordEntry { Name = playerName, TimestampIso = when.ToString("o") });
-            //TODO: SaveRecords();
             // SaveRecords 헬퍼:
-            //TODO: // string json = JsonUtility.ToJson(Records); File.WriteAllText(recordPath, json);
-            EnsureRecords(); //Wave0write
-            Records.Clears.Add(new RecordEntry { Name = playerName, TimestampIso = when.ToString("o") }); //Wave0write
-            SaveRecords(); //Wave0write
+            EnsureRecords();
+            Records.Clears.Add(new RecordEntry { Name = playerName, TimestampIso = when.ToString("o") });
+            SaveRecords();
         }
 
-        private void EnsureRecords() //Wave0write
-        { //Wave0write
-            if (Records == null) //Wave0write
-            { //Wave0write
-                Records = new RecordBook(); //Wave0write
-            } //Wave0write
+        private void EnsureRecords()
+        {
+            if (Records == null)
+            {
+                Records = new RecordBook();
+            }
 
-            if (Records.Clears == null) //Wave0write
-            { //Wave0write
-                Records.Clears = new List<RecordEntry>(); //Wave0write
-            } //Wave0write
+            if (Records.Clears == null)
+            {
+                Records.Clears = new List<RecordEntry>();
+            }
 
-            if (Records.Graves == null) //Wave0write
-            { //Wave0write
-                Records.Graves = new List<RecordEntry>(); //Wave0write
-            } //Wave0write
-        } //Wave0write
+            if (Records.Graves == null)
+            {
+                Records.Graves = new List<RecordEntry>();
+            }
+        }
 
-        private void SaveRecords() //Wave0write
-        { //Wave0write
-            EnsureRecords(); //Wave0write
-            string path = Path.Combine(Application.persistentDataPath, "records.json"); //Wave0write
-            File.WriteAllText(path, JsonUtility.ToJson(Records, true)); //Wave0write
-        } //Wave0write
+        private void SaveRecords()
+        {
+            EnsureRecords();
+            string path = Path.Combine(Application.persistentDataPath, "records.json");
+            File.WriteAllText(path, JsonUtility.ToJson(Records, true));
+        }
     }
 
     /// <summary>비석/묘비 영구 기록.</summary>

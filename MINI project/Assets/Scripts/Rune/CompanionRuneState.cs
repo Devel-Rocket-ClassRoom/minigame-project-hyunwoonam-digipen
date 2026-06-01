@@ -25,21 +25,17 @@ namespace Tempt
         public void UnlockStarter()
         {
             // 동작 요약: FixedSequence[0] 해금, UnlockedCount = 1.
-            //TODO: if (FixedSequence.Count == 0) return;
-            //TODO: if (Tree.AllNodes.TryGetValue(FixedSequence[0], out var starter))
-            //TODO:     starter.Unlocked = true;
-            //TODO: UnlockedCount = 1;
-            if (FixedSequence == null || FixedSequence.Count == 0) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (FixedSequence == null || FixedSequence.Count == 0)
+            {
+                return;
+            }
 
-            if (Tree?.AllNodes != null && Tree.AllNodes.TryGetValue(FixedSequence[0], out RuneNode starter)) //Wave0write
-            { //Wave0write
-                starter.Unlocked = true; //Wave0write
-            } //Wave0write
+            if (Tree?.AllNodes != null && Tree.AllNodes.TryGetValue(FixedSequence[0], out RuneNode starter))
+            {
+                starter.Unlocked = true;
+            }
 
-            UnlockedCount = 1; //Wave0write
+            UnlockedCount = 1;
         }
 
         /// <summary>
@@ -50,25 +46,19 @@ namespace Tempt
             // 동작 요약:
             // - UnlockedCount < FixedSequence.Count 검사.
             // - 다음 노드 Unlocked = true; UnlockedCount += 1.
-            //TODO: if (UnlockedCount >= FixedSequence.Count) return false;
-            //TODO: int nextId = FixedSequence[UnlockedCount];
-            //TODO: if (Tree.AllNodes.TryGetValue(nextId, out var node))
-            //TODO:     node.Unlocked = true;
-            //TODO: UnlockedCount++;
-            //TODO: return true;
-            if (FixedSequence == null || UnlockedCount >= FixedSequence.Count) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            if (FixedSequence == null || UnlockedCount >= FixedSequence.Count)
+            {
+                return false;
+            }
 
-            int nextId = FixedSequence[UnlockedCount]; //Wave0write
-            if (Tree?.AllNodes != null && Tree.AllNodes.TryGetValue(nextId, out RuneNode node)) //Wave0write
-            { //Wave0write
-                node.Unlocked = true; //Wave0write
-            } //Wave0write
+            int nextId = FixedSequence[UnlockedCount];
+            if (Tree?.AllNodes != null && Tree.AllNodes.TryGetValue(nextId, out RuneNode node))
+            {
+                node.Unlocked = true;
+            }
 
-            UnlockedCount++; //Wave0write
-            return true; //Wave0write
+            UnlockedCount++;
+            return true;
         }
 
         /// <summary>
@@ -83,45 +73,31 @@ namespace Tempt
             //   AddMaxHP/AddMaxMP/AddATK/AddDEF/AddSPD → EffectValue 합산.
             //   UnlockSkill / DamageBoost / HealBoost → 스킵.
             // - 합산 결과 EquipmentStatMod 반환.
-            //TODO: var result = new EquipmentStatMod();
-            //TODO: for (int i = 0; i < UnlockedCount && i < FixedSequence.Count; i++)
-            //TODO: {
-            //TODO:     if (!Tree.AllNodes.TryGetValue(FixedSequence[i], out var node)) continue;
-            //TODO:     switch (node.Data.EffectType)
-            //TODO:     {
-            //TODO:         case RuneEffectType.AddMaxHP:  result.HP  += (int)node.Data.EffectValue; break;
-            //TODO:         case RuneEffectType.AddMaxMP:  result.MP  += (int)node.Data.EffectValue; break;
-            //TODO:         case RuneEffectType.AddATK:    result.ATK += (int)node.Data.EffectValue; break;
-            //TODO:         case RuneEffectType.AddDEF:    result.DEF += (int)node.Data.EffectValue; break;
-            //TODO:         case RuneEffectType.AddSPD:    result.SPD += (int)node.Data.EffectValue; break;
-            //TODO:     }
-            //TODO: }
-            //TODO: return result;
-            var result = new EquipmentStatMod(); //Wave0write
-            if (FixedSequence == null || Tree?.AllNodes == null) //Wave0write
-            { //Wave0write
-                return result; //Wave0write
-            } //Wave0write
+            var result = new EquipmentStatMod();
+            if (FixedSequence == null || Tree?.AllNodes == null)
+            {
+                return result;
+            }
 
-            for (int i = 0; i < UnlockedCount && i < FixedSequence.Count; i++) //Wave0write
-            { //Wave0write
-                if (!Tree.AllNodes.TryGetValue(FixedSequence[i], out RuneNode node) || node.Data == null) //Wave0write
-                { //Wave0write
-                    continue; //Wave0write
-                } //Wave0write
+            for (int i = 0; i < UnlockedCount && i < FixedSequence.Count; i++)
+            {
+                if (!Tree.AllNodes.TryGetValue(FixedSequence[i], out RuneNode node) || node.Data == null)
+                {
+                    continue;
+                }
 
-                int value = (int)node.Data.EffectValue; //Wave0write
-                switch (node.Data.EffectType) //Wave0write
-                { //Wave0write
-                    case RuneEffectType.AddMaxHP: result.HP += value; break; //Wave0write
-                    case RuneEffectType.AddMaxMP: result.MP += value; break; //Wave0write
-                    case RuneEffectType.AddATK: result.ATK += value; break; //Wave0write
-                    case RuneEffectType.AddDEF: result.DEF += value; break; //Wave0write
-                    case RuneEffectType.AddSPD: result.SPD += value; break; //Wave0write
-                } //Wave0write
-            } //Wave0write
+                int value = (int)node.Data.EffectValue;
+                switch (node.Data.EffectType)
+                {
+                    case RuneEffectType.AddMaxHP: result.HP += value; break;
+                    case RuneEffectType.AddMaxMP: result.MP += value; break;
+                    case RuneEffectType.AddATK: result.ATK += value; break;
+                    case RuneEffectType.AddDEF: result.DEF += value; break;
+                    case RuneEffectType.AddSPD: result.SPD += value; break;
+                }
+            }
 
-            return result; //Wave0write
+            return result;
         }
     }
 }

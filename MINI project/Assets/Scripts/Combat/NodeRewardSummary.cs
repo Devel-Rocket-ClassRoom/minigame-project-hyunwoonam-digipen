@@ -34,37 +34,28 @@ namespace Tempt
             //     result.TotalGold += c.Gold.
             //     c.DroppedItemIds != null → result.DroppedItemIds.AddRange(c.DroppedItemIds).
             // - result 반환.
-            //TODO: var result = new NodeRewardSummary();
-            //TODO: if (contributions == null) return result;
-            //TODO: foreach (var c in contributions)
-            //TODO: {
-            //TODO:     result.TotalExp  += c.Exp;
-            //TODO:     result.TotalGold += c.Gold;
-            //TODO:     if (c.DroppedItemIds != null) result.DroppedItemIds.AddRange(c.DroppedItemIds);
-            //TODO: }
-            //TODO: return result;
-            var result = new NodeRewardSummary(); //Wave0write
-            if (contributions == null) //Wave0write
-            { //Wave0write
-                return result; //Wave0write
-            } //Wave0write
+            var result = new NodeRewardSummary();
+            if (contributions == null)
+            {
+                return result;
+            }
 
-            foreach (NodeRewardContribution contribution in contributions) //Wave0write
-            { //Wave0write
-                if (contribution == null) //Wave0write
-                { //Wave0write
-                    continue; //Wave0write
-                } //Wave0write
+            foreach (NodeRewardContribution contribution in contributions)
+            {
+                if (contribution == null)
+                {
+                    continue;
+                }
 
-                result.TotalExp += contribution.Exp; //Wave0write
-                result.TotalGold += contribution.Gold; //Wave0write
-                if (contribution.DroppedItemIds != null) //Wave0write
-                { //Wave0write
-                    result.DroppedItemIds.AddRange(contribution.DroppedItemIds); //Wave0write
-                } //Wave0write
-            } //Wave0write
+                result.TotalExp += contribution.Exp;
+                result.TotalGold += contribution.Gold;
+                if (contribution.DroppedItemIds != null)
+                {
+                    result.DroppedItemIds.AddRange(contribution.DroppedItemIds);
+                }
+            }
 
-            return result; //Wave0write
+            return result;
         }
     }
 }

@@ -41,8 +41,8 @@ namespace Tempt
         [SerializeField] private TMP_Text goldLabel;
 
         [Header("Quick Items")]
-        [SerializeField] private Button[] consumableSlotButtons = new Button[4];
-        [SerializeField] private TMP_Text[] consumableSlotLabels = new TMP_Text[4];
+        [SerializeField] private Button[] consumableSlotButtons = new Button[ConsumableSlots.SlotCount];
+        [SerializeField] private TMP_Text[] consumableSlotLabels = new TMP_Text[ConsumableSlots.SlotCount];
 
         [Header("Equipped")]
         [SerializeField] private Button weaponSlotButton;
@@ -816,9 +816,9 @@ namespace Tempt
                 && armorLegsSlotStatsLabel != null
                 && inventoryScrollRect != null
                 && consumableSlotButtons != null
-                && consumableSlotButtons.Length == 4
+                && consumableSlotButtons.Length == ConsumableSlots.SlotCount
                 && consumableSlotLabels != null
-                && consumableSlotLabels.Length == 4
+                && consumableSlotLabels.Length == ConsumableSlots.SlotCount
                 && inventorySlotButtons != null
                 && inventorySlotButtons.Length > 0
                 && inventorySlotLabels != null

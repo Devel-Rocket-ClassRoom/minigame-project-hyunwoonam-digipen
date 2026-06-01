@@ -45,59 +45,43 @@ namespace Tempt
             // - ActionWeights, RewardExp, RewardGold 복사.
             // - DropTableId = data.DropTableId.
             // - erosionMultiplier > 1 → ApplyErosionVisual().
-            //TODO: MonsterDataId = data.Id;
-            //TODO: Stats.BaseMaxHP = Mathf.RoundToInt(data.BaseMaxHP * erosionMultiplier);
-            //TODO: Stats.BaseMaxMP = data.BaseMaxMP;
-            //TODO: Stats.BaseATK   = Mathf.RoundToInt(data.BaseATK * erosionMultiplier);
-            //TODO: Stats.BaseDEF   = Mathf.RoundToInt(data.BaseDEF * erosionMultiplier);
-            //TODO: Stats.BaseSPD   = data.BaseSPD;
-            //TODO: Stats.RestoreToFull();
-            //TODO: // 스킬 매핑
-            //TODO: ActiveSkills = new System.Collections.Generic.List<Skill>();
-            //TODO: foreach (int sid in data.SkillIds)
-            //TODO:     ActiveSkills.Add(new Skill(GameSystemManager.Instance.Data.Skills[sid]));
-            //TODO: ActionWeights = data.ActionWeights;
-            //TODO: RewardExp  = data.RewardExp;
-            //TODO: RewardGold = data.RewardGold;
-            //TODO: DropTableId = data.DropTableId;
-            //TODO: if (erosionMultiplier > 1f) ApplyErosionVisual();
-            if (data == null) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (data == null)
+            {
+                return;
+            }
 
-            MonsterDataId = data.Id; //Wave0write
-            DisplayName = data.NameKey; //Wave0write
-            Stats = new StatBlock(); //Wave0write
-            float mult = Mathf.Max(1f, erosionMultiplier); //Wave0write
-            Stats.SetBaseStats( //Wave0write
-                Mathf.RoundToInt(data.MaxHP * mult), //Wave0write
-                data.MaxMP, //Wave0write
-                Mathf.RoundToInt(data.ATK * mult), //Wave0write
-                Mathf.RoundToInt(data.DEF * mult), //Wave0write
-                data.SPD); //Wave0write
-            Stats.RestoreToFull(); //Wave0write
+            MonsterDataId = data.Id;
+            DisplayName = data.NameKey;
+            Stats = new StatBlock();
+            float mult = Mathf.Max(1f, erosionMultiplier);
+            Stats.SetBaseStats(
+                Mathf.RoundToInt(data.MaxHP * mult),
+                data.MaxMP,
+                Mathf.RoundToInt(data.ATK * mult),
+                Mathf.RoundToInt(data.DEF * mult),
+                data.SPD);
+            Stats.RestoreToFull();
 
-            ActiveSkills = new Skill[2]; //Wave0write
-            if (data.SkillIds != null && GameSystemManager.TryGetInstance(out GameSystemManager gsm)) //Wave0write
-            { //Wave0write
-                for (int i = 0; i < data.SkillIds.Count && i < ActiveSkills.Length; i++) //Wave0write
-                { //Wave0write
-                    if (gsm.Data.Skills.TryGetValue(data.SkillIds[i], out SkillData skillData)) //Wave0write
-                    { //Wave0write
-                        ActiveSkills[i] = new Skill(skillData); //Wave0write
-                    } //Wave0write
-                } //Wave0write
-            } //Wave0write
+            ActiveSkills = new Skill[2];
+            if (data.SkillIds != null && GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                for (int i = 0; i < data.SkillIds.Count && i < ActiveSkills.Length; i++)
+                {
+                    if (gsm.Data.Skills.TryGetValue(data.SkillIds[i], out SkillData skillData))
+                    {
+                        ActiveSkills[i] = new Skill(skillData);
+                    }
+                }
+            }
 
-            ActionWeights = data.ActionWeights ?? new ActionWeightTable { Attack = 80, Skill = 0, Defend = 20 }; //Wave0write
-            RewardExp = data.RewardExp; //Wave0write
-            RewardGold = data.RewardGold; //Wave0write
-            DropTableId = data.DropTableId; //Wave0write
-            if (erosionMultiplier > 1f) //Wave0write
-            { //Wave0write
-                ApplyErosionVisual(); //Wave0write
-            } //Wave0write
+            ActionWeights = data.ActionWeights ?? new ActionWeightTable { Attack = 80, Skill = 0, Defend = 20 };
+            RewardExp = data.RewardExp;
+            RewardGold = data.RewardGold;
+            DropTableId = data.DropTableId;
+            if (erosionMultiplier > 1f)
+            {
+                ApplyErosionVisual();
+            }
         }
 
         /// <summary>
@@ -105,13 +89,12 @@ namespace Tempt
         /// </summary>
         public void ApplyErosionVisual()
         {
-            IsEroded = true; //Wave0write
-            SpriteRenderer sr = GetComponent<SpriteRenderer>(); //Wave0write
-            if (sr != null) //Wave0write
-            { //Wave0write
-                // TEMP: 셰이더 에셋 부재로 SpriteRenderer.color lerp 만 적용. ErosionShaderKey 도입 시 교체.
-                sr.color = Color.Lerp(sr.color, new Color(0.30f, 0.18f, 0.35f, 1f), 0.55f); //Wave0write
-            } //Wave0write
+            IsEroded = true;
+            SpriteRenderer sr = GetComponent<SpriteRenderer>();
+            if (sr != null)
+            {
+                sr.color = Color.Lerp(sr.color, new Color(0.30f, 0.18f, 0.35f, 1f), 0.55f);
+            }
         }
 
         /// <summary>
@@ -125,26 +108,20 @@ namespace Tempt
             // - List<DroppedItemStack> drops = data.ResolveDrops(DropTableId).
             // - DroppedItemIds 목록 = drops.SelectMany(d => Enumerable.Repeat(d.ItemId, d.Count)).
             // - NodeRewardContribution { Exp = RewardExp, Gold = RewardGold, DroppedItemIds } 반환.
-            //TODO: DataManager dataMgr = GameSystemManager.Instance.Data;
-            //TODO: List<DroppedItemStack> drops = dataMgr.ResolveDrops(DropTableId);
-            //TODO: var itemIds = new List<int>();
-            //TODO: foreach (var stack in drops)
-            //TODO:     for (int i = 0; i < stack.Count; i++) itemIds.Add(stack.ItemId);
-            //TODO: return new NodeRewardContribution { Exp = RewardExp, Gold = RewardGold, DroppedItemIds = itemIds };
-            var itemIds = new List<int>(); //Wave0write
-            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm)) //Wave0write
-            { //Wave0write
-                List<DroppedItemStack> drops = gsm.Data.ResolveDrops(DropTableId); //Wave0write
-                foreach (DroppedItemStack stack in drops) //Wave0write
-                { //Wave0write
-                    for (int i = 0; i < stack.Count; i++) //Wave0write
-                    { //Wave0write
-                        itemIds.Add(stack.ItemId); //Wave0write
-                    } //Wave0write
-                } //Wave0write
-            } //Wave0write
+            var itemIds = new List<int>();
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                List<DroppedItemStack> drops = gsm.Data.ResolveDrops(DropTableId);
+                foreach (DroppedItemStack stack in drops)
+                {
+                    for (int i = 0; i < stack.Count; i++)
+                    {
+                        itemIds.Add(stack.ItemId);
+                    }
+                }
+            }
 
-            return new NodeRewardContribution { Exp = RewardExp, Gold = RewardGold, DroppedItemIds = itemIds }; //Wave0write
+            return new NodeRewardContribution { Exp = RewardExp, Gold = RewardGold, DroppedItemIds = itemIds };
         }
     }
 

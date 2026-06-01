@@ -11,9 +11,7 @@ namespace Tempt
         public override void PrepareForCombat()
         {
             // 동작 요약: base.PrepareForCombat() 호출 + 이 몬스터 고유 초기화(필요 시).
-            //TODO: base.PrepareForCombat();
-            //TODO: // Monster1 고유 특수 동작이 없으면 base 호출만으로 충분
-            base.PrepareForCombat(); //Wave0write
+            base.PrepareForCombat();
         }
     }
 }

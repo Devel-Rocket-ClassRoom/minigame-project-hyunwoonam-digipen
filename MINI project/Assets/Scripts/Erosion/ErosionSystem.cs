@@ -5,8 +5,6 @@ namespace Tempt
     /// </summary>
     public sealed class ErosionSystem
     {
-        public const int MaxStage = 6;
-
         /// <summary>모델.</summary>
         public ErosionStateModel Model;
 
@@ -16,15 +14,27 @@ namespace Tempt
         /// <summary>침식 증가/몬스터 보정 밸런스.</summary>
         public BalanceData Balance;
 
+        /// <summary>단계 수 권위.</summary>
+        public WorldData World;
+
+        public int MaxStage => GetMaxStage(World);
+
         public ErosionSystem()
         {
         }
 
-        public ErosionSystem(ErosionStateModel model, EventBus events, BalanceData balance = null)
+        public ErosionSystem(ErosionStateModel model, EventBus events, BalanceData balance = null, WorldData world = null)
         {
             Model = model;
             Events = events;
             Balance = balance;
+            World = world;
+            Model?.EnsureStageCount(MaxStage);
+        }
+
+        public static int GetMaxStage(WorldData world)
+        {
+            return world?.Stages != null && world.Stages.Count > 0 ? world.Stages.Count : 6;
         }
 
         /// <summary>Safe2 도달 시 호출. 침식 시작.</summary>
@@ -38,6 +48,7 @@ namespace Tempt
 
             Model.IsActivated = true;
             Model.CurrentEroddingStage = 1;
+            Model.EnsureStageCount(MaxStage);
             for (int i = 1; i <= MaxStage; i++)
             {
                 Model.StageRates[i] = 0f;
@@ -148,7 +159,16 @@ namespace Tempt
                 return 1f;
             }
 
-            return UnityEngine.Mathf.Max(1f, Balance.ErosionMonsterMultiplier);
+            float maxMultiplier = UnityEngine.Mathf.Max(1f, Balance.ErosionMonsterMultiplier);
+            if (!Balance.UseErosionMonsterMultiplierCurve)
+            {
+                return maxMultiplier;
+            }
+
+            float t = UnityEngine.Mathf.Clamp01(rate / 100f);
+            float power = Balance.ErosionMonsterMultiplierCurvePower > 0f ? Balance.ErosionMonsterMultiplierCurvePower : 1f;
+            t = UnityEngine.Mathf.Pow(t, power);
+            return UnityEngine.Mathf.Lerp(1f, maxMultiplier, t);
         }
 
         /// <summary>단계 완전 침식 여부.</summary>

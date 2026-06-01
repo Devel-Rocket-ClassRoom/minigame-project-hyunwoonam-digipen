@@ -16,17 +16,13 @@ namespace Tempt
             // - mitigated = max(1, raw - defender.Stats.DEF).
             // - defender.IsDefending이면 mitigated -= defender.Stats.DEF (또는 비율 차감).
             // - 결과 반환.
-            //TODO: int raw = attacker.Stats.ATK;
-            //TODO: int mitigated = Mathf.Max(1, raw - defender.Stats.DEF);
-            //TODO: if (defender.IsDefending) mitigated = Mathf.Max(1, mitigated - defender.Stats.DEF / 2);
-            //TODO: return mitigated;
-            if (attacker?.Stats == null || defender?.Stats == null) //Wave0write
-            { //Wave0write
-                return 0; //Wave0write
-            } //Wave0write
+            if (attacker?.Stats == null || defender?.Stats == null)
+            {
+                return 0;
+            }
 
-            int raw = attacker.Stats.ATK; //Wave0write
-            return UnityEngine.Mathf.Max(1, raw - defender.Stats.DEF); //Wave0write
+            int raw = attacker.Stats.ATK;
+            return ApplyDefense(raw, defender);
         }
 
         /// <summary>
@@ -39,19 +35,29 @@ namespace Tempt
             // - 룬 보정 BoostSkillId == skill.Id면 BoostSkillDamagePercent 적용.
             // - DEF 감쇠.
             // - 방어 상태 추가 경감.
-            //TODO: float baseDmg = attacker.Stats.ATK * skill.DamageScale;
-            //TODO: float boost = attacker.GetDamageBoostForSkill(skill.Id); // 룬 RuneEffectType.DamageBoost 확인
-            //TODO: baseDmg *= (1f + boost);
-            //TODO: int mitigated = Mathf.Max(1, Mathf.RoundToInt(baseDmg) - defender.Stats.DEF);
-            //TODO: if (defender.IsDefending) mitigated = Mathf.Max(1, mitigated - defender.Stats.DEF / 2);
-            //TODO: return mitigated;
-            if (attacker?.Stats == null || defender?.Stats == null || skill == null) //Wave0write
-            { //Wave0write
-                return 0; //Wave0write
-            } //Wave0write
+            if (attacker?.Stats == null || defender?.Stats == null || skill == null)
+            {
+                return 0;
+            }
 
-            float baseDamage = attacker.Stats.ATK * UnityEngine.Mathf.Max(0.1f, skill.DamageScale); //Wave0write
-            return UnityEngine.Mathf.Max(1, UnityEngine.Mathf.RoundToInt(baseDamage) - defender.Stats.DEF); //Wave0write
+            float baseDamage = attacker.Stats.ATK * UnityEngine.Mathf.Max(0.1f, skill.DamageScale);
+            return ApplyDefense(UnityEngine.Mathf.RoundToInt(baseDamage), defender);
+        }
+
+        private static int ApplyDefense(int rawDamage, EntityBase defender)
+        {
+            if (defender?.Stats == null)
+            {
+                return UnityEngine.Mathf.Max(0, rawDamage);
+            }
+
+            int defense = defender.Stats.DEF;
+            if (defender.IsDefending)
+            {
+                defense += defender.Stats.DEF / 2;
+            }
+
+            return UnityEngine.Mathf.Max(1, rawDamage - defense);
         }
 
         // Wave0refactor 2026-05-27 (F.3.2): ExtraAttackChance 제거.

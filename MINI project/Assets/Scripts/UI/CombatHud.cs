@@ -20,8 +20,8 @@ namespace Tempt
         [SerializeField] private Button skill1Button;
         [SerializeField] private Button skill2Button;
         [SerializeField] private Button defendButton;
-        [SerializeField] private Button[] consumableButtons = new Button[4];
-        [SerializeField] private TMP_Text[] consumableLabels = new TMP_Text[4];
+        [SerializeField] private Button[] consumableButtons = new Button[ConsumableSlots.SlotCount];
+        [SerializeField] private TMP_Text[] consumableLabels = new TMP_Text[ConsumableSlots.SlotCount];
         [SerializeField] private Slider playerHpBar;
         [SerializeField] private Slider playerMpBar;
         [SerializeField] private TMP_Text playerNameLabel;
@@ -147,9 +147,9 @@ namespace Tempt
                 skill2Button != null &&
                 defendButton != null &&
                 consumableButtons != null &&
-                consumableButtons.Length == 4 &&
+                consumableButtons.Length == ConsumableSlots.SlotCount &&
                 consumableLabels != null &&
-                consumableLabels.Length == 4 &&
+                consumableLabels.Length == ConsumableSlots.SlotCount &&
                 playerHpBar != null &&
                 playerMpBar != null &&
                 playerNameLabel != null &&
@@ -270,7 +270,9 @@ namespace Tempt
             PlayerState state = TryGetPlayerState();
             int level = state != null ? state.Level : player != null ? player.Level : 1;
             int current = state != null ? state.Exp : player != null ? player.CurrentExp : 0;
-            int required = RequiredExpForLevel(level);
+            int required = GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                ? RunProgression.RequiredExpForLevel(gsm.Data, level)
+                : 0;
             RefreshPlayerExp(current, required);
         }
 
@@ -364,19 +366,6 @@ namespace Tempt
         private static PlayerState TryGetPlayerState()
         {
             return GameSystemManager.TryGetInstance(out GameSystemManager gsm) ? gsm.CurrentRun?.Player : null;
-        }
-
-        private static int RequiredExpForLevel(int level)
-        {
-            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm)
-                && gsm.Data?.Balance?.ExpToNextLevel != null
-                && level >= 0
-                && level < gsm.Data.Balance.ExpToNextLevel.Count)
-            {
-                return gsm.Data.Balance.ExpToNextLevel[level];
-            }
-
-            return 0;
         }
 
         private void SetPrompt(string text)

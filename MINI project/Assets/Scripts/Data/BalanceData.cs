@@ -5,6 +5,7 @@ namespace Tempt
     /// <summary>
     /// 게임 전역 밸런스 곡선. JSON.
     /// </summary>
+    [System.Serializable]
     public sealed class BalanceData
     {
         /// <summary>레벨별 필요 EXP 표(인덱스 = 레벨, 값 = 필요량).</summary>
@@ -39,9 +40,43 @@ namespace Tempt
 
         /// <summary>행동 타이밍 기본 최소(초).</summary>
         public float MinActionTimeSec;
+
+        /// <summary>룬 초기화 시 환급 비율(0~1).</summary>
+        public float RuneResetRefundRate;
+
+        /// <summary>룬 트리 초기화 골드 비용.</summary>
+        public int RuneResetCostGold;
+
+        /// <summary>룬 직업 변경 골드 비용.</summary>
+        public int RuneClassChangeCostGold;
+
+        /// <summary>첫 AI 행동 시작 전 대기 시간(초).</summary>
+        public float FirstNonPlayerActionDelaySec;
+
+        /// <summary>기본 공격 추가 행동 시간(초).</summary>
+        public float AttackActionTimeSec;
+
+        /// <summary>스킬 데이터에 행동 시간이 없을 때 사용할 기본 시간(초).</summary>
+        public float SkillActionFallbackSec;
+
+        /// <summary>방어 행동 추가 시간(초).</summary>
+        public float DefendActionTimeSec;
+
+        /// <summary>런타임 대체 전투 유닛 스프라이트 크기(px).</summary>
+        public int CombatGeneratedSpriteSize;
+
+        /// <summary>런타임 대체 전투 유닛 스프라이트 PPU.</summary>
+        public float CombatGeneratedSpritePixelsPerUnit;
+
+        /// <summary>침식률 비례 몬스터 배수 곡선 사용 여부.</summary>
+        public bool UseErosionMonsterMultiplierCurve;
+
+        /// <summary>침식률 배수 곡선 지수. 1이면 선형.</summary>
+        public float ErosionMonsterMultiplierCurvePower;
     }
 
     /// <summary>침식 지수함수 파라미터.</summary>
+    [System.Serializable]
     public sealed class ErosionCurve
     {
         /// <summary>일일 기본 증가량(초기).</summary>
@@ -54,4 +89,3 @@ namespace Tempt
         public int InflectionDay;
     }
 }
-

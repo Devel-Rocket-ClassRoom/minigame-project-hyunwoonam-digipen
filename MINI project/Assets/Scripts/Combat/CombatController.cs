@@ -6,12 +6,22 @@ namespace Tempt
     /// <summary>
     /// 전투 씬 컨트롤러. CombatFlow 를 보유하고, 런타임 참가자/몬스터 스포너/입력 공급자/타겟 셀렉터를 조립한다.
     /// </summary>
-    public sealed class CombatController : SceneControllerBase, IPlayerInputProvider, IDeadEnemyRemover
+    public sealed class CombatController
+        : SceneControllerBase,
+            IPlayerInputProvider,
+            IDeadEnemyRemover
     {
-        [SerializeField] private CombatMonsterSpawner spawnerRef;
-        [SerializeField] private CombatHud hudRef;
-        [SerializeField] private bool autoPlayerActions;
-        [SerializeField] private Transform runtimeRootRef;
+        [SerializeField]
+        private CombatMonsterSpawner spawnerRef;
+
+        [SerializeField]
+        private CombatHud hudRef;
+
+        [SerializeField]
+        private bool autoPlayerActions;
+
+        [SerializeField]
+        private Transform runtimeRootRef;
 
         /// <summary>전투 FSM.</summary>
         public CombatFlow Flow;
@@ -34,10 +44,11 @@ namespace Tempt
         /// <summary>참여 몬스터.</summary>
         public List<MonsterBase> Monsters;
 
-        private static readonly Dictionary<string, Sprite> generatedSprites = new Dictionary<string, Sprite>();
+        private static readonly Dictionary<string, Sprite> generatedSprites =
+            new Dictionary<string, Sprite>();
 
-        /// <summary>플레이어 임시 행동(입력 진행 중).</summary>
-        private CombatAction pendingAction;
+        /// <summary>플레이어 행동 선택 상태.</summary>
+        private PlayerActionSelector playerActionSelector;
 
         /// <summary>이미 EndCombat을 호출했는지 방어 플래그.</summary>
         private bool combatEnded;
@@ -45,9 +56,7 @@ namespace Tempt
         private Transform runtimeRoot;
         private EntityBase hoveredTarget;
 
-        private sealed class DeadEnemyRemovalMarker : MonoBehaviour
-        {
-        }
+        private sealed class DeadEnemyRemovalMarker : MonoBehaviour { }
 
         /// <inheritdoc/>
         public override void OnEnter()
@@ -74,7 +83,13 @@ namespace Tempt
             Monsters = Spawner.SpawnedT ?? new List<MonsterBase>();
             for (int i = 0; i < Monsters.Count; i++)
             {
-                ConfigureCombatUnit(Monsters[i], "monster", new Color(0.68f, 0.86f, 0.32f, 1f), false, 8);
+                ConfigureCombatUnit(
+                    Monsters[i],
+                    "monster",
+                    new Color(0.68f, 0.86f, 0.32f, 1f),
+                    false,
+                    8
+                );
             }
 
             Flow = new CombatFlow
@@ -99,7 +114,7 @@ namespace Tempt
             }
 
             combatEnded = false;
-            pendingAction = null;
+            playerActionSelector = new PlayerActionSelector();
             hoveredTarget = null;
 
             Hud.Bind(this, Player);
@@ -111,18 +126,25 @@ namespace Tempt
 
         private bool ResolveCoreReferences()
         {
-            if (Spawner == null) Spawner = spawnerRef;
-            if (Spawner == null) Spawner = GetComponent<CombatMonsterSpawner>();
+            if (Spawner == null)
+                Spawner = spawnerRef;
+            if (Spawner == null)
+                Spawner = GetComponent<CombatMonsterSpawner>();
             if (Spawner == null)
             {
-                Debug.LogError("[CombatController] CombatMonsterSpawner 가 씬에 직접 배치/할당되어 있지 않습니다.");
+                Debug.LogError(
+                    "[CombatController] CombatMonsterSpawner 가 씬에 직접 배치/할당되어 있지 않습니다."
+                );
                 return false;
             }
 
-            if (Hud == null) Hud = hudRef;
+            if (Hud == null)
+                Hud = hudRef;
             if (Hud == null)
             {
-                Debug.LogError("[CombatController] CombatHud 가 씬에 직접 배치/할당되어 있지 않습니다.");
+                Debug.LogError(
+                    "[CombatController] CombatHud 가 씬에 직접 배치/할당되어 있지 않습니다."
+                );
                 return false;
             }
             if (!Hud.HasRequiredReferences())
@@ -130,7 +152,8 @@ namespace Tempt
                 return false;
             }
 
-            if (Targeter == null) Targeter = new TargetSelector();
+            if (Targeter == null)
+                Targeter = new TargetSelector();
             return true;
         }
 
@@ -156,7 +179,7 @@ namespace Tempt
             Player = null;
             Companions = null;
             Monsters = null;
-            pendingAction = null;
+            playerActionSelector = null;
             hoveredTarget = null;
         }
 
@@ -174,12 +197,13 @@ namespace Tempt
         }
 
         /// <inheritdoc/>
-        public bool HasAction => pendingAction != null && IsActionConfirmed();
+        public bool HasAction =>
+            playerActionSelector != null && playerActionSelector.HasConfirmedAction;
 
         /// <inheritdoc/>
         public void RequestPlayerAction(EntityBase actor)
         {
-            pendingAction = null;
+            playerActionSelector?.Clear();
             Hud?.ClearTargetPrompt();
             if (!IsAutoMode)
             {
@@ -195,8 +219,7 @@ namespace Tempt
         /// <inheritdoc/>
         public CombatAction PopAction()
         {
-            CombatAction action = pendingAction;
-            pendingAction = null;
+            CombatAction action = playerActionSelector?.PopAction();
             Hud?.HidePlayerActionPanel();
             Hud?.ClearTargetPrompt();
             return action;
@@ -207,105 +230,28 @@ namespace Tempt
         /// <summary>공격 버튼.</summary>
         public void PlayerPickAttack()
         {
-            pendingAction = new CombatAction
-            {
-                Actor = Player,
-                Type = CombatActionType.Attack,
-                Targets = new List<EntityBase>(),
-                ConsumesTurn = true,
-            };
-
-            if (IsAutoMode)
-            {
-                EntityBase auto = CombatTargeting.FirstAlive(Flow?.EnemiesT);
-                if (auto != null) pendingAction.Targets.Add(auto);
-                return;
-            }
-
-            Targeter.BeginHover(SkillTargetType.EnemySingle);
-            Hud?.ShowTargetPrompt(SkillTargetType.EnemySingle);
+            playerActionSelector?.PickAttack(Player, Flow, Targeter, Hud, IsAutoMode);
         }
 
         /// <summary>스킬 버튼.</summary>
         public void PlayerPickSkill(int slotIndex)
         {
-            Skill skill = Player != null ? Player.GetActiveSkill(slotIndex) : null;
-            if (skill == null || !skill.CanUse(Player))
-            {
-                return;
-            }
-
-            pendingAction = new CombatAction
-            {
-                Actor = Player,
-                Type = CombatActionType.Skill,
-                Skill = skill,
-                Targets = new List<EntityBase>(),
-                ConsumesTurn = true,
-            };
-
-            SkillTargetType tt = skill.Data.TargetType;
-            if (tt == SkillTargetType.Self)
-            {
-                pendingAction.Targets.Add(Player);
-                Hud?.ClearTargetPrompt();
-                return;
-            }
-            if (tt == SkillTargetType.EnemyAll)
-            {
-                CombatTargeting.FillByTargetType(
-                    pendingAction.Targets,
-                    SkillTargetType.EnemyAll,
-                    Player,
-                    Flow?.AlliesT,
-                    Flow?.EnemiesT,
-                    CombatTargeting.SingleSelect.Random);
-                Hud?.ClearTargetPrompt();
-                return;
-            }
-            if (tt == SkillTargetType.AllyAll)
-            {
-                CombatTargeting.FillByTargetType(
-                    pendingAction.Targets,
-                    SkillTargetType.AllyAll,
-                    Player,
-                    Flow?.AlliesT,
-                    Flow?.EnemiesT,
-                    CombatTargeting.SingleSelect.Random);
-                Hud?.ClearTargetPrompt();
-                return;
-            }
-
-            if (IsAutoMode)
-            {
-                IList<EntityBase> source = tt == SkillTargetType.AllySingle ? Flow?.AlliesT : Flow?.EnemiesT;
-                EntityBase pick = CombatTargeting.FirstAlive(source);
-                if (pick != null) pendingAction.Targets.Add(pick);
-                return;
-            }
-
-            Targeter.BeginHover(tt);
-            Hud?.ShowTargetPrompt(tt);
+            playerActionSelector?.PickSkill(Player, Flow, Targeter, Hud, slotIndex, IsAutoMode);
         }
 
         /// <summary>방어 버튼.</summary>
         public void PlayerPickDefend()
         {
-            pendingAction = new CombatAction
-            {
-                Actor = Player,
-                Type = CombatActionType.Defend,
-                Targets = new List<EntityBase> { Player },
-                ConsumesTurn = true,
-            };
-            Targeter?.EndHover();
-            Hud?.ClearTargetPrompt();
+            playerActionSelector?.PickDefend(Player, Targeter, Hud);
         }
 
         /// <summary>소모 아이템 슬롯 클릭.</summary>
         public void PlayerUseItem(int slotIndex)
         {
-            if (Player?.Consumables != null && Player.Consumables.TryUse(slotIndex, Player, Player.Inventory))
+            if (
+                Player?.Consumables != null
+                && Player.Consumables.TryUse(slotIndex, Player, Player.Inventory)
+            )
             {
                 Hud?.RefreshConsumableSlots();
             }
@@ -314,20 +260,7 @@ namespace Tempt
         /// <summary>타겟 호버 후 클릭 시 호출.</summary>
         public void OnTargetConfirmed(EntityBase target)
         {
-            if (pendingAction == null || target == null || target.IsDead || !target.gameObject.activeInHierarchy)
-            {
-                return;
-            }
-
-            if (pendingAction.Targets == null)
-            {
-                pendingAction.Targets = new List<EntityBase>();
-            }
-
-            pendingAction.Targets.Clear();
-            pendingAction.Targets.Add(target);
-            Targeter?.EndHover();
-            Hud?.ClearTargetPrompt();
+            playerActionSelector?.ConfirmTarget(target, Targeter, Hud);
         }
 
         public void ScheduleDeadEnemyRemoval(EntityBase enemy, float delaySec)
@@ -349,7 +282,10 @@ namespace Tempt
             StartCoroutine(DestroyDeadEnemyAfterDelay(enemy, delaySec));
         }
 
-        private System.Collections.IEnumerator DestroyDeadEnemyAfterDelay(EntityBase enemy, float delaySec)
+        private System.Collections.IEnumerator DestroyDeadEnemyAfterDelay(
+            EntityBase enemy,
+            float delaySec
+        )
         {
             yield return new WaitForSeconds(Mathf.Max(0f, delaySec));
             if (enemy != null)
@@ -411,7 +347,10 @@ namespace Tempt
 
         private void DisableSceneAuthoredCombatUnits()
         {
-            EntityBase[] sceneEntities = FindObjectsByType<EntityBase>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            EntityBase[] sceneEntities = FindObjectsByType<EntityBase>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
             for (int i = 0; i < sceneEntities.Length; i++)
             {
                 EntityBase entity = sceneEntities[i];
@@ -459,14 +398,26 @@ namespace Tempt
 
                 CombatCompanion companion = go.AddComponent<CombatCompanion>();
                 companion.BindState(state);
-                ConfigureCombatUnit(companion, "companion", new Color(0.62f, 0.86f, 1f, 1f), true, 9);
+                ConfigureCombatUnit(
+                    companion,
+                    "companion",
+                    new Color(0.62f, 0.86f, 1f, 1f),
+                    true,
+                    9
+                );
                 result.Add(companion);
             }
 
             return result;
         }
 
-        private void ConfigureCombatUnit(EntityBase entity, string spriteKey, Color fallbackColor, bool includeMana, int sortingOrder)
+        private void ConfigureCombatUnit(
+            EntityBase entity,
+            string spriteKey,
+            Color fallbackColor,
+            bool includeMana,
+            int sortingOrder
+        )
         {
             if (entity == null)
             {
@@ -507,7 +458,7 @@ namespace Tempt
                 return sprite;
             }
 
-            const int size = 64;
+            int size = ResolveGeneratedSpriteSize();
             Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
             texture.hideFlags = HideFlags.DontSave;
             texture.filterMode = FilterMode.Point;
@@ -540,10 +491,43 @@ namespace Tempt
             }
 
             texture.Apply();
-            sprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.18f), 48f);
+            sprite = Sprite.Create(
+                texture,
+                new Rect(0f, 0f, size, size),
+                new Vector2(0.5f, 0.18f),
+                ResolveGeneratedSpritePixelsPerUnit()
+            );
             sprite.name = "GeneratedCombatUnit_" + key;
             generatedSprites[key] = sprite;
             return sprite;
+        }
+
+        private static int ResolveGeneratedSpriteSize()
+        {
+            if (
+                GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                && gsm.Data?.Balance != null
+                && gsm.Data.Balance.CombatGeneratedSpriteSize > 0
+            )
+            {
+                return gsm.Data.Balance.CombatGeneratedSpriteSize;
+            }
+
+            return 64;
+        }
+
+        private static float ResolveGeneratedSpritePixelsPerUnit()
+        {
+            if (
+                GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                && gsm.Data?.Balance != null
+                && gsm.Data.Balance.CombatGeneratedSpritePixelsPerUnit > 0f
+            )
+            {
+                return gsm.Data.Balance.CombatGeneratedSpritePixelsPerUnit;
+            }
+
+            return 48f;
         }
 
         private static Vector3 AllyPosition(int index)
@@ -571,40 +555,6 @@ namespace Tempt
             }
 
             return positions;
-        }
-
-        /// <summary>행동이 완전히 확정됐는지(타겟 포함).</summary>
-        private bool IsActionConfirmed()
-        {
-            if (pendingAction == null)
-            {
-                return false;
-            }
-
-            if (pendingAction.Type == CombatActionType.Defend)
-            {
-                return true;
-            }
-
-            if (pendingAction.Type == CombatActionType.Attack)
-            {
-                return pendingAction.Targets != null && pendingAction.Targets.Count > 0;
-            }
-
-            if (pendingAction.Type == CombatActionType.Skill && pendingAction.Skill?.Data != null)
-            {
-                SkillTargetType targetType = pendingAction.Skill.Data.TargetType;
-                if (targetType == SkillTargetType.Self
-                    || targetType == SkillTargetType.EnemyAll
-                    || targetType == SkillTargetType.AllyAll)
-                {
-                    return true;
-                }
-
-                return pendingAction.Targets != null && pendingAction.Targets.Count > 0;
-            }
-
-            return false;
         }
 
         /// <summary>

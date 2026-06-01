@@ -1,0 +1,10 @@
+Id,NameKey,DescKey,Category,SubCategory,EquipSlot,EquipMod_HP,EquipMod_MP,EquipMod_ATK,EquipMod_DEF,EquipMod_SPD,ConsumeEffectKey,ParamValue,BasePrice,Stackable,MaxStack,IsRetreat
+1,item.hp_potion,,Consumable,HP_Potion,None,0,0,0,0,0,HealHP,30,1,true,99,false
+2,item.mp_potion,,Consumable,MP_Potion,None,0,0,0,0,0,HealMP,12,1,true,99,false
+3,item.escape,,Consumable,Escape,None,0,0,0,0,0,Escape,0,30,true,10,true
+101,item.training_sword,,Equipment,Weapon,Weapon,0,0,3,0,0,,3,40,false,1,false
+201,item.cloth_armor,,Equipment,ArmorBody,ArmorBody,10,0,0,1,0,,1,35,false,1,false
+901,test.weapon,,Equipment,Weapon,Weapon,0,0,5,0,0,,5,1,false,1,false
+902,test.body,,Equipment,ArmorBody,ArmorBody,15,0,0,2,0,,2,1,false,1,false
+903,test.arms,,Equipment,ArmorArms,ArmorArms,0,0,1,1,0,,1,1,false,1,false
+904,test.legs,,Equipment,ArmorLegs,ArmorLegs,0,0,0,1,2,,2,1,false,1,false

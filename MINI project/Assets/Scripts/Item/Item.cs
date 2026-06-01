@@ -20,43 +20,32 @@ namespace Tempt
             // 동작 요약:
             // - Data.EquipMod에 Enhancement 곱셈 보정 적용.
             // - 대장간 강화 수식은 BalanceData.
-            //TODO: if (Data == null || Data.EquipMod == null) return new EquipmentStatMod();
-            //TODO: // 강화 보정 배수: 1 + Enhancement * BalanceData.EnhanceMultiplier
-            //TODO: float multiplier = 1f + Enhancement * BalanceData.EnhanceMultiplier;
-            //TODO: return new EquipmentStatMod
-            //TODO: {
-            //TODO:     HP  = UnityEngine.Mathf.RoundToInt(Data.EquipMod.HP  * multiplier),
-            //TODO:     MP  = UnityEngine.Mathf.RoundToInt(Data.EquipMod.MP  * multiplier),
-            //TODO:     ATK = UnityEngine.Mathf.RoundToInt(Data.EquipMod.ATK * multiplier),
-            //TODO:     DEF = UnityEngine.Mathf.RoundToInt(Data.EquipMod.DEF * multiplier),
-            //TODO:     SPD = UnityEngine.Mathf.RoundToInt(Data.EquipMod.SPD * multiplier),
-            //TODO: };
-            if (Data == null || Data.EquipMod == null) //Wave0write
-            { //Wave0write
-                return new EquipmentStatMod(); //Wave0write
-            } //Wave0write
+            if (Data == null || Data.EquipMod == null)
+            {
+                return new EquipmentStatMod();
+            }
 
-            float enhanceMultiplier = 0f; //Wave0write
-            if (Enhancement > 0) //Wave0write
-            { //Wave0write
-                if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.Data?.Balance == null) //Wave0write
-                { //Wave0write
-                    UnityEngine.Debug.LogError("[Item.GetFinalMod] BalanceData.EnhanceMultiplier 참조가 없습니다."); //Wave0write
-                    return new EquipmentStatMod(); //Wave0write
-                } //Wave0write
+            float enhanceMultiplier = 0f;
+            if (Enhancement > 0)
+            {
+                if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.Data?.Balance == null)
+                {
+                    UnityEngine.Debug.LogError("[Item.GetFinalMod] BalanceData.EnhanceMultiplier 참조가 없습니다.");
+                    return new EquipmentStatMod();
+                }
 
-                enhanceMultiplier = gsm.Data.Balance.EnhanceMultiplier; //Wave0write
-            } //Wave0write
+                enhanceMultiplier = gsm.Data.Balance.EnhanceMultiplier;
+            }
 
-            float multiplier = 1f + System.Math.Max(0, Enhancement) * enhanceMultiplier; //Wave0write
-            return new EquipmentStatMod //Wave0write
-            { //Wave0write
-                HP = UnityEngine.Mathf.RoundToInt(Data.EquipMod.HP * multiplier), //Wave0write
-                MP = UnityEngine.Mathf.RoundToInt(Data.EquipMod.MP * multiplier), //Wave0write
-                ATK = UnityEngine.Mathf.RoundToInt(Data.EquipMod.ATK * multiplier), //Wave0write
-                DEF = UnityEngine.Mathf.RoundToInt(Data.EquipMod.DEF * multiplier), //Wave0write
-                SPD = UnityEngine.Mathf.RoundToInt(Data.EquipMod.SPD * multiplier), //Wave0write
-            }; //Wave0write
+            float multiplier = 1f + System.Math.Max(0, Enhancement) * enhanceMultiplier;
+            return new EquipmentStatMod
+            {
+                HP = UnityEngine.Mathf.RoundToInt(Data.EquipMod.HP * multiplier),
+                MP = UnityEngine.Mathf.RoundToInt(Data.EquipMod.MP * multiplier),
+                ATK = UnityEngine.Mathf.RoundToInt(Data.EquipMod.ATK * multiplier),
+                DEF = UnityEngine.Mathf.RoundToInt(Data.EquipMod.DEF * multiplier),
+                SPD = UnityEngine.Mathf.RoundToInt(Data.EquipMod.SPD * multiplier),
+            };
         }
     }
 }

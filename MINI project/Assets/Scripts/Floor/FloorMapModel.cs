@@ -26,63 +26,50 @@ namespace Tempt
             // - NodesById[nodeId].IsCleared = true.
             // - 그 층이 마지막 노드(보스)였다면 다음 단계 해금.
             // - NextSelectableFloor 갱신.
-            //TODO: if (!NodesById.TryGetValue(nodeId, out var node)) return;
-            //TODO: node.IsCleared = true;
-            //TODO: // 현재 층의 모든 노드가 클리어됐는지 확인(또는 보스 클리어 기준)
-            //TODO: if (node.IsBoss)
-            //TODO: {
-            //TODO:     NextSelectableFloor = node.Floor + 1; // 다음 층 해금
-            //TODO: }
-            //TODO: else
-            //TODO: {
-            //TODO:     // 일반 전투 노드: 같은 층에서 다음 선택 가능 노드 없으면 다음 층으로
-            //TODO:     bool anyUncleared = NodesByFloor[node.Floor].Exists(n => !n.IsCleared);
-            //TODO:     if (!anyUncleared) NextSelectableFloor = node.Floor + 1;
-            //TODO: }
-            if (!NodesById.TryGetValue(nodeId, out FloorNode node)) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (!NodesById.TryGetValue(nodeId, out FloorNode node))
+            {
+                return;
+            }
 
-            if (node.IsSafeZone) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (node.IsSafeZone)
+            {
+                return;
+            }
 
-            node.IsCleared = true; //Wave0write
-            NextSelectableFloor = FindNextSelectableFloor(node.Floor); //Wave0write
+            node.IsCleared = true;
+            NextSelectableFloor = FindNextSelectableFloor(node.Floor);
         }
 
-        public void ResetStageProgression(int stageIndex) //Wave0write
-        { //Wave0write
-            int firstFloor = int.MaxValue; //Wave0write
-            foreach (List<FloorNode> nodes in NodesByFloor.Values) //Wave0write
-            { //Wave0write
-                if (nodes == null) //Wave0write
-                { //Wave0write
-                    continue; //Wave0write
-                } //Wave0write
+        public void ResetStageProgression(int stageIndex)
+        {
+            int firstFloor = int.MaxValue;
+            foreach (List<FloorNode> nodes in NodesByFloor.Values)
+            {
+                if (nodes == null)
+                {
+                    continue;
+                }
 
-                foreach (FloorNode node in nodes) //Wave0write
-                { //Wave0write
-                    if (node == null || node.IsSafeZone || node.StageIndex != stageIndex) //Wave0write
-                    { //Wave0write
-                        continue; //Wave0write
-                    } //Wave0write
+                foreach (FloorNode node in nodes)
+                {
+                    if (node == null || node.IsSafeZone || node.StageIndex != stageIndex)
+                    {
+                        continue;
+                    }
 
-                    node.IsCleared = false; //Wave0write
-                    if (node.Floor < firstFloor) //Wave0write
-                    { //Wave0write
-                        firstFloor = node.Floor; //Wave0write
-                    } //Wave0write
-                } //Wave0write
-            } //Wave0write
+                    node.IsCleared = false;
+                    if (node.Floor < firstFloor)
+                    {
+                        firstFloor = node.Floor;
+                    }
+                }
+            }
 
-            if (firstFloor != int.MaxValue) //Wave0write
-            { //Wave0write
-                NextSelectableFloor = firstFloor; //Wave0write
-            } //Wave0write
-        } //Wave0write
+            if (firstFloor != int.MaxValue)
+            {
+                NextSelectableFloor = firstFloor;
+            }
+        }
 
         /// <summary>
         /// 특정 층이 클리어됐는가(보스 노드 클리어 기준).
@@ -91,64 +78,59 @@ namespace Tempt
         {
             // 동작 요약: 해당 stage의 보스 노드.IsCleared 반환.
             // - 단계별 보스층: 1단계=3, 2단계=11, 3단계=19, 4단계=29, 5단계=39, 6단계=49.
-            //TODO: int[] bossFloors = { 0, 3, 11, 19, 29, 39, 49 };
-            //TODO: if (stageIndex < 1 || stageIndex >= bossFloors.Length) return false;
-            //TODO: int bossFloor = bossFloors[stageIndex];
-            //TODO: if (!NodesByFloor.TryGetValue(bossFloor, out var nodes)) return false;
-            //TODO: return nodes.Count > 0 && nodes[0].IsBoss && nodes[0].IsCleared;
-            int bossFloor = BossFloorOfStage(stageIndex); //Wave0write
-            if (bossFloor <= 0 || !NodesByFloor.TryGetValue(bossFloor, out List<FloorNode> nodes)) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            int bossFloor = BossFloorOfStage(stageIndex);
+            if (bossFloor <= 0 || !NodesByFloor.TryGetValue(bossFloor, out List<FloorNode> nodes))
+            {
+                return false;
+            }
 
-            foreach (FloorNode node in nodes) //Wave0write
-            { //Wave0write
-                if (!node.IsSafeZone && node.IsBoss && node.IsCleared) //Wave0write
-                { //Wave0write
-                    return true; //Wave0write
-                } //Wave0write
-            } //Wave0write
+            foreach (FloorNode node in nodes)
+            {
+                if (!node.IsSafeZone && node.IsBoss && node.IsCleared)
+                {
+                    return true;
+                }
+            }
 
-            return false; //Wave0write
+            return false;
         }
 
-        private int FindNextSelectableFloor(int currentFloor) //Wave0write
-        { //Wave0write
-            int next = int.MaxValue; //Wave0write
-            foreach (int floor in NodesByFloor.Keys) //Wave0write
-            { //Wave0write
-                if (floor <= currentFloor) //Wave0write
-                { //Wave0write
-                    continue; //Wave0write
-                } //Wave0write
+        private int FindNextSelectableFloor(int currentFloor)
+        {
+            int next = int.MaxValue;
+            foreach (int floor in NodesByFloor.Keys)
+            {
+                if (floor <= currentFloor)
+                {
+                    continue;
+                }
 
-                if (NodesByFloor.TryGetValue(floor, out List<FloorNode> nodes)) //Wave0write
-                { //Wave0write
-                    bool hasUncleared = nodes.Exists(n => n != null && !n.IsSafeZone && !n.IsCleared); //Wave0write
-                    if (hasUncleared && floor < next) //Wave0write
-                    { //Wave0write
-                        next = floor; //Wave0write
-                    } //Wave0write
-                } //Wave0write
-            } //Wave0write
+                if (NodesByFloor.TryGetValue(floor, out List<FloorNode> nodes))
+                {
+                    bool hasUncleared = nodes.Exists(n => n != null && !n.IsSafeZone && !n.IsCleared);
+                    if (hasUncleared && floor < next)
+                    {
+                        next = floor;
+                    }
+                }
+            }
 
-            return next == int.MaxValue ? currentFloor + 1 : next; //Wave0write
-        } //Wave0write
+            return next == int.MaxValue ? currentFloor + 1 : next;
+        }
 
-        private static int BossFloorOfStage(int stageIndex) //Wave0write
-        { //Wave0write
-            switch (stageIndex) //Wave0write
-            { //Wave0write
-                case 1: return 3; //Wave0write
-                case 2: return 11; //Wave0write
-                case 3: return 19; //Wave0write
-                case 4: return 29; //Wave0write
-                case 5: return 39; //Wave0write
-                case 6: return 49; //Wave0write
-                default: return 0; //Wave0write
-            } //Wave0write
-        } //Wave0write
+        private static int BossFloorOfStage(int stageIndex)
+        {
+            switch (stageIndex)
+            {
+                case 1: return 3;
+                case 2: return 11;
+                case 3: return 19;
+                case 4: return 29;
+                case 5: return 39;
+                case 6: return 49;
+                default: return 0;
+            }
+        }
     }
 }
 

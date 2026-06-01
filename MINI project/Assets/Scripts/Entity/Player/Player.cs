@@ -32,53 +32,51 @@ namespace Tempt
             // - StartingClass = pickedClass.
             // - Rune = new PlayerRuneState(pickedClass).
             // - Rune.UnlockStarter().
-            //TODO: StartingClass = pickedClass;
-            //TODO: Rune = new PlayerRuneState(pickedClass);
-            //TODO: Rune.UnlockStarter();
-            //TODO: SyncPassivesFromRunes(); // 패시브 스킬 동기화
-            StartingClass = pickedClass; //Wave0write
-            Rune = new PlayerRuneState //Wave0write
-            { //Wave0write
-                ClassId = pickedClass, //Wave0write
-                RunePoints = 0, //Wave0write
-                UnlockedIds = new System.Collections.Generic.HashSet<int>(), //Wave0write
-                Tree = GameSystemManager.TryGetInstance(out GameSystemManager gsm) ? RuneTree.BuildFromData(pickedClass, gsm.Data.Runes.Values) : null, //Wave0write
-            }; //Wave0write
-            Rune.UnlockStarter(); //Wave0write
-            if (gsm != null) //Wave0write
-            { //Wave0write
-                SyncPassivesFromRunes(gsm.Data); //Wave0write
-                if (gsm.CurrentRun?.Player != null) //Wave0write
-                { //Wave0write
-                    PlayerState state = gsm.CurrentRun.Player; //Wave0write
-                    state.StartingClass = pickedClass; //Wave0write
-                    state.Rune = Rune; //Wave0write
-                    if (state.OwnedSkillIds == null) //Wave0write
-                    { //Wave0write
-                        state.OwnedSkillIds = new System.Collections.Generic.HashSet<int>(); //Wave0write
-                    } //Wave0write
-                    if (state.ActiveSlotSkillIds == null || state.ActiveSlotSkillIds.Length != 2) //Wave0write
-                    { //Wave0write
-                        state.ActiveSlotSkillIds = new int[2]; //Wave0write
-                    } //Wave0write
+            StartingClass = pickedClass;
+            Rune = new PlayerRuneState
+            {
+                ClassId = pickedClass,
+                RunePoints = 0,
+                UnlockedIds = new System.Collections.Generic.HashSet<int>(),
+                Tree = GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                    ? RuneTree.BuildFromData(pickedClass, gsm.Data.Runes.Values)
+                    : null,
+            };
+            Rune.UnlockStarter();
+            if (gsm != null)
+            {
+                SyncPassivesFromRunes(gsm.Data);
+                if (gsm.CurrentRun?.Player != null)
+                {
+                    PlayerState state = gsm.CurrentRun.Player;
+                    state.StartingClass = pickedClass;
+                    state.Rune = Rune;
+                    if (state.OwnedSkillIds == null)
+                    {
+                        state.OwnedSkillIds = new System.Collections.Generic.HashSet<int>();
+                    }
+                    if (state.ActiveSlotSkillIds == null || state.ActiveSlotSkillIds.Length != 2)
+                    {
+                        state.ActiveSlotSkillIds = new int[2];
+                    }
 
-                    state.ActiveSlotSkillIds[0] = 0; //Wave0write
-                    state.ActiveSlotSkillIds[1] = 0; //Wave0write
-                    int[] starters = gsm.Data.GetStartingSkillIds(pickedClass); //Wave0write
-                    for (int i = 0; i < starters.Length && i < state.ActiveSlotSkillIds.Length; i++) //Wave0write
-                    { //Wave0write
-                        int skillId = starters[i]; //Wave0write
-                        state.ActiveSlotSkillIds[i] = skillId; //Wave0write
-                        if (skillId != 0) //Wave0write
-                        { //Wave0write
-                            state.OwnedSkillIds.Add(skillId); //Wave0write
-                        } //Wave0write
-                    } //Wave0write
+                    state.ActiveSlotSkillIds[0] = 0;
+                    state.ActiveSlotSkillIds[1] = 0;
+                    int[] starters = gsm.Data.GetStartingSkillIds(pickedClass);
+                    for (int i = 0; i < starters.Length && i < state.ActiveSlotSkillIds.Length; i++)
+                    {
+                        int skillId = starters[i];
+                        state.ActiveSlotSkillIds[i] = skillId;
+                        if (skillId != 0)
+                        {
+                            state.OwnedSkillIds.Add(skillId);
+                        }
+                    }
 
-                    gsm.Events?.RaiseSkillsChanged(); //Wave0write
-                } //Wave0write
-            } //Wave0write
-            RecalcBonusStats(); //Wave0write
+                    gsm.Events?.RaiseSkillsChanged();
+                }
+            }
+            RecalcBonusStats();
         }
 
         /// <summary>
@@ -89,28 +87,23 @@ namespace Tempt
             // 동작 요약:
             // - Equipment.AggregateStatMod() + Rune.AggregateStatMod() → Stats.Bonus.
             // - Stats.ClampToMax().
-            //TODO: StatModt equipMod = Equipment != null ? Equipment.AggregateStatMod() : new StatModt();
-            //TODO: StatModt runeMod  = Rune    != null ? Rune.AggregateStatMod()      : new StatModt();
-            //TODO: Stats.BonusMaxHP  = equipMod.MaxHP  + runeMod.MaxHP;
-            //TODO: Stats.BonusMaxMP  = equipMod.MaxMP  + runeMod.MaxMP;
-            //TODO: Stats.BonusATK    = equipMod.ATK    + runeMod.ATK;
-            //TODO: Stats.BonusDEF    = equipMod.DEF    + runeMod.DEF;
-            //TODO: Stats.BonusSPD    = equipMod.SPD    + runeMod.SPD;
-            //TODO: Stats.ClampToMax();
-            if (Stats == null) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (Stats == null)
+            {
+                return;
+            }
 
-            Stats.ResetEquipmentBonuses(); //Wave0write
-            Stats.ApplyEquipmentBonus(Equipment != null ? Equipment.AggregateStatMod() : new EquipmentStatMod()); //Wave0write
-            Stats.ResetRuneBonuses(); //Wave0write
-            EquipmentStatMod runeMod = Rune != null ? Rune.AggregateStatMod() : new EquipmentStatMod(); //Wave0write
-            Stats.ApplyRuneBonus(StatType.HP, runeMod.HP); //Wave0write
-            Stats.ApplyRuneBonus(StatType.MP, runeMod.MP); //Wave0write
-            Stats.ApplyRuneBonus(StatType.ATK, runeMod.ATK); //Wave0write
-            Stats.ApplyRuneBonus(StatType.DEF, runeMod.DEF); //Wave0write
-            Stats.ApplyRuneBonus(StatType.SPD, runeMod.SPD); //Wave0write
+            Stats.ResetEquipmentBonuses();
+            Stats.ApplyEquipmentBonus(
+                Equipment != null ? Equipment.AggregateStatMod() : new EquipmentStatMod()
+            );
+            Stats.ResetRuneBonuses();
+            EquipmentStatMod runeMod =
+                Rune != null ? Rune.AggregateStatMod() : new EquipmentStatMod();
+            Stats.ApplyRuneBonus(StatType.HP, runeMod.HP);
+            Stats.ApplyRuneBonus(StatType.MP, runeMod.MP);
+            Stats.ApplyRuneBonus(StatType.ATK, runeMod.ATK);
+            Stats.ApplyRuneBonus(StatType.DEF, runeMod.DEF);
+            Stats.ApplyRuneBonus(StatType.SPD, runeMod.SPD);
         }
 
         // Wave0refactor 2026-05-27: CharacterBase.LevelUp 이 이미 SyncPassivesFromRunes 와
@@ -135,7 +128,11 @@ namespace Tempt
 
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm))
             {
-                Rune?.AddRunePoint(gsm.Data?.Balance?.RunePointPerLevel ?? 1);
+                if (Rune != null)
+                {
+                    Rune.AddRunePoint(gsm.Data?.Balance?.RunePointPerLevel ?? 1);
+                    gsm.Events?.RaiseRunePointsChanged(Rune.RunePoints);
+                }
             }
         }
 
@@ -143,11 +140,11 @@ namespace Tempt
         protected override System.Collections.Generic.IReadOnlyList<int> GetUnlockedRuneNodeIds()
         {
             // 동작 요약:
-            // - Rune?.UnlockedIds(HashSet<int>)를 List<int>로 변환하여 반환.
+            // - 마스터 완료된 룬 노드 ID를 반환한다. 부분 투자 노드는 패시브 해금 대상이 아니다.
             // - Rune이 null이면 빈 목록 반환.
-            //TODO: if (Rune == null) return new System.Collections.Generic.List<int>();
-            //TODO: return new System.Collections.Generic.List<int>(Rune.UnlockedIds);
-            return Rune?.UnlockedIds != null ? new System.Collections.Generic.List<int>(Rune.UnlockedIds) : new System.Collections.Generic.List<int>(); //Wave0write
+            return Rune != null
+                ? Rune.GetMasteredNodeIds()
+                : new System.Collections.Generic.List<int>();
         }
 
         /// <summary>
@@ -158,90 +155,98 @@ namespace Tempt
             // 동작 요약:
             // - Inventory에서 후퇴 아이템 1개 차감.
             // - GameSystemManager.Instance.EndCombat(Retreat) 호출.
-            //TODO: // 후퇴 아이템 ID는 BalanceData.RetreatItemId 상수로 관리
-            //TODO: if (!Inventory.Remove(BalanceData.RetreatItemId, 1)) return;
-            //TODO: GameSystemManager.Instance.EndCombat(CombatResult.Retreat, null);
-            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm)) //Wave0write
-            { //Wave0write
-                gsm.EndCombat(CombatResult.Retreat, null); //Wave0write
-            } //Wave0write
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                gsm.EndCombat(CombatResult.Retreat, null);
+            }
         }
 
         /// <summary>
         /// 저장/런 상태 데이터를 전투용 MonoBehaviour에 바인딩한다.
         /// </summary>
-        public void BindState(PlayerState state) //Wave0write
-        { //Wave0write
-            if (state == null) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+        public void BindState(PlayerState state)
+        {
+            if (state == null)
+            {
+                return;
+            }
 
-            DisplayName = state.Name; //Wave0write
-            Level = state.Level <= 0 ? 1 : state.Level; //Wave0write
-            CurrentExp = state.Exp; //Wave0write
-            Stats = state.Stats ?? new StatBlock(); //Wave0write
-            StartingClass = state.StartingClass; //Wave0write
-            Rune = state.Rune; //Wave0write
-            Inventory = state.Inventory ?? new InventoryState(); //Wave0write
-            Equipment = state.Equipment ?? new EquipmentSlots(); //Wave0write
-            Consumables = state.Consumables ?? new ConsumableSlots(); //Wave0write
-            Locker = state.Locker ?? new LockerState(); //Wave0write
+            DisplayName = state.Name;
+            Level = state.Level <= 0 ? 1 : state.Level;
+            CurrentExp = state.Exp;
+            Stats = state.Stats ?? new StatBlock();
+            StartingClass = state.StartingClass;
+            Rune = state.Rune;
+            Inventory = state.Inventory ?? new InventoryState();
+            Equipment = state.Equipment ?? new EquipmentSlots();
+            Consumables = state.Consumables ?? new ConsumableSlots();
+            Locker = state.Locker ?? new LockerState();
 
-            if (ActiveSkills == null || ActiveSkills.Length != 2) //Wave0write
-            { //Wave0write
-                ActiveSkills = new Skill[2]; //Wave0write
-            } //Wave0write
+            if (ActiveSkills == null || ActiveSkills.Length != 2)
+            {
+                ActiveSkills = new Skill[2];
+            }
 
-            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm)) //Wave0write
-            { //Wave0write
-                BindActiveSlotsFromState(state, gsm.Data); //Wave0write
-                SyncPassivesFromRunes(gsm.Data); //Wave0write
-            } //Wave0write
-            else //Wave0write
-            { //Wave0write
-                UnityEngine.Debug.LogError("[Player.BindState] GameSystemManager 참조가 없어 ActiveSkills 를 바인딩할 수 없습니다."); //Wave0write
-            } //Wave0write
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                BindActiveSlotsFromState(state, gsm.Data);
+                SyncPassivesFromRunes(gsm.Data);
+            }
+            else
+            {
+                UnityEngine.Debug.LogError(
+                    "[Player.BindState] GameSystemManager 참조가 없어 ActiveSkills 를 바인딩할 수 없습니다."
+                );
+            }
 
-            RecalcBonusStats(); //Wave0write
-        } //Wave0write
+            RecalcBonusStats();
+        }
 
-        private void BindActiveSlotsFromState(PlayerState state, DataManager data) //Wave0write
-        { //Wave0write
-            if (state?.ActiveSlotSkillIds == null || state.ActiveSlotSkillIds.Length != 2) //Wave0write
-            { //Wave0write
-                UnityEngine.Debug.LogError("[Player.BindState] PlayerState.ActiveSlotSkillIds 가 없거나 길이가 2가 아닙니다."); //Wave0write
-                ActiveSkills[0] = null; //Wave0write
-                ActiveSkills[1] = null; //Wave0write
-                return; //Wave0write
-            } //Wave0write
+        private void BindActiveSlotsFromState(PlayerState state, DataManager data)
+        {
+            if (state?.ActiveSlotSkillIds == null || state.ActiveSlotSkillIds.Length != 2)
+            {
+                UnityEngine.Debug.LogError(
+                    "[Player.BindState] PlayerState.ActiveSlotSkillIds 가 없거나 길이가 2가 아닙니다."
+                );
+                ActiveSkills[0] = null;
+                ActiveSkills[1] = null;
+                return;
+            }
 
-            if (data?.Skills == null) //Wave0write
-            { //Wave0write
-                UnityEngine.Debug.LogError("[Player.BindState] DataManager.Skills 참조가 없습니다."); //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (data?.Skills == null)
+            {
+                UnityEngine.Debug.LogError(
+                    "[Player.BindState] DataManager.Skills 참조가 없습니다."
+                );
+                return;
+            }
 
-            for (int slot = 0; slot < ActiveSkills.Length; slot++) //Wave0write
-            { //Wave0write
-                int skillId = state.ActiveSlotSkillIds[slot]; //Wave0write
-                if (skillId == 0) //Wave0write
-                { //Wave0write
-                    ActiveSkills[slot] = null; //Wave0write
-                    continue; //Wave0write
-                } //Wave0write
+            for (int slot = 0; slot < ActiveSkills.Length; slot++)
+            {
+                int skillId = state.ActiveSlotSkillIds[slot];
+                if (skillId == 0)
+                {
+                    ActiveSkills[slot] = null;
+                    continue;
+                }
 
-                if (data.Skills.TryGetValue(skillId, out SkillData skillData)) //Wave0write
-                { //Wave0write
-                    ActiveSkills[slot] = new Skill(skillData); //Wave0write
-                } //Wave0write
-                else //Wave0write
-                { //Wave0write
-                    UnityEngine.Debug.LogError("[Player.BindState] ActiveSlotSkillIds[" + slot + "] 데이터 없음: " + skillId); //Wave0write
-                    ActiveSkills[slot] = null; //Wave0write
-                } //Wave0write
-            } //Wave0write
-        } //Wave0write
+                if (data.Skills.TryGetValue(skillId, out SkillData skillData))
+                {
+                    ActiveSkills[slot] = new Skill(skillData);
+                }
+                else
+                {
+                    UnityEngine.Debug.LogError(
+                        "[Player.BindState] ActiveSlotSkillIds["
+                            + slot
+                            + "] 데이터 없음: "
+                            + skillId
+                    );
+                    ActiveSkills[slot] = null;
+                }
+            }
+        }
 
         // Wave0refactor 2026-05-27: BUG-2 수정.
         // GameSystemManager.EndCombat 이 PlayerState.Level / Exp 를 먼저 갱신하고 직후
@@ -280,4 +285,3 @@ namespace Tempt
         }
     }
 }
-

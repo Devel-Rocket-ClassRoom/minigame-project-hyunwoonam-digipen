@@ -37,21 +37,48 @@ namespace Tempt
         /// <inheritdoc/>
         public override void Parse(string[] cells)
         {
-            // 동작 요약: 필드 파싱.
-            //TODO: Id             = int.Parse(cells[0]);
-            //TODO: NameKey        = cells[1];
-            //TODO: ClassId        = (RuneClass)System.Enum.Parse(typeof(RuneClass), cells[2]);
-            //TODO: ActionRuleKey  = cells[3];
-            //TODO: RequiredFloor  = int.Parse(cells[4]);
-            //TODO: RecruitPrice   = int.Parse(cells[5]);
-            //TODO: BaseStats      = new EquipmentStatMod { HP = int.Parse(cells[6]), ATK = int.Parse(cells[7]), DEF = int.Parse(cells[8]), SPD = int.Parse(cells[9]) };
-            //TODO: StatGrowth     = new EquipmentStatMod { HP = int.Parse(cells[10]), ATK = int.Parse(cells[11]), DEF = int.Parse(cells[12]), SPD = int.Parse(cells[13]) };
-            //TODO: RuneTreeLength = int.Parse(cells[14]);
-            //TODO: PrefabKey      = cells[15];
-            //TODO: // RuneNodePool: ';' 구분 int 목록
-            //TODO: RuneNodePool = new List<int>();
-            //TODO: if (cells.Length > 16 && !string.IsNullOrEmpty(cells[16]))
-            //TODO:     foreach (var s in cells[16].Split(';')) RuneNodePool.Add(int.Parse(s.Trim()));
+            Id = cells.Length > 0 && CsvParser.TryParseInt(cells[0], out int id) ? id : 0;
+            NameKey = cells.Length > 1 ? cells[1] : string.Empty;
+            RequiredFloor = cells.Length > 2 && CsvParser.TryParseInt(cells[2], out int floor) ? floor : 0;
+            RecruitPrice = cells.Length > 3 && CsvParser.TryParseInt(cells[3], out int price) ? price : 0;
+        }
+
+        public static CompanionData FromRow(IDictionary<string, string> row)
+        {
+            if (!CsvParser.HasColumns(row, nameof(CompanionData), "Id", "NameKey"))
+            {
+                return null;
+            }
+
+            return new CompanionData
+            {
+                Id = CsvParser.GetInt(row, "Id"),
+                NameKey = CsvParser.GetString(row, "NameKey"),
+                DescKey = CsvParser.GetString(row, "DescKey"),
+                RequiredFloor = CsvParser.GetInt(row, "RequiredFloor"),
+                RecruitPrice = CsvParser.GetInt(row, "RecruitPrice"),
+                ClassId = CsvParser.GetEnum(row, "ClassId", RuneClass.None),
+                BaseStats = new EquipmentStatMod
+                {
+                    HP = CsvParser.GetInt(row, "BaseStats_HP"),
+                    MP = CsvParser.GetInt(row, "BaseStats_MP"),
+                    ATK = CsvParser.GetInt(row, "BaseStats_ATK"),
+                    DEF = CsvParser.GetInt(row, "BaseStats_DEF"),
+                    SPD = CsvParser.GetInt(row, "BaseStats_SPD"),
+                },
+                StatGrowth = new EquipmentStatMod
+                {
+                    HP = CsvParser.GetInt(row, "StatGrowth_HP"),
+                    MP = CsvParser.GetInt(row, "StatGrowth_MP"),
+                    ATK = CsvParser.GetInt(row, "StatGrowth_ATK"),
+                    DEF = CsvParser.GetInt(row, "StatGrowth_DEF"),
+                    SPD = CsvParser.GetInt(row, "StatGrowth_SPD"),
+                },
+                RuneNodePool = CsvParser.GetIntList(row, "RuneNodePool"),
+                RuneTreeLength = CsvParser.GetInt(row, "RuneTreeLength"),
+                PrefabKey = CsvParser.GetString(row, "PrefabKey"),
+                ActionRuleKey = CsvParser.GetString(row, "ActionRuleKey"),
+            };
         }
     }
 }

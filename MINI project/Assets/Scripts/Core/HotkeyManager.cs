@@ -34,6 +34,11 @@ namespace Tempt
                 OnTogglePage?.Invoke(HotkeyPageId.StatRune);
             }
 
+            if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.R))
+            {
+                OnTogglePage?.Invoke(HotkeyPageId.Rune);
+            }
+
             if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.Escape))
             {
                 OnRequestQuit?.Invoke();
@@ -48,9 +53,6 @@ namespace Tempt
             // 동작 요약:
             // - GameSystemManagert에서 Update 폴링 호출을 등록.
             // - 키 매핑 테이블 초기화(추후 옵션에서 재바인딩 지원).
-            //TODO: // 현재는 PollInput()이 GameSystemManager.Update()에서 매 프레임 직접 호출됨
-            //TODO: // 키 리매핑 테이블 예시: keyMap[HotkeyPageId.Inventory] = KeyCode.I 등
-            //TODO: // 추후 옵션 화면에서 keyMap을 수정하면 PollInput에서 keyMap을 참조하도록 구조 변경
         }
     }
 
@@ -65,6 +67,8 @@ namespace Tempt
 
         /// <summary>S: 스탯/룬 확인.</summary>
         StatRune,
+
+        /// <summary>R: 룬 트리 확인.</summary>
+        Rune,
     }
 }
-

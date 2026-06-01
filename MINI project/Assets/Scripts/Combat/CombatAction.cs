@@ -16,7 +16,7 @@ namespace Tempt
         /// <summary>사용 스킬(Type=Skill일 때).</summary>
         public Skill Skill;
 
-        /// <summary>소모 아이템 ID(Type=Item일 때).</summary>
+        /// <summary>전투 UI 소모품 슬롯 인덱스. 플레이어 아이템 사용 경로에서만 사용한다.</summary>
         public int ConsumableSlotIndex;
 
         /// <summary>실제 대상 목록(타겟팅 후 확정).</summary>
@@ -25,7 +25,7 @@ namespace Tempt
         /// <summary>이 행동의 누적 실행 시간(초). ActionTimingt가 계산.</summary>
         public float DurationSec;
 
-        /// <summary>턴을 소비하는가. Item은 false, 그 외는 true.</summary>
+        /// <summary>턴을 소비하는가.</summary>
         public bool ConsumesTurn;
     }
 
@@ -40,9 +40,6 @@ namespace Tempt
 
         /// <summary>방어(라운드 끝까지 유지).</summary>
         Defend,
-
-        /// <summary>소모 아이템 사용(턴 미소모).</summary>
-        Item,
     }
 }
 

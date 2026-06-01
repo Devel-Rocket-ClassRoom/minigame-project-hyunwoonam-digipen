@@ -41,39 +41,47 @@ namespace Tempt
         /// <summary>쿨다운(라운드). Passive는 0.</summary>
         public int CooldownRounds;
 
+        /// <summary>보호막 지속 라운드. ShieldScale 이 0이면 무시.</summary>
+        public int ShieldDurationRounds;
+
         /// <inheritdoc/>
         public override void Parse(string[] cells)
         {
-            // 동작 요약: SkillTable.csv 열 순서대로 파싱.
-            // - cells[0] = SkillID → Id
-            // - cells[1] = NameKey
-            // - cells[2] = AcquireType (enum 문자열 → AcquireType)
-            // - cells[3] = PurchasePrice (int)
-            // - cells[4] = SkillType (enum 문자열 → SkillType)
-            // - cells[5] = TargetType (enum 문자열 → SkillTargetType)
-            // - cells[6] = MpCost (int)
-            // - cells[7] = EffectFormula → DamageScale / HealScale / ShieldScale 분기 파싱
-            // - cells[8] = EffectValue (float)
-            // - cells[9] = DescriptionKey
-            // - AnimationKey, EffectKey, ActionDuration, CooldownRounds는 별도 컬럼 또는 기본값 처리
-            //TODO: Id            = int.Parse(cells[0]);
-            //TODO: NameKey       = cells[1];
-            //TODO: AcquireType   = (AcquireType)System.Enum.Parse(typeof(AcquireType), cells[2]);
-            //TODO: PurchasePrice = int.Parse(cells[3]);
-            //TODO: SkillType     = (SkillType)System.Enum.Parse(typeof(SkillType), cells[4]);
-            //TODO: TargetType    = (SkillTargetType)System.Enum.Parse(typeof(SkillTargetType), cells[5]);
-            //TODO: MpCost        = int.Parse(cells[6]);
-            //TODO: // cells[7] = 효과 분류("Damage"/"Heal"/"Shield"), cells[8] = scale 수치
-            //TODO: float effectVal = float.Parse(cells[8]);
-            //TODO: switch (cells[7].Trim())
-            //TODO: {
-            //TODO:     case "Damage": DamageScale = effectVal; break;
-            //TODO:     case "Heal":   HealScale   = effectVal; break;
-            //TODO:     case "Shield": ShieldScale = effectVal; break;
-            //TODO: }
-            //TODO: DescKey        = cells[9];
-            //TODO: CooldownRounds = cells.Length > 10 ? int.Parse(cells[10]) : 0;
-            //TODO: ActionDuration = cells.Length > 11 ? float.Parse(cells[11]) : 0f;
+            Id = cells.Length > 0 && CsvParser.TryParseInt(cells[0], out int id) ? id : 0;
+            NameKey = cells.Length > 1 ? cells[1] : string.Empty;
+            AcquireType = cells.Length > 2 && System.Enum.TryParse(cells[2], true, out AcquireType acquireType) ? acquireType : AcquireType.Default;
+            PurchasePrice = cells.Length > 3 && CsvParser.TryParseInt(cells[3], out int price) ? price : 0;
+            SkillType = cells.Length > 4 && System.Enum.TryParse(cells[4], true, out SkillType skillType) ? skillType : SkillType.Active;
+            TargetType = cells.Length > 5 && System.Enum.TryParse(cells[5], true, out SkillTargetType targetType) ? targetType : SkillTargetType.EnemySingle;
+            MpCost = cells.Length > 6 && CsvParser.TryParseInt(cells[6], out int mpCost) ? mpCost : 0;
+        }
+
+        public static SkillData FromRow(System.Collections.Generic.IDictionary<string, string> row)
+        {
+            if (!CsvParser.HasColumns(row, nameof(SkillData), "Id", "NameKey", "SkillType", "AcquireType", "MpCost", "TargetType"))
+            {
+                return null;
+            }
+
+            return new SkillData
+            {
+                Id = CsvParser.GetInt(row, "Id"),
+                NameKey = CsvParser.GetString(row, "NameKey"),
+                DescKey = CsvParser.GetString(row, "DescKey"),
+                SkillType = CsvParser.GetEnum(row, "SkillType", SkillType.Active),
+                AcquireType = CsvParser.GetEnum(row, "AcquireType", AcquireType.Default),
+                PurchasePrice = CsvParser.GetInt(row, "PurchasePrice"),
+                MpCost = CsvParser.GetInt(row, "MpCost"),
+                DamageScale = CsvParser.GetFloat(row, "DamageScale"),
+                HealScale = CsvParser.GetFloat(row, "HealScale"),
+                ShieldScale = CsvParser.GetFloat(row, "ShieldScale"),
+                TargetType = CsvParser.GetEnum(row, "TargetType", SkillTargetType.EnemySingle),
+                AnimationKey = CsvParser.GetString(row, "AnimationKey"),
+                EffectKey = CsvParser.GetString(row, "EffectKey"),
+                ActionDuration = CsvParser.GetFloat(row, "ActionDuration"),
+                CooldownRounds = CsvParser.GetInt(row, "CooldownRounds"),
+                ShieldDurationRounds = CsvParser.GetInt(row, "ShieldDurationRounds", 1),
+            };
         }
     }
 

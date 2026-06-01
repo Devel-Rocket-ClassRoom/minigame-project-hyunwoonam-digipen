@@ -46,7 +46,7 @@ namespace Tempt
         private CombatAction delayedAiAction;
         private bool firstActionDelayAvailable;
 
-        private const float FirstNonPlayerActionDelaySec = 2f;
+        private const float DefaultFirstNonPlayerActionDelaySec = 2f;
 
         // Wave0refactor 2026-05-27 (F.5): BeginRound / EndRound 가 매번 new List 를 만들지 않도록
         // 재사용 가능한 참가자 버퍼를 보유한다. 라운드 시작/종료 시 Clear 후 채운다.
@@ -63,26 +63,19 @@ namespace Tempt
             // - Queue = new ActionQueue().
             // - RoundNumber = 1.
             // - BeginRound().
-            //TODO: AlliesT = allies;
-            //TODO: EnemiesT = enemies;
-            //TODO: foreach (EntityBase entity in AlliesT) entity.PrepareForCombat();
-            //TODO: foreach (EntityBase entity in EnemiesT) entity.PrepareForCombat();
-            //TODO: Queue = new ActionQueue();
-            //TODO: RoundNumber = 1;
-            //TODO: BeginRound();
-            AlliesT = allies ?? new List<EntityBase>(); //Wave0write
-            EnemiesT = enemies ?? new List<EntityBase>(); //Wave0write
-            foreach (EntityBase entity in AlliesT) //Wave0write
-            { //Wave0write
-                entity?.PrepareForCombat(); //Wave0write
-            } //Wave0write
-            foreach (EntityBase entity in EnemiesT) //Wave0write
-            { //Wave0write
-                entity?.PrepareForCombat(); //Wave0write
-            } //Wave0write
+            AlliesT = allies ?? new List<EntityBase>();
+            EnemiesT = enemies ?? new List<EntityBase>();
+            foreach (EntityBase entity in AlliesT)
+            {
+                entity?.PrepareForCombat();
+            }
+            foreach (EntityBase entity in EnemiesT)
+            {
+                entity?.PrepareForCombat();
+            }
 
-            Queue = new ActionQueue(); //Wave0write
-            RoundNumber = 1; //Wave0write
+            Queue = new ActionQueue();
+            RoundNumber = 1;
             firstActionDelayAvailable = true;
             delayedAiAction = null;
             actingDelayTimer = 0f;
@@ -111,29 +104,29 @@ namespace Tempt
             //   * RoundEndCheck → Queue.IsRoundFinished()이면 EndRound().
             //                     아니면 State = NextActor.
             //   * Ended → 결과는 CombatController.OnSceneUpdate가 CheckOutcome()으로 감지.
-            switch (State) //Wave0write
-            { //Wave0write
-                case CombatState.Starting: //Wave0write
-                    State = CombatState.RoundStart; //Wave0write
-                    break; //Wave0write
-                case CombatState.RoundStart: //Wave0write
-                    BeginRound(); //Wave0write
-                    break; //Wave0write
-                case CombatState.NextActor: //Wave0write
-                    TurnEntry next = Queue?.PeekNext(); //Wave0write
-                    if (next == null) //Wave0write
-                    { //Wave0write
-                        State = CombatState.RoundEndCheck; //Wave0write
-                        break; //Wave0write
-                    } //Wave0write
-                    ResolveActor(next.Actor); //Wave0write
-                    break; //Wave0write
-                case CombatState.AwaitInput: //Wave0write
-                    if (Input != null && Input.HasAction) //Wave0write
-                    { //Wave0write
-                        ResolveAction(Input.PopAction()); //Wave0write
-                    } //Wave0write
-                    break; //Wave0write
+            switch (State)
+            {
+                case CombatState.Starting:
+                    State = CombatState.RoundStart;
+                    break;
+                case CombatState.RoundStart:
+                    BeginRound();
+                    break;
+                case CombatState.NextActor:
+                    TurnEntry next = Queue?.PeekNext();
+                    if (next == null)
+                    {
+                        State = CombatState.RoundEndCheck;
+                        break;
+                    }
+                    ResolveActor(next.Actor);
+                    break;
+                case CombatState.AwaitInput:
+                    if (Input != null && Input.HasAction)
+                    {
+                        ResolveAction(Input.PopAction());
+                    }
+                    break;
                 case CombatState.ActingDelay:
                     actingDelayTimer -= Time.deltaTime;
                     if (actingDelayTimer <= 0f)
@@ -163,7 +156,7 @@ namespace Tempt
                         State = CombatState.NextActor;
                     }
                     break;
-            } //Wave0write
+            }
         }
 
         // Wave0refactor 2026-05-27 (F.5): participantsBuffer 재사용.
@@ -231,21 +224,6 @@ namespace Tempt
             // - actor가 Playert면 Input.RequestPlayerAction(actor) 호출 → State = AwaitInput.
             // - actor가 TeamBaset이면 CompanionAi.Pick() → ResolveAction.
             // - actor가 MonsterBaset이면 MonsterAi.Pick() → ResolveAction.
-            //TODO: if (actor is Player player)
-            //TODO: {
-            //TODO:     Input.RequestPlayerAction(player);
-            //TODO:     State = CombatState.AwaitInput;
-            //TODO: }
-            //TODO: else if (actor is TeamBase companion)
-            //TODO: {
-            //TODO:     CombatAction companionAction = CompanionAi.Pick(companion, AlliesT, EnemiesT);
-            //TODO:     ResolveAction(companionAction);
-            //TODO: }
-            //TODO: else if (actor is MonsterBase monster)
-            //TODO: {
-            //TODO:     CombatAction monsterAction = MonsterAi.Pick(monster, EnemiesT, AlliesT);
-            //TODO:     ResolveAction(monsterAction);
-            //TODO: }
             // Wave0refactor 2026-05-27 (F.5): ConsumeAndRoundCheck 헬퍼 사용.
             if (actor == null || actor.IsDead)
             {
@@ -253,32 +231,32 @@ namespace Tempt
                 return;
             }
 
-            if (actor is Player player) //Wave0write
-            { //Wave0write
+            if (actor is Player player)
+            {
                 firstActionDelayAvailable = false;
-                Input?.RequestPlayerAction(player); //Wave0write
-                State = CombatState.AwaitInput; //Wave0write
-                return; //Wave0write
-            } //Wave0write
+                Input?.RequestPlayerAction(player);
+                State = CombatState.AwaitInput;
+                return;
+            }
 
-            if (actor is TeamBase companion) //Wave0write
-            { //Wave0write
-                if (CompanionAi == null) //Wave0write
-                { //Wave0write
-                    CompanionAi = new CompanionActionSelector(); //Wave0write
-                } //Wave0write
-                ResolveActionWithOpeningDelay(CompanionAi.Pick(companion, AlliesT, EnemiesT)); //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (actor is TeamBase companion)
+            {
+                if (CompanionAi == null)
+                {
+                    CompanionAi = new CompanionActionSelector();
+                }
+                ResolveActionWithOpeningDelay(CompanionAi.Pick(companion, AlliesT, EnemiesT));
+                return;
+            }
 
-            if (actor is MonsterBase monster) //Wave0write
-            { //Wave0write
-                if (MonsterAi == null) //Wave0write
-                { //Wave0write
-                    MonsterAi = new MonsterActionSelector(); //Wave0write
-                } //Wave0write
-                ResolveActionWithOpeningDelay(MonsterAi.Pick(monster, EnemiesT, AlliesT)); //Wave0write
-            } //Wave0write
+            if (actor is MonsterBase monster)
+            {
+                if (MonsterAi == null)
+                {
+                    MonsterAi = new MonsterActionSelector();
+                }
+                ResolveActionWithOpeningDelay(MonsterAi.Pick(monster, EnemiesT, AlliesT));
+            }
         }
 
         private void ResolveActionWithOpeningDelay(CombatAction action)
@@ -287,12 +265,22 @@ namespace Tempt
             {
                 firstActionDelayAvailable = false;
                 delayedAiAction = action;
-                actingDelayTimer = FirstNonPlayerActionDelaySec;
+                actingDelayTimer = ResolveFirstNonPlayerActionDelay();
                 State = CombatState.ActingDelay;
                 return;
             }
 
             ResolveAction(action);
+        }
+
+        private static float ResolveFirstNonPlayerActionDelay()
+        {
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Data?.Balance != null && gsm.Data.Balance.FirstNonPlayerActionDelaySec > 0f)
+            {
+                return gsm.Data.Balance.FirstNonPlayerActionDelaySec;
+            }
+
+            return DefaultFirstNonPlayerActionDelaySec;
         }
 
         /// <summary>
@@ -308,9 +296,6 @@ namespace Tempt
             //   * Skill  → SkillEffect.Apply*(actor, targets, skill.Data) + actor.WorldUI 빨강 아이콘.
             //              skill.ConsumeForUse(actor) 호출(MP 차감, 쿨다운 시작).
             //   * Defend → actor.SetDefending(true) + 파랑 아이콘.
-            //   * Item   → 이 경로에서 처리하지 않음.
-            //              소모 아이템은 CombatController.PlayerUseItem()가 즉시 처리하며
-            //              pending main action과 라운드 큐를 건드리지 않는다.
             // - Queue.RemoveDeadEntries() 호출(사망자 즉시 제거).
             // - CheckOutcome() 호출: 승패 확정 시 State = Ended, 아니면 State = Resolving.
             // ※ 승패 검사는 여기서만 수행. EndRound에서는 중복 검사하지 않는다.
@@ -339,14 +324,6 @@ namespace Tempt
                 case CombatActionType.Defend:
                     action.Actor.SetDefending(true);
                     break;
-                // Wave0refactor 2026-05-27 (F.3.1): Item 액션은 큐를 거치지 않는 설계(HANDOFFtemp §17).
-                // 여기로 들어왔다는 것은 호출자 버그이므로 LogError 후 ConsumeAndRoundCheck.
-                case CombatActionType.Item:
-                    UnityEngine.Debug.LogError(
-                        "[CombatFlow] CombatActionType.Item 은 큐에 들어오지 않아야 합니다. " +
-                        "CombatController.PlayerUseItem 만 사용하세요.");
-                    ConsumeAndRoundCheck();
-                    return;
             }
 
             Queue?.RemoveDeadEntries();
@@ -355,23 +332,23 @@ namespace Tempt
             State = CheckOutcome().HasValue ? CombatState.Ended : CombatState.Resolving;
         }
 
-        private void ScheduleDeadEnemyRemoval() //Wave0write
-        { //Wave0write
-            if (EnemiesT == null) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+        private void ScheduleDeadEnemyRemoval()
+        {
+            if (EnemiesT == null)
+            {
+                return;
+            }
 
-            foreach (EntityBase enemy in EnemiesT) //Wave0write
-            { //Wave0write
-                if (enemy != null && enemy.IsDead) //Wave0write
-                { //Wave0write
-                    enemy.WorldUI?.SetTargetHighlight(false); //Wave0write
-                    enemy.WorldUI?.HideActionIcon(); //Wave0write
-                    DeadEnemyRemover?.ScheduleDeadEnemyRemoval(enemy, 0.5f); //Wave0write
-                } //Wave0write
-            } //Wave0write
-        } //Wave0write
+            foreach (EntityBase enemy in EnemiesT)
+            {
+                if (enemy != null && enemy.IsDead)
+                {
+                    enemy.WorldUI?.SetTargetHighlight(false);
+                    enemy.WorldUI?.HideActionIcon();
+                    DeadEnemyRemover?.ScheduleDeadEnemyRemoval(enemy, 0.5f);
+                }
+            }
+        }
 
         // Wave0refactor 2026-05-27 (F.5): 반복 패턴 "Queue?.ConsumeCurrent(); State = RoundEndCheck;" 추출.
         private void ConsumeAndRoundCheck()
@@ -389,34 +366,29 @@ namespace Tempt
             // - 적 전멸 → Victory.
             // - 아군의 Player 사망 → Defeat (동료만 사망은 패배 아님).
             // - 결정되지 않으면 null.
-            //TODO: bool allEnemiesDead = EnemiesT.TrueForAll(e => e.IsDead);
-            //TODO: if (allEnemiesDead) return CombatResult.Victory;
-            //TODO: bool playerDead = AlliesT.Exists(a => a is Player && a.IsDead);
-            //TODO: if (playerDead) return CombatResult.Defeat;
-            //TODO: return null;
-            if (EnemiesT != null && EnemiesT.TrueForAll(e => e == null || e.IsDead)) //Wave0write
-            { //Wave0write
-                return CombatResult.Victory; //Wave0write
-            } //Wave0write
+            if (EnemiesT != null && EnemiesT.TrueForAll(e => e == null || e.IsDead))
+            {
+                return CombatResult.Victory;
+            }
 
-            if (AlliesT != null && AlliesT.Exists(a => a is Player && a.IsDead)) //Wave0write
-            { //Wave0write
-                return CombatResult.Defeat; //Wave0write
-            } //Wave0write
+            if (AlliesT != null && AlliesT.Exists(a => a is Player && a.IsDead))
+            {
+                return CombatResult.Defeat;
+            }
 
-            return null; //Wave0write
+            return null;
         }
 
-        private static void ApplyAttack(CombatAction action) //Wave0write
-        { //Wave0write
-            if (action.Targets == null) return; //Wave0write
-            foreach (EntityBase target in action.Targets) //Wave0write
-            { //Wave0write
-                if (target == null || target.IsDead) continue; //Wave0write
-                int damage = DamageCalculator.ComputeAttack(action.Actor, target); //Wave0write
-                target.ApplyDamage(damage); //Wave0write
-            } //Wave0write
-        } //Wave0write
+        private static void ApplyAttack(CombatAction action)
+        {
+            if (action.Targets == null) return;
+            foreach (EntityBase target in action.Targets)
+            {
+                if (target == null || target.IsDead) continue;
+                int damage = DamageCalculator.ComputeAttack(action.Actor, target);
+                target.ApplyDamage(damage);
+            }
+        }
 
         // Wave0refactor 2026-05-27 (F.1): 한 스킬은 한 효과(Damage > Heal > Shield) 우선순위로 단일 적용.
         // 과거 코드는 if 셋이 독립이라 데이터가 셋 다 가지면 중첩 적용되는 잠재 버그가 있었다.

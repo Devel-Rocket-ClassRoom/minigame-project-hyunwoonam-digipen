@@ -81,15 +81,17 @@ namespace Tempt
             Scenes = GetComponent<GameSceneManager>();
             if (Scenes == null)
             {
-                Debug.LogError("[GameSystemManager] GameSceneManager 컴포넌트가 같은 GameObject에 필요합니다.");
+                Debug.LogError(
+                    "[GameSystemManager] GameSceneManager 컴포넌트가 같은 GameObject에 필요합니다."
+                );
                 enabled = false;
                 return;
             }
 
             Hotkey = new HotkeyManager();
             Hotkey.BindGlobalKeys();
-            // TEMP 2026-05-29: 정식 종료 확인 팝업 도입 전, ESC는 즉시 종료로 연결한다.
-            Hotkey.OnRequestQuit += QuitGame;
+            Hotkey.OnTogglePage += RequestTogglePage;
+            Hotkey.OnRequestQuit += RequestQuitConfirm;
         }
 
         /// <summary>
@@ -107,7 +109,8 @@ namespace Tempt
 
                 if (Hotkey != null)
                 {
-                    Hotkey.OnRequestQuit -= QuitGame;
+                    Hotkey.OnTogglePage -= RequestTogglePage;
+                    Hotkey.OnRequestQuit -= RequestQuitConfirm;
                 }
 
                 UnsubscribeErosionEvents();
@@ -133,7 +136,6 @@ namespace Tempt
 
             Hotkey?.PollInput();
         }
-
 
         /// <summary>
         /// 새 게임을 시작한다. 메인 메뉴의 New Game 버튼에서 호출.
@@ -167,7 +169,8 @@ namespace Tempt
             CurrentRun.Roster = new CompanionRosterState();
 
             CurrentRun.Erosion = new ErosionStateModel();
-            CurrentRun.SafeUnlocks = new SafeZoneUnlockState();
+            CurrentRun.Erosion.EnsureStageCount(ErosionSystem.GetMaxStage(Data?.World));
+            CurrentRun.SafeUnlocks = new SafeZoneUnlockState(GetSafeZoneCount());
             CurrentRun.SafeUnlocks.Unlock(0);
             CurrentRun.ShopStock = ShopStockState.CreateDefaultSafe1Stock();
 
@@ -193,51 +196,65 @@ namespace Tempt
             // - PlayerRuneState, InventoryState, EquipmentSlots, ConsumableSlots, LockerState 초기화.
             // - 시작 직업 룬은 Safe0 선택 결과를 반영할 수 있도록 미정 상태로 둔다.
             // - 완성 후 CurrentRun.Player에 저장할 PlayerState 반환.
-            var stats = new StatBlock(); //Wave0write
-            stats.SetBaseStats(90, 20, 10, 2, 10); //Wave0write
-            stats.RestoreToFull(); //Wave0write
+            var stats = new StatBlock();
+            stats.SetBaseStats(90, 20, 10, 2, 10);
+            stats.RestoreToFull();
 
             var player = new PlayerState
-            { 
-                Name = "Player", 
-                Level = 1, //Wave0write
-                Exp = 0, //Wave0write
-                Stats = stats, //Wave0write
-                StartingClass = RuneClass.None, //Wave0write
-                Rune = new PlayerRuneState { ClassId = RuneClass.None, RunePoints = 0, UnlockedIds = new System.Collections.Generic.HashSet<int>() }, //Wave0write
-                Inventory = new InventoryState(), //Wave0write
-                Equipment = new EquipmentSlots(), //Wave0write
-                Consumables = new ConsumableSlots(), //Wave0write
-                Locker = new LockerState(), //Wave0write
-            }; //Wave0write
+            {
+                Name = "Player",
+                Level = 1,
+                Exp = 0,
+                Stats = stats,
+                StartingClass = RuneClass.None,
+                Rune = new PlayerRuneState
+                {
+                    ClassId = RuneClass.None,
+                    RunePoints = 0,
+                    UnlockedIds = new System.Collections.Generic.HashSet<int>(),
+                },
+                Inventory = new InventoryState(),
+                Equipment = new EquipmentSlots(),
+                Consumables = new ConsumableSlots(),
+                Locker = new LockerState(),
+            };
 
-            player.Inventory.Add(1, 2); //Wave0write
-            player.Inventory.Add(3, 1); //Wave0write
-            AddStartingEquipment(player.Inventory, 901); //Wave0write
-            AddStartingEquipment(player.Inventory, 902); //Wave0write
-            AddStartingEquipment(player.Inventory, 903); //Wave0write
-            AddStartingEquipment(player.Inventory, 904); //Wave0write
-            player.Consumables.SlotItemIds[0] = 1; //Wave0write
-            player.Consumables.SlotItemIds[1] = 3; //Wave0write
-            return player; //Wave0write
+            player.Inventory.Add(1, 2);
+            player.Inventory.Add(3, 1);
+
+            AddStartingEquipment(player.Inventory, 901);
+            AddStartingEquipment(player.Inventory, 902);
+            AddStartingEquipment(player.Inventory, 903);
+            AddStartingEquipment(player.Inventory, 904);
+
+            player.Consumables.SlotItemIds[0] = 1;
+            player.Consumables.SlotItemIds[1] = 3;
+
+            return player;
         }
 
-        private void AddStartingEquipment(InventoryState inventory, int itemId) //Wave0write
-        { //Wave0write
-            if (inventory == null || Data?.Items == null || !Data.Items.TryGetValue(itemId, out ItemData itemData)) //Wave0write
-            { //Wave0write
-                Debug.LogError("[GameSystemManager] 시작 테스트 장비 ID 없음: " + itemId); //Wave0write
-                return; //Wave0write
-            } //Wave0write
+        private void AddStartingEquipment(InventoryState inventory, int itemId)
+        {
+            if (
+                inventory == null
+                || Data?.Items == null
+                || !Data.Items.TryGetValue(itemId, out ItemData itemData)
+            )
+            {
+                Debug.LogError("[GameSystemManager] 시작 테스트 장비 ID 없음: " + itemId);
+                return;
+            }
 
-            if (itemData.Category != ItemCategory.Equipment || itemData.Stackable) //Wave0write
-            { //Wave0write
-                Debug.LogError("[GameSystemManager] 시작 테스트 장비가 Equipment가 아닙니다: " + itemId); //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (itemData.Category != ItemCategory.Equipment || itemData.Stackable)
+            {
+                Debug.LogError(
+                    "[GameSystemManager] 시작 테스트 장비가 Equipment가 아닙니다: " + itemId
+                );
+                return;
+            }
 
-            inventory.AddEquip(new Item { Data = itemData, Enhancement = 0 }); //Wave0write
-        } //Wave0write
+            inventory.AddEquip(new Item { Data = itemData, Enhancement = 0 });
+        }
 
         /// <summary>
         /// 이어하기. 메인 메뉴의 Continue 버튼에서 호출.
@@ -254,17 +271,19 @@ namespace Tempt
             // - Erosion = new ErosionSystem(CurrentRun.Erosion, Events)로 런 상태 모델에 다시 연결.
             // - CombatContext = null로 초기화.
             // - snapshot.Location.SceneId로 Scenes.RequestScene() 호출.
-            if (Save == null || !Save.HasContinue()) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (Save == null || !Save.HasContinue())
+            {
+                return;
+            }
 
-            CurrentRun = Save.Continue.ToGameRunStatet(Data); //Wave0write
-            AttachErosionToCurrentRun(); //Wave0write
-            CombatContext = null; //Wave0write
-            SceneId sceneId = Save.Continue.Location != null ? Save.Continue.Location.SceneId : SceneId.Safe0; //Wave0write
-            Scenes.RequestScene(sceneId); //Wave0write
+            CurrentRun = Save.Continue.ToGameRunStatet(Data);
 
+            AttachErosionToCurrentRun();
+
+            CombatContext = null;
+            SceneId sceneId =
+                Save.Continue.Location != null ? Save.Continue.Location.SceneId : SceneId.Safe0;
+            Scenes.RequestScene(sceneId);
         }
 
         /// <summary>
@@ -281,55 +300,62 @@ namespace Tempt
             // - CurrentFloor, HighestFloor를 node.Floor 기준으로 갱신.
             // - Erosion.AdvanceDay(currentDay).
             // - Scenes.LoadCombat().
-            if (CurrentRun == null || node == null || CurrentRun.FloorMap == null) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (CurrentRun == null || node == null || CurrentRun.FloorMap == null)
+            {
+                return;
+            }
 
-            if (node.IsSafeZone) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (node.IsSafeZone)
+            {
+                return;
+            }
 
-            NormalizeCombatNodeMonsterCount(node); //Wave0write
+            NormalizeCombatNodeMonsterCount(node);
 
-            int rechallengeMaxFloor = floorMapRechallengeMaxFloor; //Wave0write
-            int rechallengeReturnSafeIndex = floorMapRechallengeReturnSafeIndex; //Wave0write
-            bool rechallengeSelectable = isRechallenget && node.Floor > 0 && node.Floor <= rechallengeMaxFloor; //Wave0write
-            bool selectable = isRechallenget ? rechallengeSelectable : node.Floor == CurrentRun.FloorMap.NextSelectableFloor; //Wave0write
-            if (!selectable || (!isRechallenget && node.IsCleared)) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            int rechallengeMaxFloor = floorMapRechallengeMaxFloor;
+            int rechallengeReturnSafeIndex = floorMapRechallengeReturnSafeIndex;
+            bool rechallengeSelectable =
+                isRechallenget && node.Floor > 0 && node.Floor <= rechallengeMaxFloor;
+            bool selectable = isRechallenget
+                ? rechallengeSelectable
+                : node.Floor == CurrentRun.FloorMap.NextSelectableFloor;
 
-            AdvanceRunDay(); //Wave0write
-            CurrentRun.CurrentFloor = node.Floor; //Wave0write
-            CurrentRun.HighestFloor = System.Math.Max(CurrentRun.HighestFloor, node.Floor); //Wave0write
+            if (!selectable || (!isRechallenget && node.IsCleared))
+            {
+                return;
+            }
 
-            CombatContext = new CombatContext //Wave0write
-            { //Wave0write
-                Node = node, //Wave0write
-                IsBossNode = node.IsBoss, //Wave0write
-                IsRechallenge = isRechallenget, //Wave0write
-                RechallengeReturnSafeIndex = isRechallenget ? rechallengeReturnSafeIndex : 0, //Wave0write
-            }; //Wave0write
+            AdvanceRunDay();
+            CurrentRun.CurrentFloor = node.Floor;
+            CurrentRun.HighestFloor = System.Math.Max(CurrentRun.HighestFloor, node.Floor);
 
-            ClearFloorMapRechallengeState(); //Wave0write
+            CombatContext = new CombatContext
+            {
+                Node = node,
+                IsBossNode = node.IsBoss,
+                IsRechallenge = isRechallenget,
+                RechallengeReturnSafeIndex = isRechallenget ? rechallengeReturnSafeIndex : 0,
+            };
 
-            Save?.SaveSnapshot(); //Wave0write
-            Scenes.LoadCombat(); //Wave0write
+            ClearFloorMapRechallengeState();
 
+            Save?.SaveSnapshot();
+            Scenes.LoadCombat();
         }
 
         /// <summary>안전지대에서 안전지대 이동 가능 상태로 플로어맵을 연다.</summary>
         public void LoadFloorMapFromSafe(int safeIndex)
         {
             ArmFloorMapSafeTravel(safeIndex);
+
             if (CanOpenRechallengeFromSafe(safeIndex, out int maxFloor))
             {
                 floorMapRechallengeRequested = true;
                 floorMapRechallengeMaxFloor = maxFloor;
-                floorMapRechallengeReturnSafeIndex = System.Math.Max(0, System.Math.Min(5, safeIndex));
+                floorMapRechallengeReturnSafeIndex = System.Math.Max(
+                    0,
+                    System.Math.Min(5, safeIndex)
+                );
             }
             else
             {
@@ -357,6 +383,7 @@ namespace Tempt
             sourceSafeIndex = floorMapSafeTravelRequested ? floorMapSafeTravelSourceSafeIndex : 0;
             bool requested = floorMapSafeTravelRequested;
             floorMapSafeTravelRequested = false;
+
             return requested;
         }
 
@@ -365,34 +392,36 @@ namespace Tempt
         {
             maxFloor = floorMapRechallengeRequested ? floorMapRechallengeMaxFloor : 0;
             returnSafeIndex = floorMapRechallengeRequested ? floorMapRechallengeReturnSafeIndex : 0;
+
             bool requested = floorMapRechallengeRequested && maxFloor > 0;
+
             floorMapRechallengeRequested = false;
+
             return requested;
         }
 
-        public bool TryConsumeFloorMapRechallenge(out int maxFloor)
-        {
-            return TryConsumeFloorMapRechallenge(out maxFloor, out _);
-        }
-
         /// <summary>플로어맵의 안전지대 노드에서 안전지대로 이동한다. 안전지대 간 이동은 날짜를 증가시키지 않는다.</summary>
-        public void EnterSafeZoneFromFloorMap(int safeIndex) //Wave0write
-        { //Wave0write
-            if (CurrentRun?.SafeUnlocks == null || Scenes == null) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+        public void EnterSafeZoneFromFloorMap(int safeIndex)
+        {
+            if (CurrentRun?.SafeUnlocks == null || Scenes == null)
+            {
+                return;
+            }
 
-            if (safeIndex < 0 || safeIndex > 5 || !CurrentRun.SafeUnlocks.IsUnlocked(safeIndex)) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (
+                safeIndex < 0
+                || safeIndex >= GetSafeZoneCount()
+                || !CurrentRun.SafeUnlocks.IsUnlocked(safeIndex)
+            )
+            {
+                return;
+            }
 
-            CurrentRun.CurrentFloor = ResolveSafeZoneFloor(safeIndex); //Wave0write
-            Save?.SaveSnapshot(); //Wave0write
-            ClearFloorMapRechallengeState(); //Wave0write
-            Scenes.LoadSafeZone(safeIndex); //Wave0write
-        } //Wave0write
+            CurrentRun.CurrentFloor = ResolveSafeZoneFloor(safeIndex);
+            Save?.SaveSnapshot();
+            ClearFloorMapRechallengeState();
+            Scenes.LoadSafeZone(safeIndex);
+        }
 
         private void ClearFloorMapRechallengeState()
         {
@@ -406,7 +435,10 @@ namespace Tempt
         private void ArmFloorMapSafeTravel(int safeIndex)
         {
             floorMapSafeTravelRequested = true;
-            floorMapSafeTravelSourceSafeIndex = System.Math.Max(0, System.Math.Min(5, safeIndex));
+            floorMapSafeTravelSourceSafeIndex = System.Math.Max(
+                0,
+                System.Math.Min(GetSafeZoneCount() - 1, safeIndex)
+            );
         }
 
         private int ResolveRechallengeMaxFloor(int safeIndex)
@@ -455,56 +487,52 @@ namespace Tempt
             return CurrentRun.FloorMap.IsStageCleared(clearedStage);
         }
 
-        private void AdvanceRunDay() //Wave0write
-        { //Wave0write
-            if (CurrentRun == null) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+        private void AdvanceRunDay()
+        {
+            if (CurrentRun == null)
+            {
+                return;
+            }
 
-            CurrentRun.CurrentDay += 1; //Wave0write
-            Events?.RaiseDayChanged(CurrentRun.CurrentDay); //Wave0write
-            Erosion?.AdvanceDay(CurrentRun.CurrentDay); //Wave0write
-        } //Wave0write
+            CurrentRun.CurrentDay += 1;
+            Events?.RaiseDayChanged(CurrentRun.CurrentDay);
+            Erosion?.AdvanceDay(CurrentRun.CurrentDay);
+        }
 
-        private void AdvanceDayForBossSafeEntry() //Wave0write
-        { //Wave0write
-            AdvanceRunDay(); //Wave0write
-        } //Wave0write
+        private int ResolveSafeZoneFloor(int safeIndex)
+        {
+            if (Data?.World?.SafeZones != null)
+            {
+                for (int i = 0; i < Data.World.SafeZones.Count; i++)
+                {
+                    SafeZoneDef safeZone = Data.World.SafeZones[i];
 
-        private int ResolveSafeZoneFloor(int safeIndex) //Wave0write
-        { //Wave0write
-            if (Data?.World?.SafeZones != null) //Wave0write
-            { //Wave0write
-                for (int i = 0; i < Data.World.SafeZones.Count; i++) //Wave0write
-                { //Wave0write
-                    SafeZoneDef safeZone = Data.World.SafeZones[i]; //Wave0write
-                    if (safeZone != null && safeZone.Index == safeIndex) //Wave0write
-                    { //Wave0write
-                        return safeZone.FloorNumber; //Wave0write
-                    } //Wave0write
-                } //Wave0write
-            } //Wave0write
+                    if (safeZone != null && safeZone.Index == safeIndex)
+                    {
+                        return safeZone.FloorNumber;
+                    }
+                }
+            }
 
-            return 0; //Wave0write
-        } //Wave0write
+            return 0;
+        }
 
-        private static void NormalizeCombatNodeMonsterCount(FloorNode node) //Wave0write
-        { //Wave0write
-            if (node == null || node.IsSafeZone) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+        private static void NormalizeCombatNodeMonsterCount(FloorNode node)
+        {
+            if (node == null || node.IsSafeZone)
+            {
+                return;
+            }
 
-            if (node.IsBoss || node.Floor == 1) //Wave0write
-            { //Wave0write
-                node.MonsterCount = 1; //Wave0write
-            } //Wave0write
-            else if (node.Floor == 2) //Wave0write
-            { //Wave0write
-                node.MonsterCount = 2; //Wave0write
-            } //Wave0write
-        } //Wave0write
+            if (node.IsBoss || node.Floor == 1)
+            {
+                node.MonsterCount = 1;
+            }
+            else if (node.Floor == 2)
+            {
+                node.MonsterCount = 2;
+            }
+        }
 
         /// <summary>
         /// 전투 종료 분기. CombatControllert가 결과를 가지고 호출.
@@ -554,55 +582,62 @@ namespace Tempt
             //    - 일반 → Scenes.LoadFloorMap().
             //    - CombatContext = null.
             //    - Save.SaveSnapshot()으로 CurrentRun.FloorMap의 전체 노드 구조와 다른 런 상태를 JSON에 함께 저장.
-            if (CurrentRun == null) //Wave0write
-            { //Wave0write
-                CombatContext = null; //Wave0write
-                Scenes.LoadMainMenu(); //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (CurrentRun == null)
+            {
+                CombatContext = null;
+                Scenes.LoadMainMenu();
+                return;
+            }
 
-            if (result == CombatResult.Defeat) //Wave0write
-            { //Wave0write
-                Save?.AppendGrave(CurrentRun.Player != null ? CurrentRun.Player.Name : "Player", System.DateTime.Now); //Wave0write
-                Save?.ClearContinue(); //Wave0write
-                CurrentRun = null; //Wave0write
-                CombatContext = null; //Wave0write
-                ShowGameOverOverlay(); //Wave0write
-                Scenes.LoadMainMenu(); //Wave0write
-                return; //Wave0write
-            } //Wave0write
+            if (result == CombatResult.Defeat)
+            {
+                Save?.AppendGrave(
+                    CurrentRun.Player != null ? CurrentRun.Player.Name : "Player",
+                    System.DateTime.Now
+                );
+                Save?.ClearContinue();
+                CurrentRun = null;
+                CombatContext = null;
+                ShowGameOverOverlay();
+                Scenes.LoadMainMenu();
 
-            if (result == CombatResult.Retreat) //Wave0write
-            { //Wave0write
-                int safeIndex = CombatContext != null ? System.Math.Max(0, CombatContext.Node.StageIndex - 1) : 0; //Wave0write
-                CombatContext = null; //Wave0write
-                Save?.SaveSnapshot(); //Wave0write
-                Scenes.LoadSafeZone(safeIndex); //Wave0write
-                return; //Wave0write
-            } //Wave0write
+                return;
+            }
 
-            NodeRewardSummary summary = controller != null ? controller.CollectNodeRewards() : new NodeRewardSummary(); //Wave0write
-            if (summary == null) //Wave0write
-            { //Wave0write
-                summary = new NodeRewardSummary(); //Wave0write
-            } //Wave0write
+            if (result == CombatResult.Retreat)
+            {
+                int safeIndex =
+                    CombatContext != null
+                        ? System.Math.Max(0, CombatContext.Node.StageIndex - 1)
+                        : 0;
+                CombatContext = null;
+                Save?.SaveSnapshot();
+                Scenes.LoadSafeZone(safeIndex);
 
-            AddExpToPlayerState(summary.TotalExp); //Wave0write
-            CurrentRun.Gold += summary.TotalGold; //Wave0write
-            Events?.RaiseGoldChanged(CurrentRun.Gold); //Wave0write
+                return;
+            }
 
-            var overflowIds = new System.Collections.Generic.List<int>(); //Wave0write
-            GrantDroppedItems(summary, overflowIds); //Wave0write
+            NodeRewardSummary summary =
+                controller != null ? controller.CollectNodeRewards() : new NodeRewardSummary();
 
-            System.Action closeAction = () => FinishVictoryAfterReward(); //Wave0write
-            if (controller?.Hud?.RewardPage != null) //Wave0write
-            { //Wave0write
-                controller.Hud.RewardPage.Show(summary, overflowIds, closeAction); //Wave0write
-            } //Wave0write
-            else //Wave0write
-            { //Wave0write
-                closeAction(); //Wave0write
-            } //Wave0write
+            if (summary == null)
+            {
+                summary = new NodeRewardSummary();
+            }
+
+            var overflowIds = new System.Collections.Generic.List<int>();
+            RewardGrant.ApplyCombatRewards(CurrentRun, Data, Events, summary, overflowIds);
+
+            System.Action closeAction = () => FinishVictoryAfterReward();
+
+            if (controller?.Hud?.RewardPage != null)
+            {
+                controller.Hud.RewardPage.Show(summary, overflowIds, closeAction);
+            }
+            else
+            {
+                closeAction();
+            }
         }
 
         /// <summary>
@@ -616,16 +651,18 @@ namespace Tempt
             // - CurrentRun 정리.
             // - CombatContext 정리.
             // - Scenes.LoadMainMenu().
-            if (CurrentRun != null) //Wave0write
-            { //Wave0write
-                Save?.AppendClearRecord(CurrentRun.Player != null ? CurrentRun.Player.Name : "Player", System.DateTime.Now); //Wave0write
-            } //Wave0write
+            if (CurrentRun != null)
+            {
+                Save?.AppendClearRecord(
+                    CurrentRun.Player != null ? CurrentRun.Player.Name : "Player",
+                    System.DateTime.Now
+                );
+            }
 
-            Save?.ClearContinue(); //Wave0write
-            CurrentRun = null; //Wave0write
-            CombatContext = null; //Wave0write
-            Scenes.LoadMainMenu(); //Wave0write
-
+            Save?.ClearContinue();
+            CurrentRun = null;
+            CombatContext = null;
+            Scenes.LoadMainMenu();
         }
 
         /// <summary>
@@ -637,159 +674,87 @@ namespace Tempt
             // - CurrentRun이 있으면 Save.SaveSnapshot()으로 자동 저장.
             // - Save.SaveSnapshot()은 FloorMap 전체 구조, 위치, 플레이어, 동료, 침식, 자원 상태를 하나의 JSON으로 저장.
             // - Application.Quit().
-            if (CurrentRun != null) //Wave0write
-            { //Wave0write
-                Save?.SaveSnapshot(); //Wave0write
-            } //Wave0write
+            if (CurrentRun != null)
+            {
+                Save?.SaveSnapshot();
+            }
 
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else
-            Application.Quit(); //Wave0write
+            Application.Quit();
 #endif
-
         }
 
-        private void AddExpToPlayerState(int amount) //Wave0write
-        { //Wave0write
-            if (CurrentRun?.Player == null || amount <= 0) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+        private void FinishVictoryAfterReward()
+        {
+            CombatContext context = CombatContext;
+            VictoryFlowDecision decision = VictoryFlowResolver.Resolve(
+                context,
+                CurrentRun,
+                Data?.World,
+                GetSafeZoneCount() - 1
+            );
 
-            CurrentRun.Player.Exp += amount; //Wave0write
-            int required = RequiredExpForLevel(CurrentRun.Player.Level); //Wave0write
-            while (required > 0 && CurrentRun.Player.Exp >= required) //Wave0write
-            { //Wave0write
-                CurrentRun.Player.Exp -= required; //Wave0write
-                CurrentRun.Player.Level += 1; //Wave0write
-                CurrentRun.Player.Rune?.AddRunePoint(Data?.Balance?.RunePointPerLevel ?? 1); //Wave0write
-                GrowPlayerStats(CurrentRun.Player); //Wave0write
-                Events?.RaisePlayerLevelUp(CurrentRun.Player.Level); //Wave0write
-                required = RequiredExpForLevel(CurrentRun.Player.Level); //Wave0write
-            } //Wave0write
+            if (decision.CompleteRun)
+            {
+                CompleteRun();
+                return;
+            }
 
-            Events?.RaisePlayerExpChanged(CurrentRun.Player.Exp, required); //Wave0write
-        } //Wave0write
+            CombatContext = null;
 
-        private int RequiredExpForLevel(int level) //Wave0write
-        { //Wave0write
-            if (Data?.Balance?.ExpToNextLevel != null && level >= 0 && level < Data.Balance.ExpToNextLevel.Count) //Wave0write
-            { //Wave0write
-                return Data.Balance.ExpToNextLevel[level]; //Wave0write
-            } //Wave0write
+            if (decision.LoadSafeZone)
+            {
+                int safeIndex = decision.SafeIndex;
 
-            return 999999; //Wave0write
-        } //Wave0write
+                CurrentRun.SafeUnlocks.Unlock(safeIndex);
+                Events?.RaiseSafeZoneLockChanged(safeIndex, false);
 
-        private static void GrowPlayerStats(PlayerState player) //Wave0write
-        { //Wave0write
-            if (player?.Stats == null) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+                bool shouldActivateErosionAfterSafeEntry =
+                    decision.ShouldActivateErosion && safeIndex >= SafeIndexForErosionStart;
 
-            player.Stats.BaseMaxHP += 8; //Wave0write
-            player.Stats.BaseMaxMP += 2; //Wave0write
-            player.Stats.BaseATK += 2; //Wave0write
-            player.Stats.BaseDEF += 1; //Wave0write
-            player.Stats.BaseSPD += 1; //Wave0write
-            player.Stats.RecalculateFinalStats(); //Wave0write
-            player.Stats.RestoreToFull(); //Wave0write
-        } //Wave0write
+                if (
+                    decision.ShouldResetErosion
+                    || Erosion?.IsStageFullyEroded(decision.StageIndex) == true
+                )
+                {
+                    Erosion?.Reset(decision.StageIndex);
+                }
 
-        private void GrantDroppedItems(NodeRewardSummary summary, System.Collections.Generic.List<int> overflowIds) //Wave0write
-        { //Wave0write
-            if (summary?.DroppedItemIds == null || CurrentRun?.Player?.Inventory == null || Data?.Items == null) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+                if (context != null && context.IsBossNode)
+                {
+                    AdvanceRunDay();
+                }
+                if (shouldActivateErosionAfterSafeEntry)
+                {
+                    Erosion?.Activate();
+                }
 
-            foreach (int itemId in summary.DroppedItemIds) //Wave0write
-            { //Wave0write
-                if (!Data.Items.TryGetValue(itemId, out ItemData itemData)) //Wave0write
-                { //Wave0write
-                    continue; //Wave0write
-                } //Wave0write
+                CurrentRun.CurrentFloor = ResolveSafeZoneFloor(safeIndex);
+                Save?.SaveSnapshot();
+                Scenes.LoadSafeZone(safeIndex);
+            }
+            else
+            {
+                Save?.SaveSnapshot();
+                Scenes.LoadFloorMap();
+            }
+        }
 
-                bool added = itemData.Stackable //Wave0write
-                    ? CurrentRun.Player.Inventory.TryAdd(itemId, 1) //Wave0write
-                    : CurrentRun.Player.Inventory.TryAddEquip(new Item { Data = itemData, Enhancement = 0 }); //Wave0write
-                if (!added) //Wave0write
-                { //Wave0write
-                    overflowIds.Add(itemId); //Wave0write
-                } //Wave0write
-            } //Wave0write
-        } //Wave0write
-
-        private void FinishVictoryAfterReward() //Wave0write
-        { //Wave0write
-            FloorNode node = CombatContext?.Node; //Wave0write
-            bool isBoss = CombatContext != null && CombatContext.IsBossNode; //Wave0write
-            bool isRechallenge = CombatContext != null && CombatContext.IsRechallenge; //Wave0write
-            int rechallengeReturnSafeIndex = CombatContext != null ? CombatContext.RechallengeReturnSafeIndex : 0; //Wave0write
-            if (node != null) //Wave0write
-            { //Wave0write
-                int nextSelectableBeforeRechallenge = isRechallenge ? CurrentRun.FloorMap.NextSelectableFloor : 0; //Wave0write
-                CurrentRun.FloorMap.MarkCleared(node.NodeId); //Wave0write
-                if (isRechallenge && CurrentRun.FloorMap.NextSelectableFloor < nextSelectableBeforeRechallenge) //Wave0write
-                { //Wave0write
-                    CurrentRun.FloorMap.NextSelectableFloor = nextSelectableBeforeRechallenge; //Wave0write
-                } //Wave0write
-            } //Wave0write
-
-            if (node != null && node.Floor >= 49 && isBoss) //Wave0write
-            { //Wave0write
-                CompleteRun(); //Wave0write
-                return; //Wave0write
-            } //Wave0write
-
-            CombatContext = null; //Wave0write
-
-            if (isBoss && node != null) //Wave0write
-            { //Wave0write
-                int safeIndex = StageIndexResolver.SafeIndexForStage(node.StageIndex); //Wave0write
-                CurrentRun.SafeUnlocks.Unlock(safeIndex); //Wave0write
-                Events?.RaiseSafeZoneLockChanged(safeIndex, false); //Wave0write
-                bool shouldActivateErosionAfterSafeEntry = !isRechallenge && safeIndex >= SafeIndexForErosionStart; //Wave0write
-                if (isRechallenge || Erosion?.IsStageFullyEroded(node.StageIndex) == true) //Wave0write
-                { //Wave0write
-                    Erosion?.Reset(node.StageIndex); //Wave0write
-                } //Wave0write
-
-                AdvanceDayForBossSafeEntry(); //Wave0write
-                if (shouldActivateErosionAfterSafeEntry) //Wave0write
-                { //Wave0write
-                    Erosion?.Activate(); //Wave0write
-                } //Wave0write
-                CurrentRun.CurrentFloor = ResolveSafeZoneFloor(safeIndex); //Wave0write
-                Save?.SaveSnapshot(); //Wave0write
-                Scenes.LoadSafeZone(safeIndex); //Wave0write
-            } //Wave0write
-            else if (isRechallenge && node != null) //Wave0write
-            { //Wave0write
-                CurrentRun.CurrentFloor = ResolveSafeZoneFloor(rechallengeReturnSafeIndex); //Wave0write
-                Save?.SaveSnapshot(); //Wave0write
-                Scenes.LoadSafeZone(System.Math.Max(0, System.Math.Min(5, rechallengeReturnSafeIndex))); //Wave0write
-            } //Wave0write
-            else //Wave0write
-            { //Wave0write
-                Save?.SaveSnapshot(); //Wave0write
-                Scenes.LoadFloorMap(); //Wave0write
-            } //Wave0write
-        } //Wave0write
-
-        private static void ShowGameOverOverlay() //Wave0write
-        { //Wave0write
-            if (GlobalOverlayController.TryGetInstance(out GlobalOverlayController overlay)) //Wave0write
-            { //Wave0write
-                overlay.ShowGameOver(); //Wave0write
-            } //Wave0write
-            else //Wave0write
-            { //Wave0write
-                Debug.LogError("[GameSystemManager] GlobalOverlayController 를 찾을 수 없어 GameOver 패널을 표시할 수 없습니다."); //Wave0write
-            } //Wave0write
-        } //Wave0write
+        private static void ShowGameOverOverlay()
+        {
+            if (GlobalOverlayController.TryGetInstance(out GlobalOverlayController overlay))
+            {
+                overlay.ShowGameOver();
+            }
+            else
+            {
+                Debug.LogError(
+                    "[GameSystemManager] GlobalOverlayController 를 찾을 수 없어 GameOver 패널을 표시할 수 없습니다."
+                );
+            }
+        }
 
         private void AttachErosionToCurrentRun()
         {
@@ -799,8 +764,37 @@ namespace Tempt
                 return;
             }
 
-            Erosion = new ErosionSystem(CurrentRun.Erosion, Events, Data?.Balance);
+            CurrentRun.Erosion.EnsureStageCount(ErosionSystem.GetMaxStage(Data?.World));
+            CurrentRun.SafeUnlocks?.EnsureCapacity(GetSafeZoneCount());
+            Erosion = new ErosionSystem(CurrentRun.Erosion, Events, Data?.Balance, Data?.World);
+
             SubscribeErosionEvents();
+        }
+
+        public void RequestQuitConfirm()
+        {
+            if (GlobalOverlayController.TryGetInstance(out GlobalOverlayController overlay))
+            {
+                overlay.ShowQuitConfirm(QuitGame);
+                return;
+            }
+
+            Debug.LogError(
+                "[GameSystemManager] GlobalOverlayController 를 찾을 수 없어 종료 확인 팝업을 표시할 수 없습니다."
+            );
+        }
+
+        public void RequestTogglePage(HotkeyPageId pageId)
+        {
+            if (GlobalOverlayController.TryGetInstance(out GlobalOverlayController overlay))
+            {
+                overlay.HandleTogglePage(pageId);
+                return;
+            }
+
+            Debug.LogError(
+                "[GameSystemManager] GlobalOverlayController 를 찾을 수 없어 단축키 페이지를 열 수 없습니다."
+            );
         }
 
         private void SubscribeErosionEvents()
@@ -834,26 +828,49 @@ namespace Tempt
                 return;
             }
 
-            int safeIndex = StageIndexResolver.SafeIndexForStage(stage);
+            int safeIndex = StageIndexResolver.SafeIndexForStage(stage, Data?.World);
             CurrentRun.FloorMap?.ResetStageProgression(stage);
             CurrentRun.SafeUnlocks.Lock(safeIndex);
             Events?.RaiseSafeZoneLockChanged(safeIndex, true);
             Save?.SaveSnapshot();
         }
 
+        private int GetSafeZoneCount()
+        {
+            return Data?.World?.SafeZones != null && Data.World.SafeZones.Count > 0
+                ? Data.World.SafeZones.Count
+                : 6;
+        }
+
         private void HandleAllStagesEroded()
         {
             if (CurrentRun != null)
             {
-                Save?.AppendGrave(CurrentRun.Player != null ? CurrentRun.Player.Name : "Player", System.DateTime.Now);
+                Save?.AppendGrave(
+                    CurrentRun.Player != null ? CurrentRun.Player.Name : "Player",
+                    System.DateTime.Now
+                );
             }
 
             Save?.ClearContinue();
             CurrentRun = null;
             CombatContext = null;
-            // TEMP: H13-W1 보류 임시 처리. 정식 게임오버 패널 컨트롤러로 교체 필요.
-            BootSceneBootstrap.ShowTempGameOverPanel();
+            ShowAllStagesErodedOverlay();
             Scenes.LoadMainMenu();
+        }
+
+        private static void ShowAllStagesErodedOverlay()
+        {
+            if (GlobalOverlayController.TryGetInstance(out GlobalOverlayController overlay))
+            {
+                overlay.ShowAllStagesEroded();
+            }
+            else
+            {
+                Debug.LogError(
+                    "[GameSystemManager] GlobalOverlayController 를 찾을 수 없어 전체 침식 게임오버 패널을 표시할 수 없습니다."
+                );
+            }
         }
     }
 
@@ -915,7 +932,6 @@ namespace Tempt
 
         /// <summary>재도전 전투 종료 후 복귀할 안전지대 인덱스.</summary>
         public int RechallengeReturnSafeIndex;
-
     }
 
     /// <summary>전투 결과.</summary>

@@ -48,6 +48,18 @@ namespace Tempt
         /// <summary>보유 스킬 풀 또는 ActiveSlotSkillIds 변경.</summary>
         public event Action OnSkillsChanged;
 
+        /// <summary>룬 노드 해금. (nodeId, remainingPoints)</summary>
+        public event Action<int, int> OnRuneNodeUnlocked;
+
+        /// <summary>룬 포인트 변경. (currentPoints)</summary>
+        public event Action<int> OnRunePointsChanged;
+
+        /// <summary>룬 직업 변경. (newClass)</summary>
+        public event Action<RuneClass> OnRuneClassChanged;
+
+        /// <summary>룬 트리 리셋. (refundedPoints, currentPoints)</summary>
+        public event Action<int, int> OnRuneReset;
+
         /// <summary>동료 모집/해고. (companionId, joined)</summary>
         public event Action<int, bool> OnRosterChanged;
 
@@ -58,32 +70,28 @@ namespace Tempt
         public void RaisePlayerLevelUp(int newLevel)
         {
             // 동작 요약: OnPlayerLevelUp?.Invoke(newLevel).
-            //TODO: OnPlayerLevelUp?.Invoke(newLevel);
-            OnPlayerLevelUp?.Invoke(newLevel); //Wave0write
+            OnPlayerLevelUp?.Invoke(newLevel);
         }
 
         /// <summary>플레이어 EXP 변경 발행.</summary>
         public void RaisePlayerExpChanged(int current, int required)
         {
             // 동작 요약: OnPlayerExpChanged?.Invoke(current, required).
-            //TODO: OnPlayerExpChanged?.Invoke(current, required);
-            OnPlayerExpChanged?.Invoke(current, required); //Wave0write
+            OnPlayerExpChanged?.Invoke(current, required);
         }
 
         /// <summary>단계 침식 변경 발행.</summary>
         public void RaiseStageErosionChanged(int stage, float rate)
         {
             // 동작 요약: OnStageErosionChanged?.Invoke(stage, rate).
-            //TODO: OnStageErosionChanged?.Invoke(stage, rate);
-            OnStageErosionChanged?.Invoke(stage, rate); //Wave0write
+            OnStageErosionChanged?.Invoke(stage, rate);
         }
 
         /// <summary>안전지대 잠금 변화 발행.</summary>
         public void RaiseSafeZoneLockChanged(int idx, bool locked)
         {
             // 동작 요약: OnSafeZoneLockChanged?.Invoke(idx, locked).
-            //TODO: OnSafeZoneLockChanged?.Invoke(idx, locked);
-            OnSafeZoneLockChanged?.Invoke(idx, locked); //Wave0write
+            OnSafeZoneLockChanged?.Invoke(idx, locked);
         }
 
         // Guid4 §8.A 2026-05-29: 단계 100% 도달 통지.
@@ -108,8 +116,7 @@ namespace Tempt
         public void RaiseGoldChanged(int v)
         {
             // 동작 요약: OnGoldChanged?.Invoke(v).
-            //TODO: OnGoldChanged?.Invoke(v);
-            OnGoldChanged?.Invoke(v); //Wave0write
+            OnGoldChanged?.Invoke(v);
         }
 
         // Guid4 §9.K 2026-05-29: SafeZone DayText 갱신용 일자 변경 발행.
@@ -122,24 +129,21 @@ namespace Tempt
         public void RaiseManaStoneChanged(int v)
         {
             // 동작 요약: OnManaStoneChanged?.Invoke(v).
-            //TODO: OnManaStoneChanged?.Invoke(v);
-            OnManaStoneChanged?.Invoke(v); //Wave0write
+            OnManaStoneChanged?.Invoke(v);
         }
 
         /// <summary>인벤토리 변경 발행.</summary>
         public void RaiseInventoryChanged()
         {
             // 동작 요약: OnInventoryChanged?.Invoke().
-            //TODO: OnInventoryChanged?.Invoke();
-            OnInventoryChanged?.Invoke(); //Wave0write
+            OnInventoryChanged?.Invoke();
         }
 
         /// <summary>장비 변경 발행.</summary>
         public void RaiseEquipmentChanged()
         {
             // 동작 요약: OnEquipmentChanged?.Invoke().
-            //TODO: OnEquipmentChanged?.Invoke();
-            OnEquipmentChanged?.Invoke(); //Wave0write
+            OnEquipmentChanged?.Invoke();
         }
 
         // Guid3 §9.E 2026-05-27: 보유 스킬 / ActiveSlotSkillIds 변경 발행.
@@ -149,21 +153,42 @@ namespace Tempt
             OnSkillsChanged?.Invoke();
         }
 
+        /// <summary>룬 노드 해금 발행.</summary>
+        public void RaiseRuneNodeUnlocked(int nodeId, int remainingPoints)
+        {
+            OnRuneNodeUnlocked?.Invoke(nodeId, remainingPoints);
+        }
+
+        /// <summary>룬 포인트 변경 발행.</summary>
+        public void RaiseRunePointsChanged(int currentPoints)
+        {
+            OnRunePointsChanged?.Invoke(currentPoints);
+        }
+
+        /// <summary>룬 직업 변경 발행.</summary>
+        public void RaiseRuneClassChanged(RuneClass newClass)
+        {
+            OnRuneClassChanged?.Invoke(newClass);
+        }
+
+        /// <summary>룬 트리 리셋 발행.</summary>
+        public void RaiseRuneReset(int refundedPoints, int currentPoints)
+        {
+            OnRuneReset?.Invoke(refundedPoints, currentPoints);
+        }
+
         /// <summary>동료 변경 발행.</summary>
         public void RaiseRosterChanged(int companionId, bool joined)
         {
             // 동작 요약: OnRosterChanged?.Invoke(companionId, joined).
-            //TODO: OnRosterChanged?.Invoke(companionId, joined);
-            OnRosterChanged?.Invoke(companionId, joined); //Wave0write
+            OnRosterChanged?.Invoke(companionId, joined);
         }
 
         /// <summary>언어 변경 발행.</summary>
         public void RaiseLanguageChanged(string lang)
         {
             // 동작 요약: OnLanguageChanged?.Invoke(lang).
-            //TODO: OnLanguageChanged?.Invoke(lang);
-            OnLanguageChanged?.Invoke(lang); //Wave0write
+            OnLanguageChanged?.Invoke(lang);
         }
     }
 }
-

@@ -41,138 +41,138 @@ namespace Tempt
         }
 
         /// <summary>런 상태(PlayerState)의 장비 인스턴스를 장착한다. Safe/인벤토리 UI에서 사용한다.</summary>
-        public static bool Equip(PlayerState player, Item item) //Wave0write
-        { //Wave0write
-            if (player == null) //Wave0write
-            { //Wave0write
-                UnityEngine.Debug.LogError("[EquipFlow.Equip] PlayerState 참조가 없습니다."); //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+        public static bool Equip(PlayerState player, Item item)
+        {
+            if (player == null)
+            {
+                UnityEngine.Debug.LogError("[EquipFlow.Equip] PlayerState 참조가 없습니다.");
+                return false;
+            }
 
-            return EquipCore(player.Inventory, player.Equipment, item, () => RecalcStateStats(player)); //Wave0write
-        } //Wave0write
+            return EquipCore(player.Inventory, player.Equipment, item, () => RecalcStateStats(player));
+        }
 
         /// <summary>런 상태(PlayerState)의 장비 슬롯을 해제한다. Safe/인벤토리 UI에서 사용한다.</summary>
-        public static bool Unequip(PlayerState player, EquipmentSlotId slot) //Wave0write
-        { //Wave0write
-            if (player == null) //Wave0write
-            { //Wave0write
-                UnityEngine.Debug.LogError("[EquipFlow.Unequip] PlayerState 참조가 없습니다."); //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+        public static bool Unequip(PlayerState player, EquipmentSlotId slot)
+        {
+            if (player == null)
+            {
+                UnityEngine.Debug.LogError("[EquipFlow.Unequip] PlayerState 참조가 없습니다.");
+                return false;
+            }
 
-            return UnequipCore(player.Inventory, player.Equipment, slot, () => RecalcStateStats(player)); //Wave0write
-        } //Wave0write
+            return UnequipCore(player.Inventory, player.Equipment, slot, () => RecalcStateStats(player));
+        }
 
-        private static bool EquipCore(InventoryState inventory, EquipmentSlots equipment, Item item, System.Action recalc) //Wave0write
-        { //Wave0write
-            if (IsCombatScene()) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+        private static bool EquipCore(InventoryState inventory, EquipmentSlots equipment, Item item, System.Action recalc)
+        {
+            if (IsCombatScene())
+            {
+                return false;
+            }
 
-            if (inventory == null || equipment == null || item?.Data == null) //Wave0write
-            { //Wave0write
-                UnityEngine.Debug.LogError("[EquipFlow.Equip] Inventory / Equipment / Item.Data 누락."); //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            if (inventory == null || equipment == null || item?.Data == null)
+            {
+                UnityEngine.Debug.LogError("[EquipFlow.Equip] Inventory / Equipment / Item.Data 누락.");
+                return false;
+            }
 
-            EquipmentSlotId slot = item.Data.EquipSlot; //Wave0write
-            if (item.Data.Category != ItemCategory.Equipment || item.Data.Stackable || slot == EquipmentSlotId.None) //Wave0write
-            { //Wave0write
-                UnityEngine.Debug.LogError("[EquipFlow.Equip] 장착 가능한 장비가 아닙니다: " + item.Data.NameKey); //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            EquipmentSlotId slot = item.Data.EquipSlot;
+            if (item.Data.Category != ItemCategory.Equipment || item.Data.Stackable || slot == EquipmentSlotId.None)
+            {
+                UnityEngine.Debug.LogError("[EquipFlow.Equip] 장착 가능한 장비가 아닙니다: " + item.Data.NameKey);
+                return false;
+            }
 
-            if (!inventory.RemoveEquip(item)) //Wave0write
-            { //Wave0write
-                UnityEngine.Debug.LogError("[EquipFlow.Equip] 인벤토리에 해당 장비가 없습니다: " + item.Data.NameKey); //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            if (!inventory.RemoveEquip(item))
+            {
+                UnityEngine.Debug.LogError("[EquipFlow.Equip] 인벤토리에 해당 장비가 없습니다: " + item.Data.NameKey);
+                return false;
+            }
 
-            Item previous = equipment.Equip(slot, item); //Wave0write
-            if (previous != null && !inventory.TryAddEquip(previous)) //Wave0write
-            { //Wave0write
-                equipment.Unequip(slot); //Wave0write
-                equipment.Equip(slot, previous); //Wave0write
-                inventory.AddEquip(item); //Wave0write
-                UnityEngine.Debug.LogError("[EquipFlow.Equip] 이전 장비를 인벤토리에 되돌릴 수 없어 롤백했습니다."); //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            Item previous = equipment.Equip(slot, item);
+            if (previous != null && !inventory.TryAddEquip(previous))
+            {
+                equipment.Unequip(slot);
+                equipment.Equip(slot, previous);
+                inventory.AddEquip(item);
+                UnityEngine.Debug.LogError("[EquipFlow.Equip] 이전 장비를 인벤토리에 되돌릴 수 없어 롤백했습니다.");
+                return false;
+            }
 
-            recalc?.Invoke(); //Wave0write
-            RaiseChanged(); //Wave0write
-            return true; //Wave0write
-        } //Wave0write
+            recalc?.Invoke();
+            RaiseChanged();
+            return true;
+        }
 
-        private static bool UnequipCore(InventoryState inventory, EquipmentSlots equipment, EquipmentSlotId slot, System.Action recalc) //Wave0write
-        { //Wave0write
-            if (IsCombatScene()) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+        private static bool UnequipCore(InventoryState inventory, EquipmentSlots equipment, EquipmentSlotId slot, System.Action recalc)
+        {
+            if (IsCombatScene())
+            {
+                return false;
+            }
 
-            if (inventory == null || equipment == null) //Wave0write
-            { //Wave0write
-                UnityEngine.Debug.LogError("[EquipFlow.Unequip] Inventory / Equipment 누락."); //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            if (inventory == null || equipment == null)
+            {
+                UnityEngine.Debug.LogError("[EquipFlow.Unequip] Inventory / Equipment 누락.");
+                return false;
+            }
 
-            if (slot == EquipmentSlotId.None) //Wave0write
-            { //Wave0write
-                UnityEngine.Debug.LogError("[EquipFlow.Unequip] slot 이 None 입니다."); //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            if (slot == EquipmentSlotId.None)
+            {
+                UnityEngine.Debug.LogError("[EquipFlow.Unequip] slot 이 None 입니다.");
+                return false;
+            }
 
-            Item old = equipment.Unequip(slot); //Wave0write
-            if (old == null) //Wave0write
-            { //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            Item old = equipment.Unequip(slot);
+            if (old == null)
+            {
+                return false;
+            }
 
-            if (!inventory.TryAddEquip(old)) //Wave0write
-            { //Wave0write
-                equipment.Equip(slot, old); //Wave0write
-                UnityEngine.Debug.LogError("[EquipFlow.Unequip] 인벤토리 장비 공간 부족으로 해제를 롤백했습니다."); //Wave0write
-                return false; //Wave0write
-            } //Wave0write
+            if (!inventory.TryAddEquip(old))
+            {
+                equipment.Equip(slot, old);
+                UnityEngine.Debug.LogError("[EquipFlow.Unequip] 인벤토리 장비 공간 부족으로 해제를 롤백했습니다.");
+                return false;
+            }
 
-            recalc?.Invoke(); //Wave0write
-            RaiseChanged(); //Wave0write
-            return true; //Wave0write
-        } //Wave0write
+            recalc?.Invoke();
+            RaiseChanged();
+            return true;
+        }
 
-        private static void RecalcStateStats(PlayerState player) //Wave0write
-        { //Wave0write
-            if (player?.Stats == null) //Wave0write
-            { //Wave0write
-                return; //Wave0write
-            } //Wave0write
+        private static void RecalcStateStats(PlayerState player)
+        {
+            if (player?.Stats == null)
+            {
+                return;
+            }
 
-            player.Stats.ResetEquipmentBonuses(); //Wave0write
-            player.Stats.ApplyEquipmentBonus(player.Equipment != null ? player.Equipment.AggregateStatMod() : new EquipmentStatMod()); //Wave0write
-            player.Stats.ResetRuneBonuses(); //Wave0write
-            EquipmentStatMod runeMod = player.Rune != null ? player.Rune.AggregateStatMod() : new EquipmentStatMod(); //Wave0write
-            player.Stats.ApplyRuneBonus(StatType.HP, runeMod.HP); //Wave0write
-            player.Stats.ApplyRuneBonus(StatType.MP, runeMod.MP); //Wave0write
-            player.Stats.ApplyRuneBonus(StatType.ATK, runeMod.ATK); //Wave0write
-            player.Stats.ApplyRuneBonus(StatType.DEF, runeMod.DEF); //Wave0write
-            player.Stats.ApplyRuneBonus(StatType.SPD, runeMod.SPD); //Wave0write
-        } //Wave0write
+            player.Stats.ResetEquipmentBonuses();
+            player.Stats.ApplyEquipmentBonus(player.Equipment != null ? player.Equipment.AggregateStatMod() : new EquipmentStatMod());
+            player.Stats.ResetRuneBonuses();
+            EquipmentStatMod runeMod = player.Rune != null ? player.Rune.AggregateStatMod() : new EquipmentStatMod();
+            player.Stats.ApplyRuneBonus(StatType.HP, runeMod.HP);
+            player.Stats.ApplyRuneBonus(StatType.MP, runeMod.MP);
+            player.Stats.ApplyRuneBonus(StatType.ATK, runeMod.ATK);
+            player.Stats.ApplyRuneBonus(StatType.DEF, runeMod.DEF);
+            player.Stats.ApplyRuneBonus(StatType.SPD, runeMod.SPD);
+        }
 
-        private static void RaiseChanged() //Wave0write
-        { //Wave0write
-            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm)) //Wave0write
-            { //Wave0write
-                gsm.Events?.RaiseInventoryChanged(); //Wave0write
-                gsm.Events?.RaiseEquipmentChanged(); //Wave0write
-            } //Wave0write
-        } //Wave0write
+        private static void RaiseChanged()
+        {
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                gsm.Events?.RaiseInventoryChanged();
+                gsm.Events?.RaiseEquipmentChanged();
+            }
+        }
 
-        private static bool IsCombatScene() //Wave0write
-        { //Wave0write
-            return GameSystemManager.TryGetInstance(out GameSystemManager gsm) //Wave0write
-                && (gsm.CombatContext != null || (gsm.Scenes != null && gsm.Scenes.CurrentSceneId == SceneId.Combat)); //Wave0write
-        } //Wave0write
+        private static bool IsCombatScene()
+        {
+            return GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                && (gsm.CombatContext != null || (gsm.Scenes != null && gsm.Scenes.CurrentSceneId == SceneId.Combat));
+        }
     }
 }

@@ -26,18 +26,30 @@ namespace Tempt
         /// <inheritdoc/>
         public override void Parse(string[] cells)
         {
-            // 동작 요약:
-            // - cells[0] = DropTableId (int).
-            // - cells[1] = ItemId (int).
-            // - cells[2] = MinCount (int).
-            // - cells[3] = MaxCount (int).
-            // - cells[4] = DropRate (float).
-            //TODO: DropTableId = int.Parse(cells[0]);
-            //TODO: ItemId      = int.Parse(cells[1]);
-            //TODO: MinCount    = int.Parse(cells[2]);
-            //TODO: MaxCount    = int.Parse(cells[3]);
-            //TODO: DropRate    = float.Parse(cells[4]);
-            //TODO: Id = DropTableId * 1000 + ItemId; // 복합키(Id 필드 활용)
+            Id = cells.Length > 0 && CsvParser.TryParseInt(cells[0], out int id) ? id : 0;
+            DropTableId = cells.Length > 1 && CsvParser.TryParseInt(cells[1], out int tableId) ? tableId : 0;
+            ItemId = cells.Length > 2 && CsvParser.TryParseInt(cells[2], out int itemId) ? itemId : 0;
+            MinCount = cells.Length > 3 && CsvParser.TryParseInt(cells[3], out int minCount) ? minCount : 1;
+            MaxCount = cells.Length > 4 && CsvParser.TryParseInt(cells[4], out int maxCount) ? maxCount : MinCount;
+            DropRate = cells.Length > 5 && CsvParser.TryParseFloat(cells[5], out float rate) ? rate : 0f;
+        }
+
+        public static DropEntry FromRow(IDictionary<string, string> row)
+        {
+            if (!CsvParser.HasColumns(row, nameof(DropEntry), "Id", "DropTableId", "ItemId", "MinCount", "MaxCount", "DropRate"))
+            {
+                return null;
+            }
+
+            return new DropEntry
+            {
+                Id = CsvParser.GetInt(row, "Id"),
+                DropTableId = CsvParser.GetInt(row, "DropTableId"),
+                ItemId = CsvParser.GetInt(row, "ItemId"),
+                MinCount = CsvParser.GetInt(row, "MinCount", 1),
+                MaxCount = CsvParser.GetInt(row, "MaxCount", 1),
+                DropRate = CsvParser.GetFloat(row, "DropRate"),
+            };
         }
     }
 

@@ -49,14 +49,25 @@ namespace Tempt
             public Color LabelBaseColor;
         }
 
-        private static readonly string[] Facilities = { "TAVERN", "SHOP", "GUILD", "FORGE", "SHRINE" };
+        private static readonly string[] Facilities =
+        {
+            "TAVERN",
+            "SHOP",
+            "GUILD",
+            "FORGE",
+            "SHRINE",
+        };
         private const int Safe1ShopSellPrice = 1;
 
-        private readonly Dictionary<string, GameObject> facilityGroups = new Dictionary<string, GameObject>();
+        private readonly Dictionary<string, GameObject> facilityGroups =
+            new Dictionary<string, GameObject>();
         private readonly Dictionary<string, Button> facilityTabs = new Dictionary<string, Button>();
-        private readonly Dictionary<string, List<Button>> subButtons = new Dictionary<string, List<Button>>();
-        private readonly Dictionary<string, List<GameObject>> subContents = new Dictionary<string, List<GameObject>>();
-        private readonly Dictionary<string, List<Button>> closeButtons = new Dictionary<string, List<Button>>();
+        private readonly Dictionary<string, List<Button>> subButtons =
+            new Dictionary<string, List<Button>>();
+        private readonly Dictionary<string, List<GameObject>> subContents =
+            new Dictionary<string, List<GameObject>>();
+        private readonly Dictionary<string, List<Button>> closeButtons =
+            new Dictionary<string, List<Button>>();
         private readonly List<ShopRowView> shopBuyRows = new List<ShopRowView>();
         private readonly List<ShopRowView> shopSellRows = new List<ShopRowView>();
         private readonly List<TextMeshProUGUI> shopBuyDetailLines = new List<TextMeshProUGUI>();
@@ -80,6 +91,7 @@ namespace Tempt
         private Button guildSlot2Button;
         private TextMeshProUGUI guildPrimaryButtonLabel;
         private TextMeshProUGUI guildSlot2ButtonLabel;
+        private ShrineRuneController shrineRuneController;
         private ShopMode currentShopMode = ShopMode.Buy;
         private ShopStockEntry selectedBuyStock;
         private ShopSellEntry selectedSellEntry;
@@ -106,9 +118,13 @@ namespace Tempt
         }
 
         public void ShowTavern() => ShowFacility("TAVERN");
+
         public void ShowShop() => ShowFacility("SHOP");
+
         public void ShowGuild() => ShowFacility("GUILD");
+
         public void ShowForge() => ShowFacility("FORGE");
+
         public void ShowShrine() => ShowFacility("SHRINE");
 
         public void ShowFacility(string facility)
@@ -158,6 +174,18 @@ namespace Tempt
             }
         }
 
+        public bool TryCloseTopPanel()
+        {
+            CacheHierarchy();
+            if (mainFacilityPanel == null || !mainFacilityPanel.activeSelf)
+            {
+                return false;
+            }
+
+            CloseFacilities();
+            return true;
+        }
+
         public void ShowSubFunction(string facility, int index)
         {
             if (subContents.TryGetValue(facility, out List<GameObject> contents))
@@ -186,6 +214,11 @@ namespace Tempt
             {
                 RefreshGuildSkillPanel();
             }
+
+            if (facility == "SHRINE")
+            {
+                shrineRuneController?.ShowTab(index);
+            }
         }
 
         private void CacheHierarchy()
@@ -199,7 +232,8 @@ namespace Tempt
             Transform mainPanel = transform.Find("MainFacilityPanel");
             mainFacilityPanel = mainPanel != null ? mainPanel.gameObject : null;
             Transform enterFloorMap = transform.Find("BottomNavigationBar/EnterFloorMapButton");
-            enterFloorMapButton = enterFloorMap != null ? enterFloorMap.GetComponent<Button>() : null;
+            enterFloorMapButton =
+                enterFloorMap != null ? enterFloorMap.GetComponent<Button>() : null;
 
             foreach (string facility in Facilities)
             {
@@ -210,9 +244,15 @@ namespace Tempt
                     subButtons[facility] = FindButtons(group.Find("SubFunctionRow"));
                     subContents[facility] = FindContentPanels(group.Find("MiddleContentArea"));
                     closeButtons[facility] = FindNamedButtons(group, "CloseButton_X");
+                    AddUniqueButtons(
+                        closeButtons[facility],
+                        FindNamedButtons(group, "CloseButton")
+                    );
                 }
 
-                Transform tab = transform.Find("BottomNavigationBar/FacilityTabs/FacilityTab_" + facility);
+                Transform tab = transform.Find(
+                    "BottomNavigationBar/FacilityTabs/FacilityTab_" + facility
+                );
                 if (tab != null && tab.TryGetComponent(out Button button))
                 {
                     facilityTabs[facility] = button;
@@ -221,6 +261,7 @@ namespace Tempt
 
             CacheShopHierarchy();
             CacheGuildHierarchy();
+            CacheShrineHierarchy();
         }
 
         private void CacheShopHierarchy()
@@ -245,10 +286,18 @@ namespace Tempt
             }
 
             Transform root = shopGroup.transform;
-            shopBuyRowsRoot = root.Find("MiddleContentArea/Content_BUY/LeftColumn/MERCHANT_STOCK_Section/Rows");
-            shopSellRowsRoot = root.Find("MiddleContentArea/Content_SELL/LeftColumn/SELLABLE_ITEMS_Section/Rows");
-            shopBuyDetailBody = root.Find("MiddleContentArea/Content_BUY/RightColumn/ITEM_DETAIL_Section/Body");
-            shopSellDetailBody = root.Find("MiddleContentArea/Content_SELL/RightColumn/SELL_DETAIL_Section/Body");
+            shopBuyRowsRoot = root.Find(
+                "MiddleContentArea/Content_BUY/LeftColumn/MERCHANT_STOCK_Section/Rows"
+            );
+            shopSellRowsRoot = root.Find(
+                "MiddleContentArea/Content_SELL/LeftColumn/SELLABLE_ITEMS_Section/Rows"
+            );
+            shopBuyDetailBody = root.Find(
+                "MiddleContentArea/Content_BUY/RightColumn/ITEM_DETAIL_Section/Body"
+            );
+            shopSellDetailBody = root.Find(
+                "MiddleContentArea/Content_SELL/RightColumn/SELL_DETAIL_Section/Body"
+            );
 
             CacheShopRows(shopBuyRowsRoot, shopBuyRows);
             CacheShopRows(shopSellRowsRoot, shopSellRows);
@@ -287,13 +336,20 @@ namespace Tempt
             }
 
             Transform root = guildGroup.transform;
-            guildSkillRowsRoot = root.Find("MiddleContentArea/Content_SKILLS/LeftColumn/SKILL_SHOP_Section/Rows");
-            guildSkillDetailBody = root.Find("MiddleContentArea/Content_SKILLS/RightColumn/SKILL_DETAIL_Section/Body");
+            guildSkillRowsRoot = root.Find(
+                "MiddleContentArea/Content_SKILLS/LeftColumn/SKILL_SHOP_Section/Rows"
+            );
+            guildSkillDetailBody = root.Find(
+                "MiddleContentArea/Content_SKILLS/RightColumn/SKILL_DETAIL_Section/Body"
+            );
 
             CacheGuildRows(guildSkillRowsRoot, guildSkillRows);
             CacheDetailLines(guildSkillDetailBody, guildSkillDetailLines);
 
-            Transform primary = FindDescendant(guildSkillDetailBody, "PrimaryButton_PURCHASE_SKILL");
+            Transform primary = FindDescendant(
+                guildSkillDetailBody,
+                "PrimaryButton_PURCHASE_SKILL"
+            );
             if (primary != null)
             {
                 guildPrimaryButton = primary.GetComponent<Button>();
@@ -301,6 +357,23 @@ namespace Tempt
             }
 
             EnsureGuildSlot2Button();
+        }
+
+        private void CacheShrineHierarchy()
+        {
+            shrineRuneController = null;
+            if (!facilityGroups.TryGetValue("SHRINE", out GameObject shrineGroup))
+            {
+                return;
+            }
+
+            shrineRuneController = shrineGroup.GetComponent<ShrineRuneController>();
+            if (shrineRuneController == null)
+            {
+                shrineRuneController = shrineGroup.GetComponentInChildren<ShrineRuneController>(
+                    true
+                );
+            }
         }
 
         private void WireButtons()
@@ -330,7 +403,10 @@ namespace Tempt
                     buttons[i].onClick.RemoveAllListeners();
                     string capturedFacility = facility;
                     int capturedIndex = i;
-                    buttons[i].onClick.AddListener(() => ShowSubFunction(capturedFacility, capturedIndex));
+                    buttons[i]
+                        .onClick.AddListener(() =>
+                            ShowSubFunction(capturedFacility, capturedIndex)
+                        );
                 }
 
                 if (!closeButtons.TryGetValue(facility, out List<Button> closeList))
@@ -350,7 +426,9 @@ namespace Tempt
         {
             if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.Scenes == null)
             {
-                Debug.LogError("[SafeZone1FacilityMockupUI] GameSystemManager.Scenes 참조가 없습니다.");
+                Debug.LogError(
+                    "[SafeZone1FacilityMockupUI] GameSystemManager.Scenes 참조가 없습니다."
+                );
                 return;
             }
 
@@ -386,7 +464,9 @@ namespace Tempt
             List<SkillData> skills = BuildGuildSkillList(run, data);
             EnsureGuildRowCount(skills.Count);
 
-            bool selectedValid = selectedGuildSkillId != 0 && skills.Exists(skill => skill.Id == selectedGuildSkillId);
+            bool selectedValid =
+                selectedGuildSkillId != 0
+                && skills.Exists(skill => skill.Id == selectedGuildSkillId);
             for (int i = 0; i < guildSkillRows.Count; i++)
             {
                 SkillRowView row = guildSkillRows[i];
@@ -397,8 +477,17 @@ namespace Tempt
                 }
 
                 SkillData skill = skills[i];
-                bool purchased = run.Player?.OwnedSkillIds != null && run.Player.OwnedSkillIds.Contains(skill.Id) && skill.AcquireType == AcquireType.Shop;
-                SetGuildRow(row, skill, BuildGuildSkillRowSuffix(skill, run, data), selectedValid && selectedGuildSkillId == skill.Id, purchased);
+                bool purchased =
+                    run.Player?.OwnedSkillIds != null
+                    && run.Player.OwnedSkillIds.Contains(skill.Id)
+                    && skill.AcquireType == AcquireType.Shop;
+                SetGuildRow(
+                    row,
+                    skill,
+                    BuildGuildSkillRowSuffix(skill, run, data),
+                    selectedValid && selectedGuildSkillId == skill.Id,
+                    purchased
+                );
 
                 row.Button.onClick.RemoveAllListeners();
                 int capturedSkillId = skill.Id;
@@ -425,12 +514,18 @@ namespace Tempt
 
             foreach (SkillData skill in data.Skills.Values)
             {
-                if (skill == null || skill.SkillType != SkillType.Active || skill.AcquireType == AcquireType.MonsterOnly)
+                if (
+                    skill == null
+                    || skill.SkillType != SkillType.Active
+                    || skill.AcquireType == AcquireType.MonsterOnly
+                )
                 {
                     continue;
                 }
 
-                bool owned = run.Player?.OwnedSkillIds != null && run.Player.OwnedSkillIds.Contains(skill.Id);
+                bool owned =
+                    run.Player?.OwnedSkillIds != null
+                    && run.Player.OwnedSkillIds.Contains(skill.Id);
                 if (skill.AcquireType == AcquireType.Shop || owned)
                 {
                     skills.Add(skill);
@@ -441,9 +536,14 @@ namespace Tempt
             return skills;
         }
 
-        private static string BuildGuildSkillRowSuffix(SkillData skill, GameRunState run, DataManager data)
+        private static string BuildGuildSkillRowSuffix(
+            SkillData skill,
+            GameRunState run,
+            DataManager data
+        )
         {
-            bool owned = run.Player?.OwnedSkillIds != null && run.Player.OwnedSkillIds.Contains(skill.Id);
+            bool owned =
+                run.Player?.OwnedSkillIds != null && run.Player.OwnedSkillIds.Contains(skill.Id);
             if (IsSkillEquipped(run, skill.Id))
             {
                 return "EQUIPPED";
@@ -473,7 +573,9 @@ namespace Tempt
 
                     if (!data.Items.ContainsKey(entry.ItemId))
                     {
-                        Debug.LogError("[SafeZone1FacilityMockupUI] 상점 재고 아이템 ID 없음: " + entry.ItemId);
+                        Debug.LogError(
+                            "[SafeZone1FacilityMockupUI] 상점 재고 아이템 ID 없음: " + entry.ItemId
+                        );
                         continue;
                     }
 
@@ -483,7 +585,10 @@ namespace Tempt
 
             EnsureRowCount(shopBuyRows, shopBuyRowsRoot, entries.Count);
 
-            bool selectionValid = selectedBuyStock != null && selectedBuyStock.CanPurchase && entries.Contains(selectedBuyStock);
+            bool selectionValid =
+                selectedBuyStock != null
+                && selectedBuyStock.CanPurchase
+                && entries.Contains(selectedBuyStock);
             for (int i = 0; i < shopBuyRows.Count; i++)
             {
                 ShopRowView row = shopBuyRows[i];
@@ -496,7 +601,14 @@ namespace Tempt
                 ShopStockEntry entry = entries[i];
                 ItemData item = data.Items[entry.ItemId];
                 int price = Shop.GetStockBuyPrice(entry, run, data);
-                SetShopRow(row, item, BuildItemRole(item), BuildItemDescription(item), price + " G", selectionValid && selectedBuyStock == entry);
+                SetShopRow(
+                    row,
+                    item,
+                    BuildItemRole(item),
+                    BuildItemDescription(item),
+                    price + " G",
+                    selectionValid && selectedBuyStock == entry
+                );
 
                 row.Button.onClick.RemoveAllListeners();
                 ShopStockEntry captured = entry;
@@ -529,9 +641,20 @@ namespace Tempt
                 }
 
                 ShopSellEntry entry = entries[i];
-                ItemData item = entry.IsEquipment ? entry.EquipmentItem.Data : data.Items[entry.ItemId];
-                string suffix = entry.IsEquipment ? "+ " + entry.EquipmentItem.Enhancement : "x" + entry.Count;
-                SetShopRow(row, item, BuildItemRole(item), BuildItemDescription(item), suffix + " / " + Safe1ShopSellPrice + " G", selectionValid && IsSameSellEntry(selectedSellEntry, entry));
+                ItemData item = entry.IsEquipment
+                    ? entry.EquipmentItem.Data
+                    : data.Items[entry.ItemId];
+                string suffix = entry.IsEquipment
+                    ? "+ " + entry.EquipmentItem.Enhancement
+                    : "x" + entry.Count;
+                SetShopRow(
+                    row,
+                    item,
+                    BuildItemRole(item),
+                    BuildItemDescription(item),
+                    suffix + " / " + Safe1ShopSellPrice + " G",
+                    selectionValid && IsSameSellEntry(selectedSellEntry, entry)
+                );
 
                 row.Button.onClick.RemoveAllListeners();
                 ShopSellEntry captured = entry;
@@ -566,7 +689,9 @@ namespace Tempt
 
                 if (!data.Items.ContainsKey(stack.Key))
                 {
-                    Debug.LogError("[SafeZone1FacilityMockupUI] 판매 가능 아이템 ID 없음: " + stack.Key);
+                    Debug.LogError(
+                        "[SafeZone1FacilityMockupUI] 판매 가능 아이템 ID 없음: " + stack.Key
+                    );
                     continue;
                 }
 
@@ -582,7 +707,14 @@ namespace Tempt
                     continue;
                 }
 
-                entries.Add(new ShopSellEntry { ItemId = item.Data.Id, Count = 1, EquipmentItem = item });
+                entries.Add(
+                    new ShopSellEntry
+                    {
+                        ItemId = item.Data.Id,
+                        Count = 1,
+                        EquipmentItem = item,
+                    }
+                );
             }
 
             return entries;
@@ -633,13 +765,23 @@ namespace Tempt
             selectedBuyStock = stock;
             int price = Shop.GetStockBuyPrice(stock, run, data);
             SetDetailBody(shopBuyDetailBody, true);
-            SetDetailLines(shopBuyDetailLines, item.NameKey, BuildItemRole(item), BuildItemDescription(item), "Buy Price", price + " G");
+            SetDetailLines(
+                shopBuyDetailLines,
+                item.NameKey,
+                BuildItemRole(item),
+                BuildItemDescription(item),
+                "Buy Price",
+                price + " G"
+            );
 
             if (shopPurchaseButton != null)
             {
                 shopPurchaseButton.onClick.RemoveAllListeners();
                 shopPurchaseButton.onClick.AddListener(HandlePurchaseClicked);
-                shopPurchaseButton.interactable = stock.CanPurchase && run.Gold >= price && CanFitInventory(run.Player?.Inventory, item);
+                shopPurchaseButton.interactable =
+                    stock.CanPurchase
+                    && run.Gold >= price
+                    && CanFitInventory(run.Player?.Inventory, item);
             }
 
             if (shopPurchaseButtonLabel != null)
@@ -656,7 +798,9 @@ namespace Tempt
                 return;
             }
 
-            ItemData item = entry.IsEquipment ? entry.EquipmentItem.Data : (data.Items.TryGetValue(entry.ItemId, out ItemData stackItem) ? stackItem : null);
+            ItemData item = entry.IsEquipment
+                ? entry.EquipmentItem.Data
+                : (data.Items.TryGetValue(entry.ItemId, out ItemData stackItem) ? stackItem : null);
             if (item == null)
             {
                 ClearSellDetail();
@@ -665,7 +809,14 @@ namespace Tempt
 
             selectedSellEntry = entry;
             SetDetailBody(shopSellDetailBody, true);
-            SetDetailLines(shopSellDetailLines, item.NameKey, BuildItemRole(item), BuildItemDescription(item), "Sell Price", Safe1ShopSellPrice + " G");
+            SetDetailLines(
+                shopSellDetailLines,
+                item.NameKey,
+                BuildItemRole(item),
+                BuildItemDescription(item),
+                "Sell Price",
+                Safe1ShopSellPrice + " G"
+            );
 
             if (shopSellButton != null)
             {
@@ -696,26 +847,55 @@ namespace Tempt
                 skill.SkillType + " / " + skill.AcquireType,
                 BuildSkillEffectText(skill),
                 "Slots",
-                BuildActiveSlotText(run, data));
+                BuildActiveSlotText(run, data)
+            );
 
-            bool owned = run.Player?.OwnedSkillIds != null && run.Player.OwnedSkillIds.Contains(skillId);
+            bool owned =
+                run.Player?.OwnedSkillIds != null && run.Player.OwnedSkillIds.Contains(skillId);
             bool canEquip = owned;
             bool buyable = skill.AcquireType == AcquireType.Shop && !owned;
 
             if (buyable)
             {
-                ConfigureGuildButton(guildPrimaryButton, guildPrimaryButtonLabel, "PURCHASE", Guild.CanBuy(skillId, run, data), () => HandleGuildPurchaseClicked(skillId));
-                ConfigureGuildButton(guildSlot2Button, guildSlot2ButtonLabel, string.Empty, false, null);
+                ConfigureGuildButton(
+                    guildPrimaryButton,
+                    guildPrimaryButtonLabel,
+                    "PURCHASE",
+                    Guild.CanBuy(skillId, run, data),
+                    () => HandleGuildPurchaseClicked(skillId)
+                );
+                ConfigureGuildButton(
+                    guildSlot2Button,
+                    guildSlot2ButtonLabel,
+                    string.Empty,
+                    false,
+                    null
+                );
                 return;
             }
 
-            ConfigureGuildButton(guildPrimaryButton, guildPrimaryButtonLabel, "SLOT 1", canEquip, () => HandleGuildEquipClicked(0, skillId));
-            ConfigureGuildButton(guildSlot2Button, guildSlot2ButtonLabel, "SLOT 2", canEquip, () => HandleGuildEquipClicked(1, skillId));
+            ConfigureGuildButton(
+                guildPrimaryButton,
+                guildPrimaryButtonLabel,
+                "SLOT 1",
+                canEquip,
+                () => HandleGuildEquipClicked(0, skillId)
+            );
+            ConfigureGuildButton(
+                guildSlot2Button,
+                guildSlot2ButtonLabel,
+                "SLOT 2",
+                canEquip,
+                () => HandleGuildEquipClicked(1, skillId)
+            );
         }
 
         private void HandlePurchaseClicked()
         {
-            if (selectedBuyStock == null || !TryGetRunData(out GameRunState run, out DataManager data))
+            if (
+                selectedBuyStock == null
+                || !TryGetRunData(out GameRunState run, out DataManager data)
+            )
             {
                 return;
             }
@@ -729,13 +909,21 @@ namespace Tempt
 
         private void HandleSellClicked()
         {
-            if (selectedSellEntry == null || !TryGetRunData(out GameRunState run, out DataManager data))
+            if (
+                selectedSellEntry == null
+                || !TryGetRunData(out GameRunState run, out DataManager data)
+            )
             {
                 return;
             }
 
             bool sold = selectedSellEntry.IsEquipment
-                ? Shop.TrySellEquipForPrice(selectedSellEntry.EquipmentItem, Safe1ShopSellPrice, run, data)
+                ? Shop.TrySellEquipForPrice(
+                    selectedSellEntry.EquipmentItem,
+                    Safe1ShopSellPrice,
+                    run,
+                    data
+                )
                 : Shop.TrySellForPrice(selectedSellEntry.ItemId, 1, Safe1ShopSellPrice, run, data);
 
             if (sold)
@@ -805,8 +993,20 @@ namespace Tempt
         {
             selectedGuildSkillId = 0;
             SetDetailBody(guildSkillDetailBody, false);
-            ConfigureGuildButton(guildPrimaryButton, guildPrimaryButtonLabel, string.Empty, false, null);
-            ConfigureGuildButton(guildSlot2Button, guildSlot2ButtonLabel, string.Empty, false, null);
+            ConfigureGuildButton(
+                guildPrimaryButton,
+                guildPrimaryButtonLabel,
+                string.Empty,
+                false,
+                null
+            );
+            ConfigureGuildButton(
+                guildSlot2Button,
+                guildSlot2ButtonLabel,
+                string.Empty,
+                false,
+                null
+            );
         }
 
         private static void EnsureShopStock(GameRunState run)
@@ -833,7 +1033,9 @@ namespace Tempt
                 return false;
             }
 
-            return entry.IsEquipment ? inventory.EquipItems.Contains(entry.EquipmentItem) : inventory.CountOf(entry.ItemId) > 0;
+            return entry.IsEquipment
+                ? inventory.EquipItems.Contains(entry.EquipmentItem)
+                : inventory.CountOf(entry.ItemId) > 0;
         }
 
         private static bool IsSameSellEntry(ShopSellEntry left, ShopSellEntry right)
@@ -843,7 +1045,9 @@ namespace Tempt
                 return false;
             }
 
-            return left.IsEquipment ? left.EquipmentItem == right.EquipmentItem : left.ItemId == right.ItemId;
+            return left.IsEquipment
+                ? left.EquipmentItem == right.EquipmentItem
+                : left.ItemId == right.ItemId;
         }
 
         private static void SaveAfterShopTransaction()
@@ -858,9 +1062,16 @@ namespace Tempt
         {
             run = null;
             data = null;
-            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.CurrentRun?.Player?.Inventory == null || gsm.Data?.Items == null || gsm.Data?.Skills == null)
+            if (
+                !GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                || gsm.CurrentRun?.Player?.Inventory == null
+                || gsm.Data?.Items == null
+                || gsm.Data?.Skills == null
+            )
             {
-                Debug.LogError("[SafeZone1FacilityMockupUI] GameSystemManager / CurrentRun.Player.Inventory / Data.Items / Data.Skills 참조가 없습니다.");
+                Debug.LogError(
+                    "[SafeZone1FacilityMockupUI] GameSystemManager / CurrentRun.Player.Inventory / Data.Items / Data.Skills 참조가 없습니다."
+                );
                 return false;
             }
 
@@ -1001,7 +1212,10 @@ namespace Tempt
                 return;
             }
 
-            GameObject clone = Instantiate(guildPrimaryButton.gameObject, guildPrimaryButton.transform.parent);
+            GameObject clone = Instantiate(
+                guildPrimaryButton.gameObject,
+                guildPrimaryButton.transform.parent
+            );
             clone.name = "PrimaryButton_SLOT_2";
             guildSlot2Button = clone.GetComponent<Button>();
             guildSlot2ButtonLabel = clone.GetComponentInChildren<TextMeshProUGUI>(true);
@@ -1010,13 +1224,23 @@ namespace Tempt
             RectTransform slot2Rect = clone.GetComponent<RectTransform>();
             if (primaryRect != null && slot2Rect != null)
             {
-                primaryRect.sizeDelta = new Vector2(primaryRect.sizeDelta.x * 0.48f, primaryRect.sizeDelta.y);
+                primaryRect.sizeDelta = new Vector2(
+                    primaryRect.sizeDelta.x * 0.48f,
+                    primaryRect.sizeDelta.y
+                );
                 slot2Rect.sizeDelta = primaryRect.sizeDelta;
                 primaryRect.anchoredPosition += new Vector2(-primaryRect.sizeDelta.x * 0.53f, 0f);
-                slot2Rect.anchoredPosition = primaryRect.anchoredPosition + new Vector2(primaryRect.sizeDelta.x * 1.12f, 0f);
+                slot2Rect.anchoredPosition =
+                    primaryRect.anchoredPosition + new Vector2(primaryRect.sizeDelta.x * 1.12f, 0f);
             }
 
-            ConfigureGuildButton(guildSlot2Button, guildSlot2ButtonLabel, string.Empty, false, null);
+            ConfigureGuildButton(
+                guildSlot2Button,
+                guildSlot2ButtonLabel,
+                string.Empty,
+                false,
+                null
+            );
         }
 
         private static void CacheDetailLines(Transform body, List<TextMeshProUGUI> lines)
@@ -1122,25 +1346,47 @@ namespace Tempt
             }
 
             List<string> parts = new List<string>();
-            if (mod.HP != 0) parts.Add("HP +" + mod.HP);
-            if (mod.MP != 0) parts.Add("MP +" + mod.MP);
-            if (mod.ATK != 0) parts.Add("ATK +" + mod.ATK);
-            if (mod.DEF != 0) parts.Add("DEF +" + mod.DEF);
-            if (mod.SPD != 0) parts.Add("SPD +" + mod.SPD);
+            if (mod.HP != 0)
+                parts.Add("HP +" + mod.HP);
+            if (mod.MP != 0)
+                parts.Add("MP +" + mod.MP);
+            if (mod.ATK != 0)
+                parts.Add("ATK +" + mod.ATK);
+            if (mod.DEF != 0)
+                parts.Add("DEF +" + mod.DEF);
+            if (mod.SPD != 0)
+                parts.Add("SPD +" + mod.SPD);
             return parts.Count > 0 ? string.Join(" / ", parts) : "No stat modifier.";
         }
 
-        private void SetShopRow(ShopRowView row, ItemData item, string role, string description, string cost, bool selected)
+        private void SetShopRow(
+            ShopRowView row,
+            ItemData item,
+            string role,
+            string description,
+            string cost,
+            bool selected
+        )
         {
             row.Root.SetActive(true);
-            if (row.Name != null) row.Name.text = item != null ? item.NameKey : string.Empty;
-            if (row.Role != null) row.Role.text = role;
-            if (row.Description != null) row.Description.text = description;
-            if (row.Cost != null) row.Cost.text = cost;
+            if (row.Name != null)
+                row.Name.text = item != null ? item.NameKey : string.Empty;
+            if (row.Role != null)
+                row.Role.text = role;
+            if (row.Description != null)
+                row.Description.text = description;
+            if (row.Cost != null)
+                row.Cost.text = cost;
             SetRowSelected(row, selected);
         }
 
-        private void SetGuildRow(SkillRowView row, SkillData skill, string suffix, bool selected, bool purchased)
+        private void SetGuildRow(
+            SkillRowView row,
+            SkillData skill,
+            string suffix,
+            bool selected,
+            bool purchased
+        )
         {
             row.Root.SetActive(true);
             if (row.Label != null)
@@ -1171,16 +1417,34 @@ namespace Tempt
             }
         }
 
-        private static void SetDetailLines(List<TextMeshProUGUI> lines, string name, string role, string description, string priceLabel, string price)
+        private static void SetDetailLines(
+            List<TextMeshProUGUI> lines,
+            string name,
+            string role,
+            string description,
+            string priceLabel,
+            string price
+        )
         {
-            if (lines.Count > 0) lines[0].text = name;
-            if (lines.Count > 1) lines[1].text = role;
-            if (lines.Count > 2) lines[2].text = description;
-            if (lines.Count > 3) lines[3].text = priceLabel;
-            if (lines.Count > 4) lines[4].text = price;
+            if (lines.Count > 0)
+                lines[0].text = name;
+            if (lines.Count > 1)
+                lines[1].text = role;
+            if (lines.Count > 2)
+                lines[2].text = description;
+            if (lines.Count > 3)
+                lines[3].text = priceLabel;
+            if (lines.Count > 4)
+                lines[4].text = price;
         }
 
-        private static void ConfigureGuildButton(Button button, TextMeshProUGUI label, string text, bool interactable, UnityEngine.Events.UnityAction action)
+        private static void ConfigureGuildButton(
+            Button button,
+            TextMeshProUGUI label,
+            string text,
+            bool interactable,
+            UnityEngine.Events.UnityAction action
+        )
         {
             if (button == null)
             {
@@ -1204,14 +1468,21 @@ namespace Tempt
         private static bool IsSkillEquipped(GameRunState run, int skillId)
         {
             int[] slots = run?.Player?.ActiveSlotSkillIds;
-            return slots != null && ((slots.Length > 0 && slots[0] == skillId) || (slots.Length > 1 && slots[1] == skillId));
+            return slots != null
+                && (
+                    (slots.Length > 0 && slots[0] == skillId)
+                    || (slots.Length > 1 && slots[1] == skillId)
+                );
         }
 
         private static string BuildSkillEffectText(SkillData skill)
         {
-            if (skill.DamageScale > 0f) return "Damage x" + skill.DamageScale + " / MP " + skill.MpCost;
-            if (skill.HealScale > 0f) return "Heal x" + skill.HealScale + " / MP " + skill.MpCost;
-            if (skill.ShieldScale > 0f) return "Shield x" + skill.ShieldScale + " / MP " + skill.MpCost;
+            if (skill.DamageScale > 0f)
+                return "Damage x" + skill.DamageScale + " / MP " + skill.MpCost;
+            if (skill.HealScale > 0f)
+                return "Heal x" + skill.HealScale + " / MP " + skill.MpCost;
+            if (skill.ShieldScale > 0f)
+                return "Shield x" + skill.ShieldScale + " / MP " + skill.MpCost;
             return "MP " + skill.MpCost;
         }
 
@@ -1223,7 +1494,10 @@ namespace Tempt
                 return "Slot 1: Empty / Slot 2: Empty";
             }
 
-            return "Slot 1: " + SkillName(slots[0], data) + " / Slot 2: " + SkillName(slots[1], data);
+            return "Slot 1: "
+                + SkillName(slots[0], data)
+                + " / Slot 2: "
+                + SkillName(slots[1], data);
         }
 
         private static string SkillName(int skillId, DataManager data)
@@ -1233,13 +1507,16 @@ namespace Tempt
                 return "Empty";
             }
 
-            return data.Skills.TryGetValue(skillId, out SkillData skill) ? skill.NameKey : "Missing " + skillId;
+            return data.Skills.TryGetValue(skillId, out SkillData skill)
+                ? skill.NameKey
+                : "Missing " + skillId;
         }
 
         private static List<Button> FindButtons(Transform row)
         {
             List<Button> buttons = new List<Button>();
-            if (row == null) return buttons;
+            if (row == null)
+                return buttons;
 
             for (int i = 0; i < row.childCount; i++)
             {
@@ -1255,7 +1532,8 @@ namespace Tempt
         private static List<Button> FindNamedButtons(Transform root, string buttonName)
         {
             List<Button> buttons = new List<Button>();
-            if (root == null) return buttons;
+            if (root == null)
+                return buttons;
 
             Button[] candidates = root.GetComponentsInChildren<Button>(true);
             foreach (Button button in candidates)
@@ -1269,17 +1547,36 @@ namespace Tempt
             return buttons;
         }
 
+        private static void AddUniqueButtons(List<Button> target, List<Button> source)
+        {
+            if (target == null || source == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < source.Count; i++)
+            {
+                if (source[i] != null && !target.Contains(source[i]))
+                {
+                    target.Add(source[i]);
+                }
+            }
+        }
+
         private static int DefaultSubFunctionIndex(string facility)
         {
-            if (facility == "TAVERN") return 1;
-            if (facility == "GUILD") return 2;
+            if (facility == "TAVERN")
+                return 1;
+            if (facility == "GUILD")
+                return 2;
             return 0;
         }
 
         private static List<GameObject> FindContentPanels(Transform area)
         {
             List<GameObject> panels = new List<GameObject>();
-            if (area == null) return panels;
+            if (area == null)
+                return panels;
 
             for (int i = 0; i < area.childCount; i++)
             {
@@ -1309,7 +1606,9 @@ namespace Tempt
             Outline outline = button.GetComponent<Outline>();
             if (outline != null)
             {
-                outline.effectColor = active ? new Color(1f, 0.20f, 0.27f, 0.55f) : new Color(0.47f, 0.47f, 0.47f, 0.35f);
+                outline.effectColor = active
+                    ? new Color(1f, 0.20f, 0.27f, 0.55f)
+                    : new Color(0.47f, 0.47f, 0.47f, 0.35f);
             }
 
             Transform underline = button.transform.Find("ActiveUnderline");
