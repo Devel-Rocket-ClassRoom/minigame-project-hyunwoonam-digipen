@@ -27,6 +27,9 @@ namespace Tempt
         [SerializeField]
         private RuneTreeView runeTreeView;
 
+        private ShortcutInfoPanelController skillPageController;
+        private ShortcutInfoPanelController statPageController;
+
         [SerializeField]
         private GameObject gameOverPanel;
 
@@ -235,7 +238,14 @@ namespace Tempt
             inventoryPage.OnClose();
             HideRunePage();
             HideStatRunePage();
+            EnsureShortcutPanelSizing(skillPageRoot);
             skillPageRoot.SetActive(true);
+            EnsureShortcutPanelController(
+                    skillPageRoot,
+                    ShortcutInfoPanelController.PageKind.Skills,
+                    ref skillPageController
+                )
+                ?.Show(HideSkillPage);
         }
 
         public void HideSkillPage()
@@ -259,7 +269,14 @@ namespace Tempt
             inventoryPage.OnClose();
             HideRunePage();
             HideSkillPage();
+            EnsureShortcutPanelSizing(statRunePageRoot);
             statRunePageRoot.SetActive(true);
+            EnsureShortcutPanelController(
+                    statRunePageRoot,
+                    ShortcutInfoPanelController.PageKind.Status,
+                    ref statPageController
+                )
+                ?.Show(HideStatRunePage);
         }
 
         public void HideStatRunePage()
@@ -376,13 +393,32 @@ namespace Tempt
                 return false;
             }
 
-            Transform found = FindChildRecursive(persistentRoot.transform, "SkillsPanel");
+            Transform found = FindChildRecursiveWithDescendant(
+                persistentRoot.transform,
+                "MainSkillsPanel",
+                "Content/LeftCol/Scroll/Viewport/ListContent"
+            );
+            if (found == null)
+            {
+                found = FindChildRecursive(persistentRoot.transform, "SkillsPanel");
+            }
+
             if (found == null)
             {
                 found = FindChildRecursive(persistentRoot.transform, "MainSkillsPanel");
             }
 
             skillPageRoot = found != null ? found.gameObject : null;
+            if (skillPageRoot != null)
+            {
+                EnsureShortcutPanelSizing(skillPageRoot);
+                EnsureShortcutPanelController(
+                    skillPageRoot,
+                    ShortcutInfoPanelController.PageKind.Skills,
+                    ref skillPageController
+                );
+            }
+
             return skillPageRoot != null;
         }
 
@@ -405,7 +441,95 @@ namespace Tempt
             }
 
             statRunePageRoot = found != null ? found.gameObject : null;
+            if (statRunePageRoot != null)
+            {
+                EnsureShortcutPanelSizing(statRunePageRoot);
+                EnsureShortcutPanelController(
+                    statRunePageRoot,
+                    ShortcutInfoPanelController.PageKind.Status,
+                    ref statPageController
+                );
+            }
+
             return statRunePageRoot != null;
+        }
+
+        private static ShortcutInfoPanelController EnsureShortcutPanelController(
+            GameObject root,
+            ShortcutInfoPanelController.PageKind kind,
+            ref ShortcutInfoPanelController cached
+        )
+        {
+            if (root == null)
+            {
+                cached = null;
+                return null;
+            }
+
+            if (cached == null || cached.gameObject != root)
+            {
+                cached = root.GetComponent<ShortcutInfoPanelController>();
+                if (cached == null)
+                {
+                    cached = root.AddComponent<ShortcutInfoPanelController>();
+                }
+            }
+
+            cached.Kind = kind;
+            return cached;
+        }
+
+        private static Transform FindChildRecursiveWithDescendant(
+            Transform root,
+            string childName,
+            string descendantPath
+        )
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            if (root.name == childName && root.Find(descendantPath) != null)
+            {
+                return root;
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform found = FindChildRecursiveWithDescendant(
+                    root.GetChild(i),
+                    childName,
+                    descendantPath
+                );
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            return null;
+        }
+
+        private static void EnsureShortcutPanelSizing(GameObject root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            ResponsiveOverlayPanelSizer sizer = root.GetComponent<ResponsiveOverlayPanelSizer>();
+            if (sizer == null)
+            {
+                sizer = root.AddComponent<ResponsiveOverlayPanelSizer>();
+            }
+
+            sizer.ReferenceSize = new Vector2(980f, 610f);
+            sizer.ViewportRatio = new Vector2(0.88f, 0.88f);
+            sizer.MinSize = new Vector2(680f, 420f);
+            sizer.MaxSize = new Vector2(1180f, 740f);
+            sizer.PreserveAspect = true;
+            sizer.ApplySize();
         }
 
         private static Transform FindChildRecursive(Transform root, string childName)

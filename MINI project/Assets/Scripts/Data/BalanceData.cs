@@ -29,6 +29,24 @@ namespace Tempt
         /// <summary>장비 강화 1단계당 스탯 배율 증가량.</summary>
         public float EnhanceMultiplier;
 
+        /// <summary>강화 비용 기본 계수. 비용 = BasePrice * (EnhanceCostBase + level * EnhanceCostPerLevel).</summary>
+        public float EnhanceCostBase;
+
+        /// <summary>강화 비용 레벨당 증가 계수.</summary>
+        public float EnhanceCostPerLevel;
+
+        /// <summary>강화 기본 성공률(0~1).</summary>
+        public float EnhanceBaseSuccessRate;
+
+        /// <summary>강화 레벨당 성공률 감소량.</summary>
+        public float EnhanceSuccessRateDecayPerLevel;
+
+        /// <summary>강화 성공률 최소 하한(0~1).</summary>
+        public float EnhanceMinSuccessRate;
+
+        /// <summary>이 횟수만큼 연속 실패하면 다음 강화가 확정 성공한다.</summary>
+        public int EnhancePityFailCount;
+
         /// <summary>광산 단계별 일일 마석 지급량(SafeZone 3~5).</summary>
         public List<int> MineDailyGain;
 

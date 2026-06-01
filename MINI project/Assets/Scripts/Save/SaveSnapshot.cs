@@ -442,7 +442,12 @@ namespace Tempt
                 if (item?.Data != null)
                 {
                     snapshot.EquipItems.Add(
-                        new EquipItemEntry { ItemId = item.Data.Id, Enhancement = item.Enhancement }
+                        new EquipItemEntry
+                        {
+                            ItemId = item.Data.Id,
+                            Enhancement = item.Enhancement,
+                            EnhanceFailStreak = item.EnhanceFailStreak,
+                        }
                     );
                 }
             }
@@ -473,7 +478,12 @@ namespace Tempt
                     if (data.Items.TryGetValue(entry.ItemId, out ItemData itemData))
                     {
                         inv.EquipItems.Add(
-                            new Item { Data = itemData, Enhancement = entry.Enhancement }
+                            new Item
+                            {
+                                Data = itemData,
+                                Enhancement = entry.Enhancement,
+                                EnhanceFailStreak = entry.EnhanceFailStreak,
+                            }
                         );
                     }
                 }
@@ -488,15 +498,23 @@ namespace Tempt
             {
                 WeaponId = equipment?.Weapon?.Data != null ? equipment.Weapon.Data.Id : 0,
                 WeaponEnhancement = equipment?.Weapon != null ? equipment.Weapon.Enhancement : 0,
+                WeaponEnhanceFailStreak =
+                    equipment?.Weapon != null ? equipment.Weapon.EnhanceFailStreak : 0,
                 ArmorBodyId = equipment?.ArmorBody?.Data != null ? equipment.ArmorBody.Data.Id : 0,
                 ArmorBodyEnhancement =
                     equipment?.ArmorBody != null ? equipment.ArmorBody.Enhancement : 0,
+                ArmorBodyEnhanceFailStreak =
+                    equipment?.ArmorBody != null ? equipment.ArmorBody.EnhanceFailStreak : 0,
                 ArmorArmsId = equipment?.ArmorArms?.Data != null ? equipment.ArmorArms.Data.Id : 0,
                 ArmorArmsEnhancement =
                     equipment?.ArmorArms != null ? equipment.ArmorArms.Enhancement : 0,
+                ArmorArmsEnhanceFailStreak =
+                    equipment?.ArmorArms != null ? equipment.ArmorArms.EnhanceFailStreak : 0,
                 ArmorLegsId = equipment?.ArmorLegs?.Data != null ? equipment.ArmorLegs.Data.Id : 0,
                 ArmorLegsEnhancement =
                     equipment?.ArmorLegs != null ? equipment.ArmorLegs.Enhancement : 0,
+                ArmorLegsEnhanceFailStreak =
+                    equipment?.ArmorLegs != null ? equipment.ArmorLegs.EnhanceFailStreak : 0,
             };
         }
 
@@ -508,20 +526,28 @@ namespace Tempt
                 return equipment;
             }
 
-            equipment.Weapon = CreateItem(snapshot.WeaponId, snapshot.WeaponEnhancement, data);
+            equipment.Weapon = CreateItem(
+                snapshot.WeaponId,
+                snapshot.WeaponEnhancement,
+                snapshot.WeaponEnhanceFailStreak,
+                data
+            );
             equipment.ArmorBody = CreateItem(
                 snapshot.ArmorBodyId,
                 snapshot.ArmorBodyEnhancement,
+                snapshot.ArmorBodyEnhanceFailStreak,
                 data
             );
             equipment.ArmorArms = CreateItem(
                 snapshot.ArmorArmsId,
                 snapshot.ArmorArmsEnhancement,
+                snapshot.ArmorArmsEnhanceFailStreak,
                 data
             );
             equipment.ArmorLegs = CreateItem(
                 snapshot.ArmorLegsId,
                 snapshot.ArmorLegsEnhancement,
+                snapshot.ArmorLegsEnhanceFailStreak,
                 data
             );
             return equipment;
@@ -552,7 +578,12 @@ namespace Tempt
                 if (item?.Data != null)
                 {
                     snapshot.EquipItems.Add(
-                        new EquipItemEntry { ItemId = item.Data.Id, Enhancement = item.Enhancement }
+                        new EquipItemEntry
+                        {
+                            ItemId = item.Data.Id,
+                            Enhancement = item.Enhancement,
+                            EnhanceFailStreak = item.EnhanceFailStreak,
+                        }
                     );
                 }
             }
@@ -581,7 +612,12 @@ namespace Tempt
             {
                 foreach (EquipItemEntry entry in snapshot.EquipItems)
                 {
-                    Item item = CreateItem(entry.ItemId, entry.Enhancement, data);
+                    Item item = CreateItem(
+                        entry.ItemId,
+                        entry.Enhancement,
+                        entry.EnhanceFailStreak,
+                        data
+                    );
                     if (item != null)
                     {
                         locker.EquipItems.Add(item);
@@ -592,7 +628,12 @@ namespace Tempt
             return locker;
         }
 
-        private static Item CreateItem(int itemId, int enhancement, DataManager data)
+        private static Item CreateItem(
+            int itemId,
+            int enhancement,
+            int enhanceFailStreak,
+            DataManager data
+        )
         {
             if (
                 itemId == 0
@@ -603,7 +644,12 @@ namespace Tempt
                 return null;
             }
 
-            return new Item { Data = itemData, Enhancement = enhancement };
+            return new Item
+            {
+                Data = itemData,
+                Enhancement = enhancement,
+                EnhanceFailStreak = enhanceFailStreak,
+            };
         }
 
         private static RosterSnapshot FromRoster(CompanionRosterState roster)
@@ -1017,6 +1063,9 @@ namespace Tempt
 
         /// <summary>강화 단계(0=기본).</summary>
         public int Enhancement;
+
+        /// <summary>연속 강화 실패 횟수.</summary>
+        public int EnhanceFailStreak;
     }
 
     /// <summary>장착 슬롯 직렬화(강화 단계 포함).</summary>
@@ -1029,11 +1078,17 @@ namespace Tempt
         /// <summary>무기 강화 단계.</summary>
         public int WeaponEnhancement;
 
+        /// <summary>무기 연속 강화 실패 횟수.</summary>
+        public int WeaponEnhanceFailStreak;
+
         /// <summary>방어구(몸통) ID.</summary>
         public int ArmorBodyId;
 
         /// <summary>방어구(몸통) 강화 단계.</summary>
         public int ArmorBodyEnhancement;
+
+        /// <summary>방어구(몸통) 연속 강화 실패 횟수.</summary>
+        public int ArmorBodyEnhanceFailStreak;
 
         /// <summary>방어구(팔) ID.</summary>
         public int ArmorArmsId;
@@ -1041,11 +1096,17 @@ namespace Tempt
         /// <summary>방어구(팔) 강화 단계.</summary>
         public int ArmorArmsEnhancement;
 
+        /// <summary>방어구(팔) 연속 강화 실패 횟수.</summary>
+        public int ArmorArmsEnhanceFailStreak;
+
         /// <summary>방어구(다리) ID.</summary>
         public int ArmorLegsId;
 
         /// <summary>방어구(다리) 강화 단계.</summary>
         public int ArmorLegsEnhancement;
+
+        /// <summary>방어구(다리) 연속 강화 실패 횟수.</summary>
+        public int ArmorLegsEnhanceFailStreak;
     }
 
     /// <summary>보관함 직렬화.</summary>

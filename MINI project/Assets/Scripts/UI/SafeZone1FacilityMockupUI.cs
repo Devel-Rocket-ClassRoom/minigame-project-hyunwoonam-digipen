@@ -92,6 +92,7 @@ namespace Tempt
         private TextMeshProUGUI guildPrimaryButtonLabel;
         private TextMeshProUGUI guildSlot2ButtonLabel;
         private ShrineRuneController shrineRuneController;
+        private ForgeEnhanceController forgeEnhanceController;
         private ShopMode currentShopMode = ShopMode.Buy;
         private ShopStockEntry selectedBuyStock;
         private ShopSellEntry selectedSellEntry;
@@ -219,6 +220,11 @@ namespace Tempt
             {
                 shrineRuneController?.ShowTab(index);
             }
+
+            if (facility == "FORGE")
+            {
+                forgeEnhanceController?.Refresh();
+            }
         }
 
         private void CacheHierarchy()
@@ -261,6 +267,7 @@ namespace Tempt
 
             CacheShopHierarchy();
             CacheGuildHierarchy();
+            CacheForgeHierarchy();
             CacheShrineHierarchy();
         }
 
@@ -374,6 +381,30 @@ namespace Tempt
                     true
                 );
             }
+        }
+
+        private void CacheForgeHierarchy()
+        {
+            forgeEnhanceController = null;
+            if (!facilityGroups.TryGetValue("FORGE", out GameObject forgeGroup))
+            {
+                return;
+            }
+
+            forgeEnhanceController = forgeGroup.GetComponent<ForgeEnhanceController>();
+            if (forgeEnhanceController == null)
+            {
+                forgeEnhanceController = forgeGroup.GetComponentInChildren<ForgeEnhanceController>(
+                    true
+                );
+            }
+
+            if (forgeEnhanceController == null)
+            {
+                forgeEnhanceController = forgeGroup.AddComponent<ForgeEnhanceController>();
+            }
+
+            forgeEnhanceController.Initialize();
         }
 
         private void WireButtons()
