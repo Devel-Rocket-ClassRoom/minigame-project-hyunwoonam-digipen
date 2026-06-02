@@ -93,6 +93,8 @@ namespace Tempt
         private TextMeshProUGUI guildSlot2ButtonLabel;
         private ShrineRuneController shrineRuneController;
         private ForgeEnhanceController forgeEnhanceController;
+        private TavernRecruitmentController tavernRecruitmentController;
+        private GuildPartyController guildPartyController;
         private ShopMode currentShopMode = ShopMode.Buy;
         private ShopStockEntry selectedBuyStock;
         private ShopSellEntry selectedSellEntry;
@@ -216,6 +218,16 @@ namespace Tempt
                 RefreshGuildSkillPanel();
             }
 
+            if (facility == "GUILD" && index == 0)
+            {
+                guildPartyController?.Refresh();
+            }
+
+            if (facility == "TAVERN")
+            {
+                tavernRecruitmentController?.Refresh();
+            }
+
             if (facility == "SHRINE")
             {
                 shrineRuneController?.ShowTab(index);
@@ -269,6 +281,8 @@ namespace Tempt
             CacheGuildHierarchy();
             CacheForgeHierarchy();
             CacheShrineHierarchy();
+            CacheTavernHierarchy();
+            CacheGuildPartyHierarchy();
         }
 
         private void CacheShopHierarchy()
@@ -392,19 +406,28 @@ namespace Tempt
             }
 
             forgeEnhanceController = forgeGroup.GetComponent<ForgeEnhanceController>();
-            if (forgeEnhanceController == null)
+        }
+
+        private void CacheTavernHierarchy()
+        {
+            tavernRecruitmentController = null;
+            if (!facilityGroups.TryGetValue("TAVERN", out GameObject tavernGroup))
             {
-                forgeEnhanceController = forgeGroup.GetComponentInChildren<ForgeEnhanceController>(
-                    true
-                );
+                return;
             }
 
-            if (forgeEnhanceController == null)
+            tavernRecruitmentController = tavernGroup.GetComponent<TavernRecruitmentController>();
+        }
+
+        private void CacheGuildPartyHierarchy()
+        {
+            guildPartyController = null;
+            if (!facilityGroups.TryGetValue("GUILD", out GameObject guildGroup))
             {
-                forgeEnhanceController = forgeGroup.AddComponent<ForgeEnhanceController>();
+                return;
             }
 
-            forgeEnhanceController.Initialize();
+            guildPartyController = guildGroup.GetComponent<GuildPartyController>();
         }
 
         private void WireButtons()

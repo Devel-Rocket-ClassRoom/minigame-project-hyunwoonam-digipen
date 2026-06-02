@@ -1,1 +1,5 @@
 Id,NameKey,DescKey,RequiredFloor,RecruitPrice,ClassId,BaseStats_HP,BaseStats_MP,BaseStats_ATK,BaseStats_DEF,BaseStats_SPD,StatGrowth_HP,StatGrowth_MP,StatGrowth_ATK,StatGrowth_DEF,StatGrowth_SPD,RuneNodePool,RuneTreeLength,PrefabKey,ActionRuleKey
+1,companion.kael,companion.kael.desc,0,25,Dealer,70,10,12,3,11,6,1,1,0,1,,8,,Dealer
+2,companion.lyra,companion.lyra.desc,0,25,Supporter,80,15,6,3,9,5,2,0,1,0,,8,,Supporter
+3,companion.merrick,companion.merrick.desc,8,35,MagicDealer,65,20,8,2,10,4,2,1,0,1,,8,,MagicDealer
+4,companion.sister_elyn,companion.sister_elyn.desc,8,35,Tanker,100,10,8,6,8,8,1,0,1,1,,8,,Tanker

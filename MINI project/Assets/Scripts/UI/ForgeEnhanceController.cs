@@ -29,19 +29,43 @@ namespace Tempt
         private readonly List<TextMeshProUGUI> currentCardLines = new List<TextMeshProUGUI>();
         private readonly List<TextMeshProUGUI> nextCardLines = new List<TextMeshProUGUI>();
 
+        [SerializeField]
         private Transform rowsRoot;
+
+        [SerializeField]
         private Transform currentCard;
+
+        [SerializeField]
         private Transform nextCard;
+
+        [SerializeField]
         private Button enhanceButton;
+
+        [SerializeField]
         private TextMeshProUGUI enhanceButtonLabel;
+
+        [SerializeField]
         private TextMeshProUGUI priceText;
         private Color priceBaseColor = Color.white;
         private Item selectedItem;
         private string lastResultMessage = string.Empty;
-        private bool initialized;
 
         private readonly Color selectedRowColor = new Color(0.42f, 0.30f, 0.08f, 0.92f);
         private readonly Color disabledPriceColor = new Color(1f, 0.20f, 0.27f, 1f);
+
+        private void Awake()
+        {
+            if (!ValidateReferences())
+            {
+                enabled = false;
+                return;
+            }
+
+            priceBaseColor = priceText.color;
+            CacheRows();
+            CacheCardLines(currentCard, currentCardLines);
+            CacheCardLines(nextCard, nextCardLines);
+        }
 
         private void OnEnable()
         {
@@ -54,64 +78,13 @@ namespace Tempt
             UnsubscribeEvents();
         }
 
-        public void Initialize()
+        public void Refresh()
         {
-            if (initialized)
+            if (!enabled)
             {
                 return;
             }
 
-            rowsRoot = FindFirst(
-                "MiddleContentArea/Content_ENHANCE/LeftColumn/EQUIPMENT_Section/EQUIPMENT_ScrollView/Viewport/Rows",
-                "MiddleContentArea/Content_EQUIPMENT/LeftColumn/EQUIPMENT_Section/EQUIPMENT_ScrollView/Viewport/Rows",
-                "MiddleContentArea/Content_EQUIPMENT/EQUIPMENT_ScrollView/Viewport/Rows"
-            );
-            currentCard = FindFirst(
-                "MiddleContentArea/Content_ENHANCE/RightColumn/ENHANCEMENT_PREVIEW_Section/Body/ComparisonColumns/EnhanceCard_CURRENT",
-                "MiddleContentArea/Content_EQUIPMENT/RightColumn/ComparisonColumns/EnhanceCard_CURRENT"
-            );
-            nextCard = FindFirst(
-                "MiddleContentArea/Content_ENHANCE/RightColumn/ENHANCEMENT_PREVIEW_Section/Body/ComparisonColumns/EnhanceCard_NEXT",
-                "MiddleContentArea/Content_EQUIPMENT/RightColumn/ComparisonColumns/EnhanceCard_NEXT"
-            );
-
-            Transform buttonTransform = FindFirst(
-                "MiddleContentArea/Content_ENHANCE/RightColumn/ENHANCEMENT_PREVIEW_Section/Body/PrimaryButton_ENHANCE",
-                "MiddleContentArea/Content_EQUIPMENT/RightColumn/PrimaryButton_ENHANCE"
-            );
-            if (buttonTransform != null)
-            {
-                enhanceButton = buttonTransform.GetComponent<Button>();
-                if (enhanceButton == null)
-                {
-                    enhanceButton = buttonTransform.gameObject.AddComponent<Button>();
-                }
-
-                enhanceButtonLabel = buttonTransform.GetComponentInChildren<TextMeshProUGUI>(true);
-            }
-
-            Transform priceTransform = FindFirst(
-                "MiddleContentArea/Content_ENHANCE/RightColumn/ENHANCEMENT_PREVIEW_Section/Body/ShowPrice",
-                "MiddleContentArea/Content_EQUIPMENT/RightColumn/ShowPrice"
-            );
-            priceText =
-                priceTransform != null
-                    ? priceTransform.GetComponentInChildren<TextMeshProUGUI>(true)
-                    : null;
-            if (priceText != null)
-            {
-                priceBaseColor = priceText.color;
-            }
-
-            CacheRows();
-            CacheCardLines(currentCard, currentCardLines);
-            CacheCardLines(nextCard, nextCardLines);
-            initialized = true;
-        }
-
-        public void Refresh()
-        {
-            Initialize();
             if (!TryGetRunData(out GameRunState run, out DataManager data))
             {
                 ClearPanel();
@@ -207,13 +180,7 @@ namespace Tempt
                 return;
             }
 
-            entries.Add(
-                new ForgeItemEntry
-                {
-                    Item = item,
-                    SourceLabel = sourceLabel,
-                }
-            );
+            entries.Add(new ForgeItemEntry { Item = item, SourceLabel = sourceLabel });
         }
 
         private void RefreshRows()
@@ -257,8 +224,22 @@ namespace Tempt
         {
             if (selectedItem == null)
             {
-                SetCardLines(currentCardLines, "CURRENT", "No equipment", string.Empty, string.Empty, string.Empty);
-                SetCardLines(nextCardLines, "NEXT", "Select equipment", string.Empty, string.Empty, string.Empty);
+                SetCardLines(
+                    currentCardLines,
+                    "CURRENT",
+                    "No equipment",
+                    string.Empty,
+                    string.Empty,
+                    string.Empty
+                );
+                SetCardLines(
+                    nextCardLines,
+                    "NEXT",
+                    "Select equipment",
+                    string.Empty,
+                    string.Empty,
+                    string.Empty
+                );
                 ConfigureEnhanceButton(false, null);
                 SetPriceText("-");
                 return;
@@ -292,7 +273,10 @@ namespace Tempt
             ConfigureEnhanceButton(canEnhance, () => Forge.TryEnhance(selectedItem, run, data));
         }
 
-        private void ConfigureEnhanceButton(bool interactable, UnityEngine.Events.UnityAction action)
+        private void ConfigureEnhanceButton(
+            bool interactable,
+            UnityEngine.Events.UnityAction action
+        )
         {
             if (enhanceButton == null)
             {
@@ -330,20 +314,48 @@ namespace Tempt
                 rows[i].Root.SetActive(false);
             }
 
-            SetCardLines(currentCardLines, "CURRENT", string.Empty, string.Empty, string.Empty, string.Empty);
-            SetCardLines(nextCardLines, "NEXT", string.Empty, string.Empty, string.Empty, string.Empty);
+            SetCardLines(
+                currentCardLines,
+                "CURRENT",
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty
+            );
+            SetCardLines(
+                nextCardLines,
+                "NEXT",
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty
+            );
             SetPriceText("-");
             ConfigureEnhanceButton(false, null);
+        }
+
+        private bool ValidateReferences()
+        {
+            bool valid =
+                rowsRoot != null
+                && currentCard != null
+                && nextCard != null
+                && enhanceButton != null
+                && enhanceButtonLabel != null
+                && priceText != null;
+            if (!valid)
+            {
+                Debug.LogError(
+                    "[ForgeEnhanceController] 필수 UI 참조가 Inspector 에 직접 할당되어 있지 않습니다."
+                );
+            }
+
+            return valid;
         }
 
         private void CacheRows()
         {
             rows.Clear();
-            if (rowsRoot == null)
-            {
-                Debug.LogError("[ForgeEnhanceController] 장비 목록 Rows 경로를 찾을 수 없습니다.");
-                return;
-            }
 
             for (int i = 0; i < rowsRoot.childCount; i++)
             {
@@ -388,11 +400,7 @@ namespace Tempt
 
             button.targetGraphic = background;
 
-            TextMeshProUGUI label = FindChildText(row, "Text");
-            if (label == null)
-            {
-                label = row.GetComponentInChildren<TextMeshProUGUI>(true);
-            }
+            TextMeshProUGUI label = row.GetComponentInChildren<TextMeshProUGUI>(true);
 
             return new ForgeRowView
             {
@@ -433,26 +441,6 @@ namespace Tempt
             {
                 lines[i].text = i < values.Length ? values[i] : string.Empty;
             }
-        }
-
-        private Transform FindFirst(params string[] paths)
-        {
-            for (int i = 0; i < paths.Length; i++)
-            {
-                Transform found = transform.Find(paths[i]);
-                if (found != null)
-                {
-                    return found;
-                }
-            }
-
-            return null;
-        }
-
-        private static TextMeshProUGUI FindChildText(Transform root, string childName)
-        {
-            Transform child = root != null ? root.Find(childName) : null;
-            return child != null ? child.GetComponentInChildren<TextMeshProUGUI>(true) : null;
         }
 
         private static bool TryGetRunData(out GameRunState run, out DataManager data)
