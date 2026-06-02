@@ -176,6 +176,7 @@ namespace Tempt
 
             CurrentRun.Gold = 0;
             CurrentRun.ManaStone = 0;
+            CurrentRun.InitializeMineState();
             CurrentRun.Tutorial = new TutorialProgressState();
 
             AttachErosionToCurrentRun();
@@ -912,8 +913,50 @@ namespace Tempt
         /// <summary>마석 잔액.</summary>
         public int ManaStone;
 
+        /// <summary>광산 활성 상태(Safe3~5, 인덱스 = SafeIndex - 3).</summary>
+        public bool[] MineActivated;
+
+        /// <summary>광산별 미수령 누적 골드(Safe3~5, 인덱스 = SafeIndex - 3).</summary>
+        public int[] MineStored;
+
+        /// <summary>광산별 마지막 일일 적립 일자(Safe3~5, 인덱스 = SafeIndex - 3).</summary>
+        public int[] LastMineGainDay;
+
         /// <summary>튜토리얼 진행 플래그.</summary>
         public TutorialProgressState Tutorial;
+
+        public void InitializeMineState()
+        {
+            EnsureMineState();
+            for (int i = 0; i < 3; i++)
+            {
+                MineActivated[i] = false;
+                MineStored[i] = 0;
+                LastMineGainDay[i] = -1;
+            }
+        }
+
+        public void EnsureMineState()
+        {
+            if (MineActivated == null || MineActivated.Length != 3)
+            {
+                MineActivated = new bool[3];
+            }
+
+            if (MineStored == null || MineStored.Length != 3)
+            {
+                MineStored = new int[3];
+            }
+
+            if (LastMineGainDay == null || LastMineGainDay.Length != 3)
+            {
+                LastMineGainDay = new int[3];
+                for (int i = 0; i < LastMineGainDay.Length; i++)
+                {
+                    LastMineGainDay[i] = -1;
+                }
+            }
+        }
     }
 
     /// <summary>
