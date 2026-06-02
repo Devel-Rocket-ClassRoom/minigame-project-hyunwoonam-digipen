@@ -12,6 +12,9 @@ namespace Tempt
         /// <summary>강화 단계(장비 한정, 0=기본).</summary>
         public int Enhancement;
 
+        /// <summary>연속 강화 실패 횟수. 천장 성공 계산에 사용하고 성공 시 0으로 초기화된다.</summary>
+        public int EnhanceFailStreak;
+
         /// <summary>
         /// 강화 적용 후 최종 보정 스탯 반환(장비 한정).
         /// </summary>

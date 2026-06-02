@@ -64,6 +64,18 @@ namespace Tempt
             return UnequipCore(player.Inventory, player.Equipment, slot, () => RecalcStateStats(player));
         }
 
+        /// <summary>런 상태(PlayerState)의 장비/룬 스탯 보정을 다시 계산한다.</summary>
+        public static void RecalculateStats(PlayerState player)
+        {
+            if (player == null)
+            {
+                UnityEngine.Debug.LogError("[EquipFlow.RecalculateStats] PlayerState 참조가 없습니다.");
+                return;
+            }
+
+            RecalcStateStats(player);
+        }
+
         private static bool EquipCore(InventoryState inventory, EquipmentSlots equipment, Item item, System.Action recalc)
         {
             if (IsCombatScene())

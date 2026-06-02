@@ -44,6 +44,9 @@ namespace Tempt
         /// <summary>장비 변경.</summary>
         public event Action OnEquipmentChanged;
 
+        /// <summary>강화 시도 결과.</summary>
+        public event Action<EnhanceResult> OnEnhanceResult;
+
         // Guid3 §9.E 2026-05-27: 길드 시스템의 보유 스킬 / ActiveSlotSkillIds 변경 이벤트.
         /// <summary>보유 스킬 풀 또는 ActiveSlotSkillIds 변경.</summary>
         public event Action OnSkillsChanged;
@@ -144,6 +147,12 @@ namespace Tempt
         {
             // 동작 요약: OnEquipmentChanged?.Invoke().
             OnEquipmentChanged?.Invoke();
+        }
+
+        /// <summary>강화 결과 발행.</summary>
+        public void RaiseEnhanceResult(EnhanceResult result)
+        {
+            OnEnhanceResult?.Invoke(result);
         }
 
         // Guid3 §9.E 2026-05-27: 보유 스킬 / ActiveSlotSkillIds 변경 발행.
