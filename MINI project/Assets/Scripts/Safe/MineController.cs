@@ -1,7 +1,15 @@
 namespace Tempt
 {
+    using UnityEngine;
+
+    /// <summary>
+    /// Safe3~5 광산 컨트롤러. 골드 기반 활성화, 일일 적립, 수령을 담당한다.
+    /// </summary>
     public sealed class MineController : SafeZoneControllerBase
     {
+        [SerializeField]
+        private MineUI mineUI;
+
         protected override void Awake()
         {
             base.Awake();
@@ -15,15 +23,171 @@ namespace Tempt
                 return;
             }
 
-            int gainIndex = SafeIndex - 3;
-            if (gsm.Data?.Balance?.MineDailyGain == null || gainIndex < 0 || gainIndex >= gsm.Data.Balance.MineDailyGain.Count)
+            EnsureMineState(gsm.CurrentRun);
+            AccumulateDailyGain(gsm);
+            mineUI?.Refresh();
+        }
+
+        public int MineIndex => SafeIndex - 3;
+
+        public bool IsActivated
+        {
+            get
+            {
+                if (!TryGetRun(out GameRunState run))
+                {
+                    return false;
+                }
+
+                int index = MineIndex;
+                return IsValidMineIndex(index) && run.MineActivated[index];
+            }
+        }
+
+        public int GetStoredGold()
+        {
+            if (!TryGetRun(out GameRunState run))
+            {
+                return 0;
+            }
+
+            int index = MineIndex;
+            return IsValidMineIndex(index) ? run.MineStored[index] : 0;
+        }
+
+        public int GetDailyGain()
+        {
+            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                return 0;
+            }
+
+            int index = MineIndex;
+            if (!IsValidMineIndex(index) || gsm.Data?.Balance?.MineDailyGain == null || index >= gsm.Data.Balance.MineDailyGain.Count)
+            {
+                return 0;
+            }
+
+            return System.Math.Max(0, gsm.Data.Balance.MineDailyGain[index]);
+        }
+
+        public int GetActivationCost()
+        {
+            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                return 0;
+            }
+
+            BalanceData balance = gsm.Data?.Balance;
+            if (balance == null)
+            {
+                Debug.LogError("[MineController] BalanceData 참조가 없습니다.");
+                return 0;
+            }
+
+            float inflation = 1f + Mathf.Max(0f, balance.InflationCoef) * Mathf.Max(0, MineIndex);
+            return Mathf.Max(1, Mathf.CeilToInt(balance.MineActivationCost * inflation));
+        }
+
+        public bool CanActivate()
+        {
+            if (!TryGetRun(out GameRunState run))
+            {
+                return false;
+            }
+
+            int index = MineIndex;
+            return IsValidMineIndex(index) && !run.MineActivated[index] && run.Gold >= GetActivationCost();
+        }
+
+        public bool TryActivateMine()
+        {
+            if (!CanActivate())
+            {
+                return false;
+            }
+
+            GameSystemManager gsm = GameSystemManager.Instance;
+            int index = MineIndex;
+            int cost = GetActivationCost();
+            gsm.CurrentRun.Gold -= cost;
+            gsm.CurrentRun.MineActivated[index] = true;
+            gsm.Events?.RaiseGoldChanged(gsm.CurrentRun.Gold);
+            AccumulateDailyGain(gsm);
+            gsm.Save?.SaveSnapshot();
+            mineUI?.Refresh();
+            return true;
+        }
+
+        public bool TryCollectStoredGold()
+        {
+            if (!TryGetRun(out GameRunState run))
+            {
+                return false;
+            }
+
+            int index = MineIndex;
+            if (!IsValidMineIndex(index) || run.MineStored[index] <= 0)
+            {
+                return false;
+            }
+
+            int amount = run.MineStored[index];
+            run.Gold += amount;
+            run.MineStored[index] = 0;
+            GameSystemManager gsm = GameSystemManager.Instance;
+            gsm.Events?.RaiseGoldChanged(run.Gold);
+            gsm.Save?.SaveSnapshot();
+            mineUI?.Refresh();
+            return true;
+        }
+
+        private void AccumulateDailyGain(GameSystemManager gsm)
+        {
+            if (gsm?.CurrentRun == null)
             {
                 return;
             }
 
-            int gain = System.Math.Max(0, gsm.Data.Balance.MineDailyGain[gainIndex]);
-            gsm.CurrentRun.ManaStone += gain;
+            GameRunState run = gsm.CurrentRun;
+            int index = MineIndex;
+            if (!IsValidMineIndex(index))
+            {
+                return;
+            }
+
+            EnsureMineState(run);
+            if (!run.MineActivated[index] || run.LastMineGainDay[index] >= run.CurrentDay)
+            {
+                return;
+            }
+
+            run.MineStored[index] += GetDailyGain();
+            run.LastMineGainDay[index] = run.CurrentDay;
             gsm.Save?.SaveSnapshot();
+        }
+
+        private static void EnsureMineState(GameRunState run)
+        {
+            run?.EnsureMineState();
+        }
+
+        private static bool IsValidMineIndex(int index)
+        {
+            return index >= 0 && index < 3;
+        }
+
+        private static bool TryGetRun(out GameRunState run)
+        {
+            run = null;
+            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.CurrentRun == null)
+            {
+                return false;
+            }
+
+            run = gsm.CurrentRun;
+            run.EnsureMineState();
+            return true;
         }
 
         private static int ResolveSafeIndexFromScene()
