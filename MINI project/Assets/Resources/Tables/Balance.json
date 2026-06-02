@@ -33,6 +33,7 @@
     2,
     3
   ],
+  "MineActivationCost": 1,
   "ErosionAltarReduction": 10.0,
   "ErosionAltarCost": 3,
   "MinActionTimeSec": 0.1,

@@ -47,13 +47,16 @@ namespace Tempt
         /// <summary>이 횟수만큼 연속 실패하면 다음 강화가 확정 성공한다.</summary>
         public int EnhancePityFailCount;
 
-        /// <summary>광산 단계별 일일 마석 지급량(SafeZone 3~5).</summary>
+        /// <summary>광산 단계별 일일 골드 지급량(SafeZone 3~5).</summary>
         public List<int> MineDailyGain;
+
+        /// <summary>광산 활성화 기본 골드 비용.</summary>
+        public int MineActivationCost;
 
         /// <summary>성소 1회 사용 시 침식률 차감량.</summary>
         public float ErosionAltarReduction;
 
-        /// <summary>성소 사용 마석 비용.</summary>
+        /// <summary>성소 정화 골드 비용.</summary>
         public int ErosionAltarCost;
 
         /// <summary>행동 타이밍 기본 최소(초).</summary>

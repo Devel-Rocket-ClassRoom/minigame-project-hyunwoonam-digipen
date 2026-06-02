@@ -969,6 +969,7 @@ namespace Tempt
                 EnhanceMinSuccessRate = 0.2f,
                 EnhancePityFailCount = 5,
                 MineDailyGain = new List<int> { 1, 2, 3 },
+                MineActivationCost = 1,
                 ErosionAltarReduction = 10f,
                 ErosionAltarCost = 3,
                 MinActionTimeSec = 0.1f,
