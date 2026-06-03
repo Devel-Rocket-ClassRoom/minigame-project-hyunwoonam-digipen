@@ -1,0 +1,38 @@
+{
+    "asset": "6fa42961960a5aa41ba005ecd06388ec",
+    "fileName": "019e8e08-d212-75be-9d98-39016bb91cf8.png",
+    "prompt": "A simple stone tombstone, clean design with no text or carvings. Weathered and mossy stone texture. Front-facing view. Dark fantasy, painterly art style matching the somber and moody atmosphere of the provided reference. Golden highlights on stone edges. Isolated on a simple neutral background.",
+    "negativePrompt": "",
+    "model": "gemini-3.1-flash",
+    "modelName": "Gemini 3.1 Nano Banana 2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "25b15c25187b4394cbb16ae5d35c07e4",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}

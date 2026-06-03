@@ -37,8 +37,9 @@ namespace Tempt
                 return 0;
             }
 
-            float inflation = 1f + Mathf.Max(0f, balance.InflationCoef) * Mathf.Max(0, stageIndex - 1);
-            return Mathf.Max(1, Mathf.CeilToInt(balance.ErosionAltarCost * inflation));
+            // 설계 §3.6: 단계별 인플레이션 가중. PurifyCost(n) = Ceil(ErosionAltarCost * (1 + InflationCoef * (n - 1)))
+            float cost = balance.ErosionAltarCost * (1f + balance.InflationCoef * (stageIndex - 1));
+            return Mathf.Max(1, Mathf.CeilToInt(cost));
         }
 
         public bool CanPurify(int stageIndex)

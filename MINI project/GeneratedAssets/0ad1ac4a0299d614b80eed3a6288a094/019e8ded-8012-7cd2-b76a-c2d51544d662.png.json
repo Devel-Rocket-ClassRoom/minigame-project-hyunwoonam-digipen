@@ -1,0 +1,38 @@
+{
+    "asset": "0ad1ac4a0299d614b80eed3a6288a094",
+    "fileName": "019e8ded-8012-7cd2-b76a-c2d51544d662.png",
+    "prompt": "A monolithic black stone stele, ancient and weathered, rising from dark shallow water. Faint glowing blue runes etched on the surface. Dark fantasy, gritty texture, high contrast, hand-painted art style. Darkest Dungeon inspired. Golden highlights on stone edges. Atmospheric cinematic lighting. Matching the dark somber mood of the reference background. Isolated on a simple background for easy removal.",
+    "negativePrompt": "",
+    "model": "gemini-3.1-flash",
+    "modelName": "Gemini 3.1 Nano Banana 2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "25b15c25187b4394cbb16ae5d35c07e4",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}

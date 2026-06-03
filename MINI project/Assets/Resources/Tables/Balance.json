@@ -35,7 +35,7 @@
   ],
   "MineActivationCost": 1,
   "ErosionAltarReduction": 10.0,
-  "ErosionAltarCost": 3,
+  "ErosionAltarCost": 1,
   "MinActionTimeSec": 0.1,
   "RuneResetRefundRate": 0.8,
   "RuneResetCostGold": 1,

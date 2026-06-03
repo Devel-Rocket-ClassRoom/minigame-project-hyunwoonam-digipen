@@ -66,16 +66,51 @@ Balance:
 프로젝트 파일:
 - `Assembly-CSharp.csproj`에 신규 스크립트 Include를 추가했다.
 
+2026-06-04 추가 UI 연결:
+- Safe2 `Canvas_SafeZone2` 중앙에 실제 씬 오브젝트 `OpenSanctuaryButton`을 추가했다.
+  - 클릭 시 `Facility_SANCTUARY.SetActive(true)`가 실행되도록 영구 이벤트를 연결했다.
+- Safe3~5 각 `Canvas_SafeZone3/4/5` 중앙에 실제 씬 오브젝트 `OpenMineButton`을 추가했다.
+  - 클릭 시 각 씬의 `MainPanel.SetActive(true)`가 실행되도록 영구 이벤트를 연결했다.
+- `SanctuaryUI.ClosePanel()`과 `MineUI.ClosePanel()`을 추가해 내부 닫기/취소 버튼이 전체 패널을 닫도록 정리했다.
+- 버튼 배치용 임시 Editor 스크립트 `Assets/Editor/PlaceSafeFacilityButtonsOnce.cs`는 최종 산출물에 남기지 않고 삭제했다.
+
+2026-06-04 추가 연결 보강:
+- `.claude/CLAUDE.md` 지침과 성소/광산 설계 문서를 재확인했다.
+- `SanctuaryUI`의 `SummaryValues` 바인딩을 단순 순서 의존에서 `ValueRow`의 `Label`/행 이름 기반 매칭 + 순서 fallback 방식으로 보강했다.
+- `MineUI`의 `StatGrid`와 `CollectionSummaryValues` 바인딩을 `Label`/행 이름 기반 매칭 + 순서 fallback 방식으로 보강했다.
+- Safe2~5 중앙 패널 열기 버튼의 Canvas sibling 순서를 대상 패널보다 앞쪽으로 이동해, 패널이 열릴 때 버튼이 패널 앞을 가리지 않게 했다.
+
+2026-06-04 비용 임시 조정:
+- 사용자 지시에 따라 성소 정화 비용과 광산 활성화 비용을 모두 임시 `1`로 고정했다.
+- `Balance.json`과 `DataManager.BuildFallbackBalance()`의 `ErosionAltarCost`를 `1`로 변경했다.
+- `SanctuaryController.GetPurifyCost()`와 `MineController.GetActivationCost()`는 해당 비용에 인플레이션을 적용하지 않고 기본 비용 `1`을 그대로 사용한다.
+
+2026-06-04 UI 클릭/바인딩 차단 원인 수정:
+- Safe2 `STAGE 1~6_Card` 루트에 `Button` 컴포넌트가 없어 `SanctuaryUI`가 초기화 중 실패하고 카드 클릭/값 갱신/RightColumn 갱신이 모두 중단되는 문제를 확인했다.
+- Safe2 `STAGE 1~6_Card`에 실제 Unity UI `Button` 컴포넌트를 추가하고 카드 루트 `Image`를 `targetGraphic`으로 연결했다.
+- Safe3~5 `Btn_CollectGold`, `Btn_Close`에 `Button` 컴포넌트가 없어 `MineUI`의 수령/닫기 와이어가 불완전한 문제를 확인했다.
+- Safe3~5 `Btn_CollectGold`, `Btn_Close`에 실제 Unity UI `Button` 컴포넌트를 추가하고 각 루트 `Image`를 `targetGraphic`으로 연결했다.
+- 정적 검사로 Safe2 카드 6개, Safe3~5 Activate/Collect/Close/Cancel 버튼 모두 `Button` 컴포넌트를 보유함을 확인했다.
+
 ## 3. 검증 결과
 
 완료:
 - `dotnet build "MINI project\Assembly-CSharp.csproj"` 통과.
   - 경고 0 / 오류 0.
+- 2026-06-04 추가 버튼 작업 후 `dotnet build "MINI project\Assembly-CSharp.csproj"` 재실행 통과.
+  - 경고 0 / 오류 0.
+- 2026-06-04 추가 버튼 작업 대상 `Safe2~5.unity`, `MineUI.cs`, `SanctuaryUI.cs`에 대해 `git diff --check` 통과.
+- Safe2 `OpenSanctuaryButton`, Safe3~5 `OpenMineButton`이 Canvas 자식으로 존재하고 각 대상 패널을 `SetActive(true)`로 여는 YAML 참조를 정적으로 확인했다.
+- 2026-06-04 추가 연결 보강 후 `dotnet build "MINI project\Assembly-CSharp.csproj"` 재실행 통과.
+  - 경고 0 / 오류 0.
+- 2026-06-04 추가 연결 보강 대상 `Safe2~5.unity`, `MineUI.cs`, `SanctuaryUI.cs`에 대해 `git diff --check` 통과.
+- Safe2~5 중앙 열기 버튼이 대상 패널 RectTransform보다 Canvas sibling 순서상 앞에 있어, 패널 활성화 시 패널이 버튼 위에 렌더링됨을 정적으로 확인했다.
 - 성소/광산 관련 C# 파일, Balance 파일, csproj 대상 `git diff --check` 통과.
 - `SaveSnapshot`에서 `MineActivated`, `MineStored`, `LastMineGainDay`가 저장/복원되는 코드 경로를 확인했다.
 - 신규/변경 성소/광산 코드에서 `ManaStone +=`, `RaiseManaStoneChanged`, `OnManaStoneChanged`, 런타임 `AddComponent<...>` fallback 잔존 없음 확인.
 
 미완료 / 제한:
+- Unity MCP HTTP 서버는 응답했으나 Unity 인스턴스 등록이 `0`으로 떨어져 직접 Unity Editor 메뉴 실행 검증은 중단했다. 사용자는 이후 2번 방식, 즉 씬 파일 직접 반영 방식을 지시했다.
 - `csharpier check`는 현재 PATH에서 `csharpier` 명령을 찾지 못해 미수행.
 - `dotnet csharpier check`는 `dotnet-csharpier` 도구가 설치되어 있지 않아 미수행.
 - Safe2~5 씬을 포함한 전체 `git diff --check`는 기존 씬 YAML에 남아 있던 trailing whitespace 때문에 실패했다. 코드/리소스 대상 검사는 통과했다.

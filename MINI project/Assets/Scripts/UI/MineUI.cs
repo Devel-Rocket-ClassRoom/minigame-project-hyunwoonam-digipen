@@ -10,8 +10,15 @@ namespace Tempt
     /// </summary>
     public sealed class MineUI : MonoBehaviour
     {
-        private readonly List<TMP_Text> infoValues = new List<TMP_Text>();
-        private readonly List<TMP_Text> collectionValues = new List<TMP_Text>();
+        private sealed class ValueBinding
+        {
+            public string RowName;
+            public string Label;
+            public TMP_Text Value;
+        }
+
+        private readonly List<ValueBinding> infoValues = new List<ValueBinding>();
+        private readonly List<ValueBinding> collectionValues = new List<ValueBinding>();
 
         [SerializeField]
         private MineController controller;
@@ -82,15 +89,15 @@ namespace Tempt
             SetText(activationCost, activationPrice + " G");
             SetText(storedGoldHero, stored + " G");
 
-            SetInfoValue(0, dailyGain + " G");
-            SetInfoValue(1, stored + " G");
-            SetInfoValue(2, active ? "가동" : "미가동");
-            SetInfoValue(3, "Safe" + controller.SafeIndex);
+            SetInfoValue("daily", 0, dailyGain + " G");
+            SetInfoValue("stored", 1, stored + " G");
+            SetInfoValue("status", 2, active ? "가동" : "미가동");
+            SetInfoValue("safe", 3, "Safe" + controller.SafeIndex);
 
-            SetCollectionValue(0, stored + " G");
-            SetCollectionValue(1, dailyGain + " G");
-            SetCollectionValue(2, active ? "가동 중" : "미가동");
-            SetCollectionValue(3, (run.Gold + stored) + " G");
+            SetCollectionValue("stored", 0, stored + " G");
+            SetCollectionValue("daily", 1, dailyGain + " G");
+            SetCollectionValue("status", 2, active ? "가동 중" : "미가동");
+            SetCollectionValue("after", 3, (run.Gold + stored) + " G");
 
             UpdateGold(run.Gold);
             activateButton.interactable = controller.CanActivate();
@@ -176,14 +183,19 @@ namespace Tempt
             if (activationCancelButton != null)
             {
                 activationCancelButton.onClick.RemoveAllListeners();
-                activationCancelButton.onClick.AddListener(() => activationPanel.SetActive(false));
+                activationCancelButton.onClick.AddListener(ClosePanel);
             }
 
             if (closeButton != null)
             {
                 closeButton.onClick.RemoveAllListeners();
-                closeButton.onClick.AddListener(() => collectionPanel.SetActive(false));
+                closeButton.onClick.AddListener(ClosePanel);
             }
+        }
+
+        public void ClosePanel()
+        {
+            gameObject.SetActive(false);
         }
 
         private void SubscribeEvents()
@@ -217,23 +229,35 @@ namespace Tempt
             SetText(totalGold, gold + " G");
         }
 
-        private void SetInfoValue(int index, string value)
+        private void SetInfoValue(string key, int fallbackIndex, string value)
         {
-            if (index >= 0 && index < infoValues.Count)
+            ValueBinding binding = FindBinding(infoValues, key);
+            if (binding == null && fallbackIndex >= 0 && fallbackIndex < infoValues.Count)
             {
-                infoValues[index].text = value;
+                binding = infoValues[fallbackIndex];
+            }
+
+            if (binding?.Value != null)
+            {
+                binding.Value.text = value;
             }
         }
 
-        private void SetCollectionValue(int index, string value)
+        private void SetCollectionValue(string key, int fallbackIndex, string value)
         {
-            if (index >= 0 && index < collectionValues.Count)
+            ValueBinding binding = FindBinding(collectionValues, key);
+            if (binding == null && fallbackIndex >= 0 && fallbackIndex < collectionValues.Count)
             {
-                collectionValues[index].text = value;
+                binding = collectionValues[fallbackIndex];
+            }
+
+            if (binding?.Value != null)
+            {
+                binding.Value.text = value;
             }
         }
 
-        private static void CacheValues(Transform root, List<TMP_Text> target)
+        private static void CacheValues(Transform root, List<ValueBinding> target)
         {
             target.Clear();
             if (root == null)
@@ -241,13 +265,24 @@ namespace Tempt
                 return;
             }
 
-            TMP_Text[] texts = root.GetComponentsInChildren<TMP_Text>(true);
-            for (int i = 0; i < texts.Length; i++)
+            Transform[] rows = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < rows.Length; i++)
             {
-                if (texts[i] != null && texts[i].name == "Value")
+                TMP_Text value = FindDirectText(rows[i], "Value");
+                if (value == null)
                 {
-                    target.Add(texts[i]);
+                    continue;
                 }
+
+                TMP_Text label = FindDirectText(rows[i], "Label");
+                target.Add(
+                    new ValueBinding
+                    {
+                        RowName = rows[i].name,
+                        Label = label != null ? label.text : string.Empty,
+                        Value = value,
+                    }
+                );
             }
         }
 
@@ -274,6 +309,25 @@ namespace Tempt
         {
             Transform child = FindDescendant(root, childName);
             return child != null ? child.GetComponentInChildren<TMP_Text>(true) : null;
+        }
+
+        private static TMP_Text FindDirectText(Transform root, string childName)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                if (child.name == childName)
+                {
+                    return child.GetComponent<TMP_Text>() ?? child.GetComponentInChildren<TMP_Text>(true);
+                }
+            }
+
+            return null;
         }
 
         private static Button FindButton(Transform root, string childName)
@@ -304,6 +358,45 @@ namespace Tempt
             }
 
             return null;
+        }
+
+        private static ValueBinding FindBinding(List<ValueBinding> bindings, string key)
+        {
+            for (int i = 0; i < bindings.Count; i++)
+            {
+                string rowName = bindings[i].RowName != null ? bindings[i].RowName.ToLowerInvariant() : string.Empty;
+                string label = bindings[i].Label != null ? bindings[i].Label.ToLowerInvariant() : string.Empty;
+                if (MatchesKey(rowName, key) || MatchesKey(label, key))
+                {
+                    return bindings[i];
+                }
+            }
+
+            return null;
+        }
+
+        private static bool MatchesKey(string source, string key)
+        {
+            if (string.IsNullOrEmpty(source))
+            {
+                return false;
+            }
+
+            switch (key)
+            {
+                case "daily":
+                    return source.Contains("daily") || source.Contains("day") || source.Contains("일일");
+                case "stored":
+                    return source.Contains("stored") || source.Contains("storage") || source.Contains("저장");
+                case "status":
+                    return source.Contains("status") || source.Contains("state") || source.Contains("상태");
+                case "safe":
+                    return source.Contains("safe") || source.Contains("zone") || source.Contains("위치");
+                case "after":
+                    return source.Contains("after") || source.Contains("collection") || source.Contains("수령");
+                default:
+                    return false;
+            }
         }
 
         private static void SetText(TMP_Text text, string value)

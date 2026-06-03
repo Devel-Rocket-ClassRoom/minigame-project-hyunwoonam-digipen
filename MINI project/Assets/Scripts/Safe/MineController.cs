@@ -85,8 +85,10 @@ namespace Tempt
                 return 0;
             }
 
-            float inflation = 1f + Mathf.Max(0f, balance.InflationCoef) * Mathf.Max(0, MineIndex);
-            return Mathf.Max(1, Mathf.CeilToInt(balance.MineActivationCost * inflation));
+            // 설계 §5.4: 광산 인덱스별 인플레이션 가중. Cost(i) = Ceil(MineActivationCost * (1 + InflationCoef * i))
+            int index = Mathf.Max(0, MineIndex);
+            float cost = balance.MineActivationCost * (1f + balance.InflationCoef * index);
+            return Mathf.Max(1, Mathf.CeilToInt(cost));
         }
 
         public bool CanActivate()

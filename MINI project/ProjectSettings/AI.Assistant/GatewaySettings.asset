@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.AI.Assistant.Editor:Unity.AI.Assistant.Editor:GatewayProjectSettings
   m_ProviderWorkingDirs:
   - providerId: codex
-    workingDir: C:/Users/ok623/Desktop/MIniProject
-  m_IncludeDefaultAgentsMd: 1
+    workingDir: F:/git/MINI
+  m_IncludeDefaultAgentsMd: 0

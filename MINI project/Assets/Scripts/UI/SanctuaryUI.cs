@@ -23,8 +23,15 @@ namespace Tempt
             public Color BaseColor;
         }
 
+        private sealed class ValueBinding
+        {
+            public string RowName;
+            public string Label;
+            public TMP_Text Value;
+        }
+
         private readonly List<StageCard> cards = new List<StageCard>();
-        private readonly List<TMP_Text> summaryValues = new List<TMP_Text>();
+        private readonly List<ValueBinding> summaryValues = new List<ValueBinding>();
         private readonly Color selectedColor = new Color(0.22f, 0.74f, 0.97f, 0.22f);
         private readonly Color highRiskColor = new Color(1f, 0.2f, 0.27f, 1f);
         private readonly Color midRiskColor = new Color(0.98f, 0.8f, 0.08f, 1f);
@@ -38,6 +45,7 @@ namespace Tempt
         private TMP_Text descriptionText;
         private Button purifyButton;
         private Button cancelButton;
+        private Button closeButton;
         private TMP_Text purifyButtonLabel;
         private TMP_Text goldText;
         private int selectedStage = 1;
@@ -142,6 +150,7 @@ namespace Tempt
             Transform actionButtons = rightColumn.Find("ActionButtons");
             purifyButton = FindButton(actionButtons, "PurifyButton");
             cancelButton = FindButton(actionButtons, "CancelButton");
+            closeButton = FindButton(transform, "CloseButton");
             purifyButtonLabel = purifyButton != null ? purifyButton.GetComponentInChildren<TMP_Text>(true) : null;
             goldText = FindText(transform, "Gold");
 
@@ -177,7 +186,7 @@ namespace Tempt
                 Slider = FindComponentByName<Slider>(root, "ErosionSlider"),
                 Percent = FindText(root, "Percent"),
                 Risk = FindText(root, "Risk"),
-                Cost = FindText(root, "GoldText"),
+                Cost = FindText(root, "GoldText") ?? FindText(root, "Cost"),
                 Status = FindText(root, "Status"),
                 Background = background,
                 BaseColor = background != null ? background.color : Color.clear,
@@ -192,13 +201,24 @@ namespace Tempt
                 return;
             }
 
-            TMP_Text[] texts = root.GetComponentsInChildren<TMP_Text>(true);
-            for (int i = 0; i < texts.Length; i++)
+            Transform[] rows = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < rows.Length; i++)
             {
-                if (texts[i] != null && texts[i].name == "Value")
+                TMP_Text value = FindDirectText(rows[i], "Value");
+                if (value == null)
                 {
-                    summaryValues.Add(texts[i]);
+                    continue;
                 }
+
+                TMP_Text label = FindDirectText(rows[i], "Label");
+                summaryValues.Add(
+                    new ValueBinding
+                    {
+                        RowName = rows[i].name,
+                        Label = label != null ? label.text : string.Empty,
+                        Value = value,
+                    }
+                );
             }
         }
 
@@ -228,8 +248,19 @@ namespace Tempt
             if (cancelButton != null)
             {
                 cancelButton.onClick.RemoveAllListeners();
-                cancelButton.onClick.AddListener(Refresh);
+                cancelButton.onClick.AddListener(ClosePanel);
             }
+
+            if (closeButton != null)
+            {
+                closeButton.onClick.RemoveAllListeners();
+                closeButton.onClick.AddListener(ClosePanel);
+            }
+        }
+
+        public void ClosePanel()
+        {
+            gameObject.SetActive(false);
         }
 
         private void SelectStage(int stage)
@@ -271,11 +302,11 @@ namespace Tempt
             SetText(headerTitle, "STAGE " + selectedStage);
             SetText(headerSubtitle, "Floor " + floorStart + " - " + floorEnd + " / Safe" + closingSafeIndex + " risk");
             SetText(descriptionText, "Spend Gold to purify this Stage before erosion reaches 100%.");
-            SetSummary(0, Mathf.RoundToInt(rate) + "%");
-            SetSummary(1, (gsm.Data?.Balance != null ? gsm.Data.Balance.ErosionAltarReduction : 0f).ToString("0") + "%");
-            SetSummary(2, controller.GetPurifyCost(selectedStage) + "G");
-            SetSummary(3, "Safe" + closingSafeIndex);
-            SetSummary(4, RiskTier(rate));
+            SetSummary("erosion", 0, Mathf.RoundToInt(rate) + "%");
+            SetSummary("purify", 1, (gsm.Data?.Balance != null ? gsm.Data.Balance.ErosionAltarReduction : 0f).ToString("0") + "%");
+            SetSummary("cost", 2, controller.GetPurifyCost(selectedStage) + "G");
+            SetSummary("safe", 3, "Safe" + closingSafeIndex);
+            SetSummary("risk", 4, RiskTier(rate));
 
             bool canPurify = controller.CanPurify(selectedStage);
             purifyButton.interactable = canPurify;
@@ -371,11 +402,17 @@ namespace Tempt
             return rate >= 33f ? midRiskColor : lowRiskColor;
         }
 
-        private void SetSummary(int index, string value)
+        private void SetSummary(string key, int fallbackIndex, string value)
         {
-            if (index >= 0 && index < summaryValues.Count)
+            ValueBinding binding = FindBinding(summaryValues, key);
+            if (binding == null && fallbackIndex >= 0 && fallbackIndex < summaryValues.Count)
             {
-                summaryValues[index].text = value;
+                binding = summaryValues[fallbackIndex];
+            }
+
+            if (binding?.Value != null)
+            {
+                binding.Value.text = value;
             }
         }
 
@@ -395,6 +432,25 @@ namespace Tempt
         {
             Transform child = FindDescendant(root, childName);
             return child != null ? child.GetComponentInChildren<TMP_Text>(true) : null;
+        }
+
+        private static TMP_Text FindDirectText(Transform root, string childName)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                if (child.name == childName)
+                {
+                    return child.GetComponent<TMP_Text>() ?? child.GetComponentInChildren<TMP_Text>(true);
+                }
+            }
+
+            return null;
         }
 
         private static Button FindButton(Transform root, string childName)
@@ -425,6 +481,45 @@ namespace Tempt
             }
 
             return null;
+        }
+
+        private static ValueBinding FindBinding(List<ValueBinding> bindings, string key)
+        {
+            for (int i = 0; i < bindings.Count; i++)
+            {
+                string rowName = bindings[i].RowName != null ? bindings[i].RowName.ToLowerInvariant() : string.Empty;
+                string label = bindings[i].Label != null ? bindings[i].Label.ToLowerInvariant() : string.Empty;
+                if (MatchesKey(rowName, key) || MatchesKey(label, key))
+                {
+                    return bindings[i];
+                }
+            }
+
+            return null;
+        }
+
+        private static bool MatchesKey(string source, string key)
+        {
+            if (string.IsNullOrEmpty(source))
+            {
+                return false;
+            }
+
+            switch (key)
+            {
+                case "erosion":
+                    return source.Contains("erosion") || source.Contains("침식") || source.Contains("current");
+                case "purify":
+                    return source.Contains("purify") || source.Contains("reduction") || source.Contains("정화량");
+                case "cost":
+                    return source.Contains("cost") || source.Contains("price") || source.Contains("비용");
+                case "safe":
+                    return source.Contains("safe") || source.Contains("zone") || source.Contains("안전");
+                case "risk":
+                    return source.Contains("risk") || source.Contains("danger") || source.Contains("위험");
+                default:
+                    return false;
+            }
         }
 
         private static void SetText(TMP_Text text, string value)
