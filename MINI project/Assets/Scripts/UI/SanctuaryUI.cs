@@ -86,7 +86,10 @@ namespace Tempt
                 return;
             }
 
-            int maxStage = gsm.Erosion != null ? gsm.Erosion.MaxStage : ErosionSystem.GetMaxStage(gsm.Data?.World);
+            int maxStage =
+                gsm.Erosion != null
+                    ? gsm.Erosion.MaxStage
+                    : ErosionSystem.GetMaxStage(gsm.Data?.World);
             selectedStage = Mathf.Clamp(selectedStage, 1, Mathf.Max(1, maxStage));
             for (int i = 0; i < cards.Count; i++)
             {
@@ -112,12 +115,16 @@ namespace Tempt
         {
             if (controller == null)
             {
-                Debug.LogError("[SanctuaryUI] SanctuaryController 참조가 Inspector 에 연결되어 있지 않습니다.");
+                Debug.LogError(
+                    "[SanctuaryUI] SanctuaryController 참조가 Inspector 에 연결되어 있지 않습니다."
+                );
                 return false;
             }
 
-            Transform stageGrid = transform.Find("ContentArea/LeftColumn/StageGrid");
-            Transform rightColumn = transform.Find("ContentArea/RightColumn");
+            Transform contentArea = FindDescendant(transform, "ContentArea");
+            Transform stageGrid =
+                contentArea != null ? contentArea.Find("LeftColumn/StageGrid") : null;
+            Transform rightColumn = contentArea != null ? contentArea.Find("RightColumn") : null;
             if (stageGrid == null || rightColumn == null)
             {
                 Debug.LogError("[SanctuaryUI] StageGrid 또는 RightColumn 경로를 찾지 못했습니다.");
@@ -151,7 +158,8 @@ namespace Tempt
             purifyButton = FindButton(actionButtons, "PurifyButton");
             cancelButton = FindButton(actionButtons, "CancelButton");
             closeButton = FindButton(transform, "CloseButton");
-            purifyButtonLabel = purifyButton != null ? purifyButton.GetComponentInChildren<TMP_Text>(true) : null;
+            purifyButtonLabel =
+                purifyButton != null ? purifyButton.GetComponentInChildren<TMP_Text>(true) : null;
             goldText = FindText(transform, "Gold");
 
             CacheSummaryValues(rightColumn.Find("SummaryValues"));
@@ -279,7 +287,7 @@ namespace Tempt
 
             SetText(card.Percent, Mathf.RoundToInt(rate) + "%");
             SetText(card.Risk, RiskTier(rate));
-            SetText(card.Cost, controller.GetPurifyCost(stage) + "G");
+            SetText(card.Cost, controller.GetPurifyCost(stage) + " G");
             SetText(card.Status, StatusText(gsm, stage));
 
             if (card.Risk != null)
@@ -296,17 +304,33 @@ namespace Tempt
         private void RefreshDetail(GameSystemManager gsm)
         {
             float rate = GetRate(gsm, selectedStage);
-            int closingSafeIndex = StageIndexResolver.SafeIndexForStage(selectedStage, gsm.Data?.World);
-            StageIndexResolver.TryGetFloorRange(selectedStage, gsm.Data?.World, out int floorStart, out int floorEnd);
+            float reduction =
+                gsm.Data?.Balance != null ? gsm.Data.Balance.ErosionAltarReduction : 0f;
+            int closingSafeIndex = StageIndexResolver.SafeIndexForStage(
+                selectedStage,
+                gsm.Data?.World
+            );
+            StageIndexResolver.TryGetFloorRange(
+                selectedStage,
+                gsm.Data?.World,
+                out int floorStart,
+                out int floorEnd
+            );
 
             SetText(headerTitle, "STAGE " + selectedStage);
-            SetText(headerSubtitle, "Floor " + floorStart + " - " + floorEnd + " / Safe" + closingSafeIndex + " risk");
-            SetText(descriptionText, "Spend Gold to purify this Stage before erosion reaches 100%.");
+            SetText(
+                headerSubtitle,
+                "Floor " + floorStart + " - " + floorEnd + " / Safe" + closingSafeIndex + " risk"
+            );
+            SetText(
+                descriptionText,
+                "Spend Gold to purify this Stage before erosion reaches 100%."
+            );
             SetSummary("erosion", 0, Mathf.RoundToInt(rate) + "%");
-            SetSummary("purify", 1, (gsm.Data?.Balance != null ? gsm.Data.Balance.ErosionAltarReduction : 0f).ToString("0") + "%");
-            SetSummary("cost", 2, controller.GetPurifyCost(selectedStage) + "G");
-            SetSummary("safe", 3, "Safe" + closingSafeIndex);
-            SetSummary("risk", 4, RiskTier(rate));
+            SetSummary("after", 1, Mathf.RoundToInt(Mathf.Max(0f, rate - reduction)) + "%");
+            SetSummary("cost", 2, controller.GetPurifyCost(selectedStage) + " G");
+            SetSummary("owned", 3, gsm.CurrentRun.Gold + " G");
+            SetSummary("linked", 4, "Safe" + closingSafeIndex);
 
             bool canPurify = controller.CanPurify(selectedStage);
             purifyButton.interactable = canPurify;
@@ -379,7 +403,9 @@ namespace Tempt
                 return "침식 완료";
             }
 
-            return gsm.Erosion.Model != null && gsm.Erosion.Model.CurrentEroddingStage == stage ? "침식 진행" : "안정";
+            return gsm.Erosion.Model != null && gsm.Erosion.Model.CurrentEroddingStage == stage
+                ? "침식 진행"
+                : "안정";
         }
 
         private static string RiskTier(float rate)
@@ -446,7 +472,8 @@ namespace Tempt
                 Transform child = root.GetChild(i);
                 if (child.name == childName)
                 {
-                    return child.GetComponent<TMP_Text>() ?? child.GetComponentInChildren<TMP_Text>(true);
+                    return child.GetComponent<TMP_Text>()
+                        ?? child.GetComponentInChildren<TMP_Text>(true);
                 }
             }
 
@@ -487,8 +514,12 @@ namespace Tempt
         {
             for (int i = 0; i < bindings.Count; i++)
             {
-                string rowName = bindings[i].RowName != null ? bindings[i].RowName.ToLowerInvariant() : string.Empty;
-                string label = bindings[i].Label != null ? bindings[i].Label.ToLowerInvariant() : string.Empty;
+                string rowName =
+                    bindings[i].RowName != null
+                        ? bindings[i].RowName.ToLowerInvariant()
+                        : string.Empty;
+                string label =
+                    bindings[i].Label != null ? bindings[i].Label.ToLowerInvariant() : string.Empty;
                 if (MatchesKey(rowName, key) || MatchesKey(label, key))
                 {
                     return bindings[i];
@@ -508,15 +539,22 @@ namespace Tempt
             switch (key)
             {
                 case "erosion":
-                    return source.Contains("erosion") || source.Contains("침식") || source.Contains("current");
-                case "purify":
-                    return source.Contains("purify") || source.Contains("reduction") || source.Contains("정화량");
+                    return source.Contains("erosion")
+                        || source.Contains("침식")
+                        || source.Contains("current");
+                case "after":
+                    return source.Contains("after") || source.Contains("정화 후");
                 case "cost":
-                    return source.Contains("cost") || source.Contains("price") || source.Contains("비용");
-                case "safe":
-                    return source.Contains("safe") || source.Contains("zone") || source.Contains("안전");
-                case "risk":
-                    return source.Contains("risk") || source.Contains("danger") || source.Contains("위험");
+                    return source.Contains("cost")
+                        || source.Contains("price")
+                        || source.Contains("required")
+                        || source.Contains("비용");
+                case "owned":
+                    return source.Contains("owned") || source.Contains("보유");
+                case "linked":
+                    return source.Contains("linked")
+                        || source.Contains("safe zone")
+                        || source.Contains("연결");
                 default:
                     return false;
             }

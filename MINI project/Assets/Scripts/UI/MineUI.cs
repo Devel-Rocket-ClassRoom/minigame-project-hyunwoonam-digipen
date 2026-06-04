@@ -30,6 +30,9 @@ namespace Tempt
         private TMP_Text bottomGuideText;
         private TMP_Text activationDailyGold;
         private TMP_Text activationCost;
+        private TMP_Text activationOwnedGold;
+        private TMP_Text activationStorageBegins;
+        private TMP_Text activationResult;
         private TMP_Text storedGoldHero;
         private TMP_Text ownedGold;
         private TMP_Text totalGold;
@@ -37,6 +40,7 @@ namespace Tempt
         private Button activationCancelButton;
         private Button collectButton;
         private Button closeButton;
+        private Button headerCloseButton;
         private bool initialized;
 
         private void Awake()
@@ -83,16 +87,32 @@ namespace Tempt
             int activationPrice = controller.GetActivationCost();
 
             SetText(mineName, "Mine " + (controller.MineIndex + 1));
-            SetText(descriptionText, "Activate this mine to store daily Gold for later collection.");
-            SetText(bottomGuideText, active ? "Collect stored Gold before leaving the sanctuary route." : "Activate this mine to unlock daily Gold production.");
+            SetText(
+                descriptionText,
+                "Activate this mine to store daily Gold for later collection."
+            );
+            SetText(
+                bottomGuideText,
+                active
+                    ? "Collect stored Gold before leaving the sanctuary route."
+                    : "Activate this mine to unlock daily Gold production."
+            );
             SetText(activationDailyGold, dailyGain + " G");
             SetText(activationCost, activationPrice + " G");
+            SetText(activationOwnedGold, run.Gold + " G");
+            SetText(activationStorageBegins, "TODAY");
+            SetText(
+                activationResult,
+                active ? "MINE ACTIVE"
+                    : controller.CanActivate() ? "READY"
+                    : "INSUFFICIENT GOLD"
+            );
             SetText(storedGoldHero, stored + " G");
 
-            SetInfoValue("daily", 0, dailyGain + " G");
-            SetInfoValue("stored", 1, stored + " G");
+            SetInfoValue("stored", 0, stored + " G");
+            SetInfoValue("daily", 1, dailyGain + " G");
             SetInfoValue("status", 2, active ? "가동" : "미가동");
-            SetInfoValue("safe", 3, "Safe" + controller.SafeIndex);
+            SetInfoValue("total", 3, run.Gold + " G");
 
             SetCollectionValue("stored", 0, stored + " G");
             SetCollectionValue("daily", 1, dailyGain + " G");
@@ -108,19 +128,27 @@ namespace Tempt
         {
             if (controller == null)
             {
-                Debug.LogError("[MineUI] MineController 참조가 Inspector 에 연결되어 있지 않습니다.");
+                Debug.LogError(
+                    "[MineUI] MineController 참조가 Inspector 에 연결되어 있지 않습니다."
+                );
                 return false;
             }
 
-            Transform mainMinePanel = transform.Find("MainMinePanel");
-            Transform mineInfoPanel = mainMinePanel != null ? mainMinePanel.Find("MineInfoPanel") : null;
-            Transform statGrid = mineInfoPanel != null ? mineInfoPanel.Find("StatGrid") : null;
-            Transform activation = transform.Find("ActivationInfoPanel");
-            Transform collection = transform.Find("CollectionPanel");
+            Transform contentArea =
+                transform.Find("ContentArea") ?? FindDescendant(transform, "ContentArea");
+            Transform mainMinePanel =
+                contentArea != null ? contentArea.Find("MainMinePanel") : null;
+            Transform mineInfoPanel = FindDescendant(mainMinePanel, "MineInfoPanel");
+            Transform statGrid = FindDescendant(mineInfoPanel, "StatGrid");
+            Transform activation =
+                contentArea != null ? contentArea.Find("ActivationInfoPanel") : null;
+            Transform collection = contentArea != null ? contentArea.Find("CollectionPanel") : null;
 
             if (mineInfoPanel == null || activation == null || collection == null)
             {
-                Debug.LogError("[MineUI] MineInfoPanel / ActivationInfoPanel / CollectionPanel 경로를 찾지 못했습니다.");
+                Debug.LogError(
+                    "[MineUI] MineInfoPanel / ActivationInfoPanel / CollectionPanel 경로를 찾지 못했습니다."
+                );
                 return false;
             }
 
@@ -128,13 +156,18 @@ namespace Tempt
             collectionPanel = collection.gameObject;
             mineName = FindText(mineInfoPanel, "MineName");
             descriptionText = FindText(mineInfoPanel, "Text");
-            bottomGuideText = FindText(transform.Find("BottomGuideBox"), "Text");
+            bottomGuideText = FindText(FindDescendant(transform, "BottomGuideBox"), "Text");
             activateButton = FindButton(activation, "ActivateButton");
             activationCancelButton = FindButton(activation, "CancelButton");
             collectButton = FindButton(collection, "Btn_CollectGold");
             closeButton = FindButton(collection, "Btn_Close");
-            activationDailyGold = FindRowValue(activation, "Row_DailyGold");
+            headerCloseButton = FindButton(transform.Find("Header"), "CloseButton");
+            activationDailyGold =
+                FindRowValue(activation, "Row_DailyGold") ?? FindRowValue(activation, "DailyGain");
             activationCost = FindRowValue(activation, "ActivationCost");
+            activationOwnedGold = FindRowValue(activation, "OwnedGold");
+            activationStorageBegins = FindRowValue(activation, "StorageBegins");
+            activationResult = FindRowValue(activation, "Result");
             storedGoldHero = FindText(collection, "Amount");
             if (storedGoldHero == null)
             {
@@ -191,6 +224,12 @@ namespace Tempt
                 closeButton.onClick.RemoveAllListeners();
                 closeButton.onClick.AddListener(ClosePanel);
             }
+
+            if (headerCloseButton != null)
+            {
+                headerCloseButton.onClick.RemoveAllListeners();
+                headerCloseButton.onClick.AddListener(ClosePanel);
+            }
         }
 
         public void ClosePanel()
@@ -227,6 +266,8 @@ namespace Tempt
         {
             SetText(ownedGold, gold + " G");
             SetText(totalGold, gold + " G");
+            SetText(activationOwnedGold, gold + " G");
+            SetInfoValue("total", 3, gold + " G");
         }
 
         private void SetInfoValue(string key, int fallbackIndex, string value)
@@ -295,7 +336,10 @@ namespace Tempt
         private static bool TryGetRun(out GameRunState run)
         {
             run = null;
-            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.CurrentRun == null)
+            if (
+                !GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                || gsm.CurrentRun == null
+            )
             {
                 return false;
             }
@@ -323,7 +367,8 @@ namespace Tempt
                 Transform child = root.GetChild(i);
                 if (child.name == childName)
                 {
-                    return child.GetComponent<TMP_Text>() ?? child.GetComponentInChildren<TMP_Text>(true);
+                    return child.GetComponent<TMP_Text>()
+                        ?? child.GetComponentInChildren<TMP_Text>(true);
                 }
             }
 
@@ -364,8 +409,12 @@ namespace Tempt
         {
             for (int i = 0; i < bindings.Count; i++)
             {
-                string rowName = bindings[i].RowName != null ? bindings[i].RowName.ToLowerInvariant() : string.Empty;
-                string label = bindings[i].Label != null ? bindings[i].Label.ToLowerInvariant() : string.Empty;
+                string rowName =
+                    bindings[i].RowName != null
+                        ? bindings[i].RowName.ToLowerInvariant()
+                        : string.Empty;
+                string label =
+                    bindings[i].Label != null ? bindings[i].Label.ToLowerInvariant() : string.Empty;
                 if (MatchesKey(rowName, key) || MatchesKey(label, key))
                 {
                     return bindings[i];
@@ -385,15 +434,23 @@ namespace Tempt
             switch (key)
             {
                 case "daily":
-                    return source.Contains("daily") || source.Contains("day") || source.Contains("일일");
+                    return source.Contains("daily")
+                        || source.Contains("day")
+                        || source.Contains("일일");
                 case "stored":
-                    return source.Contains("stored") || source.Contains("storage") || source.Contains("저장");
+                    return source.Contains("stored")
+                        || source.Contains("storage")
+                        || source.Contains("저장");
                 case "status":
-                    return source.Contains("status") || source.Contains("state") || source.Contains("상태");
-                case "safe":
-                    return source.Contains("safe") || source.Contains("zone") || source.Contains("위치");
+                    return source.Contains("status")
+                        || source.Contains("state")
+                        || source.Contains("상태");
+                case "total":
+                    return source.Contains("total") || source.Contains("총");
                 case "after":
-                    return source.Contains("after") || source.Contains("collection") || source.Contains("수령");
+                    return source.Contains("after")
+                        || source.Contains("collection")
+                        || source.Contains("수령");
                 default:
                     return false;
             }

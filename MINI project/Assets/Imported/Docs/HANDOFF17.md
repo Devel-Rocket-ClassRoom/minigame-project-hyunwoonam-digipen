@@ -133,3 +133,93 @@ Balance:
 - Unity Editor에서 Safe3~5 광산 UI를 열어 활성화 패널, 활성화 비용 차감, 당일 적립, 수령 패널 전환, 수령 골드 반영, Safe별 일일 보상 차등을 확인한다.
 - Unity Console Error 0과 Missing Reference 0을 확인한다.
 - Unity 저장/닫기 검증이 성공한 경우에만 PC 종료를 수행한다.
+
+## 6. 2026-06-04 성소/광산 UI 재연결 및 PlayMode 검증
+
+원인:
+- `SanctuaryUI`는 `Facility_SANCTUARY/ContentArea`를 찾았지만 실제 계층은 `Facility_SANCTUARY/PaddingContainer/ContentArea`여서 `Awake()` 초기화가 중단됐다.
+- `MineUI`는 `MainPanel/MainMinePanel`, `MainPanel/ActivationInfoPanel`, `MainPanel/CollectionPanel`을 찾았지만 실제 패널은 `MainPanel/ContentArea` 아래에 있어 `Awake()` 초기화가 중단됐다.
+- 초기화 중단 때문에 Value/슬라이더 갱신과 런타임 버튼 와이어가 전부 실행되지 않았다.
+- `MineController.ResolveSafeIndexFromScene()`가 `GameSceneManager.CurrentSceneId`만 사용해 Safe4/5 직접 Play 시 Safe3 데이터로 떨어질 수 있었다.
+
+수행:
+- `SanctuaryUI`가 실제 `PaddingContainer/ContentArea` 계층을 캐시하도록 수정했다.
+- 성소 SummaryValues를 실제 라벨에 맞춰 `Current Erosion`, `After Purify`, `Required Gold`, `Owned Gold`, `Linked Safe Zone` 값으로 연결했다.
+- `MineUI`가 실제 `ContentArea/MainMinePanel`, `ContentArea/ActivationInfoPanel`, `ContentArea/CollectionPanel` 계층을 캐시하도록 수정했다.
+- 광산 StatGrid, ActivationInfoPanel, CollectionSummaryValues의 모든 Value를 런 상태 값으로 연결했다.
+- 광산 `ActivateButton`, `CancelButton`, `Btn_CollectGold`, `Btn_Close`, Header `CloseButton`을 모두 런타임 와이어했다.
+- Safe3의 신규 `EnterFloorMapButton`을 `MineController.enterFloorMapButton`에 연결했다.
+- Safe4의 신규 `EnterFloorMapButton`을 공식 컨트롤러 참조로 연결하고, 기존 중복 버튼도 `DepartToFloorMap()` 영구 이벤트로 동작하도록 유지했다.
+- `MineController`가 자기 GameObject의 실제 씬 이름을 우선 사용해 Safe3/4/5 인덱스를 결정하도록 수정했다.
+
+검증:
+- Unity 정적 연결 감사: Safe2 카드 6개/슬라이더/버튼/SummaryValues, Safe3~5 광산 Value/버튼/EnterFloorMap 연결 전체 통과.
+- Safe2 PlayMode:
+  - 성소 열기 후 `SanctuaryUI.enabled=true`.
+  - Stage1 침식 `42%`가 슬라이더 `0.42`와 Percent `42%`로 표시됨.
+  - Stage2 선택 후 Summary가 `18%`, 정화 후 `8%`, 보유 골드, 연결 Safe 값으로 갱신됨.
+  - Purify 클릭 시 침식 `18→8`, 골드 `25→23`.
+  - Header Close 클릭 시 패널 닫힘.
+- Safe3 PlayMode:
+  - Stored/Daily/Status/Total Gold 및 Activation/Collection Value 갱신 확인.
+  - Activate 클릭 시 활성화, 골드 차감, 당일 적립, 패널 전환 확인.
+  - Collect 클릭 시 골드 수령 및 Stored Gold 0 확인.
+  - Cancel, Btn_Close, Header Close 모두 패널 닫힘 확인.
+- Safe4/5 PlayMode:
+  - Safe4 `SafeIndex=4`, 일일 생산량 `2 G`.
+  - Safe5 `SafeIndex=5`, 일일 생산량 `3 G`.
+  - 각 씬 Value 표시와 닫기 버튼 동작 확인.
+- Unity Console 최종 조회: Error 0 / Warning 0.
+- `dotnet build "MINI project/Assembly-CSharp.csproj"`: 경고 0 / 오류 0.
+
+## 7. 2026-06-04 Safe2~5 ResourceGroup / DayText 연결
+
+원인:
+- Safe2와 Safe3의 `SafeStatusHud`에 Gold/HP/MP TMP 참조가 모두 비어 있어 상단 자원 값이 런타임 상태와 연결되지 않았다.
+- Safe3의 `MineController.dayLabel` 참조가 비어 있어 `DayText`가 현재 일자로 갱신되지 않았다.
+- Safe4와 Safe5의 ResourceGroup 및 DayText 참조는 이미 정상 연결 상태였다.
+
+수행:
+- Safe2와 Safe3의 기존 `ResourceRow`를 ResourceGroup 역할로 사용해 Gold/HP/MP TMP를 `SafeStatusHud`에 연결했다.
+- Safe3의 `DayText` TMP를 `MineController.dayLabel`에 연결했다.
+- Safe2, Safe4, Safe5의 기존 DayText 연결과 Safe4~5 ResourceGroup 연결은 유지했다.
+
+검증:
+- Safe2~5 정적 참조 감사에서 DayText와 Gold/HP/MP 참조가 모두 non-null임을 확인했다.
+- Safe2~5 PlayMode에서 `SafeStatusHud.enabled=true`와 `Day 1`, `150 G`, `HP 100 / 100`, `MP 25 / 25` 실제 갱신을 확인했다.
+- `dotnet build "MINI project/Assembly-CSharp.csproj"`: 경고 0 / 오류 0.
+- Unity Console 최종 조회: Error 0 / Warning 0.
+
+## 8. 2026-06-04 UIsample Combat Reward Panel 구성
+
+수행:
+- 제공된 Combat Reward Panel TXT 명세를 기준으로 `UIsample.unity`의 기존 `Canvas_GlobalOverlay` 아래에 `RewardPanel`을 구성했다.
+- Canvas / Canvas Scaler 설정은 변경하지 않았다.
+- RewardPanel은 중앙 고정 `760x560` 크기이며 직속 자식은 `HeaderArea`, `RewardSummaryArea`, `ItemScrollArea`, `ButtonArea` 네 영역만 사용한다.
+- EXP / GOLD 요약 카드, 6개 예시 아이템의 세로 스크롤 목록, `CLAIM` / `FLOOR MAP` 두 버튼을 구성했다.
+- UIsample 실행 시 RewardPanel만 표시되도록 `Canvas_GlobalOverlay`를 활성화하고 기존 샘플 자식 UI는 비활성화했다.
+- 프로젝트 스크립트와 버튼 동작 로직은 추가하지 않았다.
+
+검증:
+- 정적 감사에서 Canvas 설정, RewardPanel 크기/중앙 앵커, 네 영역 위치와 크기, 버튼 2개, 세로 ScrollRect, `668x46` 아이템 행 6개를 확인했다.
+- PlayMode에서 RewardPanel 표시, `REWARD` 제목 렌더링, 세로 스크롤 이동을 확인했다.
+- `1366x768`, `1600x900`, `1920x1080`, `2560x1440`에서 중앙 배치 및 화면 범위 내 유지 계산 검증을 통과했다.
+- 영역 간 간격은 Header→Summary `24px`, Summary→Items `16px`, Items→Buttons `18px`이며 겹침이 없다.
+- 완전히 잘린 텍스트 `0`, 활성 Canvas 자식은 RewardPanel 하나임을 확인했다.
+
+## 9. 2026-06-04 Boot 침식 Game Over UI 구성
+
+수행:
+- 제공된 의도 대화와 UI 제작 프롬프트를 기준으로 `Boot.unity`의 기존 `Canvas` 아래에 전체 화면 `ErosionGameOverRoot`를 구성했다.
+- 루트 직속 레이어는 `BlackBackground`, `DeepRedVignette`, `PurpleCorruptionFog`, `ErosionCrackOverlay`, `RedPulseRing`, `NoiseScanlineOverlay`, `CenterTextGroup`, `FinalDarkVignette` 순서다.
+- 화면에는 3중 침식 글리치 표현의 `GAME OVER` 문구만 사용하고, 버튼이나 추가 설명 텍스트는 생성하지 않았다.
+- 붉은/보라 오염 띠, 균열선, 끊어진 침식 파동, 스캔라인, 밑줄과 추상적 번짐을 UI 레이어로 구성했다.
+- `ErosionGameOverRoot`는 평상시 비활성 상태로 저장했다.
+- Boot의 기존 Canvas Scaler는 명세 예상과 달리 `Constant Pixel Size`였으며, Canvas 변경 금지 요구에 따라 설정을 변경하지 않았다.
+- 프로젝트 스크립트와 동작 로직은 추가하지 않았다.
+
+검증:
+- PlayMode 캡처로 전체 화면 침식 연출과 중앙 `GAME OVER` 가독성을 확인했다.
+- 루트 전체 화면 Stretch, 요구된 8개 레이어 순서, 버튼 0개, 표시 문구가 `GAME OVER`뿐임을 정적 감사했다.
+- `1366x768`, `1600x900`, `1920x1080`, `2560x1440`에서 중앙 `1120x240` 콘텐츠가 화면 범위 안에 유지됨을 확인했다.
+- 최종 저장 상태에서 `ErosionGameOverRoot.activeSelf=false`임을 확인했다.

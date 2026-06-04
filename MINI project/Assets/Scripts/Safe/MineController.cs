@@ -18,7 +18,10 @@ namespace Tempt
 
         protected override void SetupZoneFeatures()
         {
-            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.CurrentRun == null)
+            if (
+                !GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                || gsm.CurrentRun == null
+            )
             {
                 return;
             }
@@ -63,7 +66,11 @@ namespace Tempt
             }
 
             int index = MineIndex;
-            if (!IsValidMineIndex(index) || gsm.Data?.Balance?.MineDailyGain == null || index >= gsm.Data.Balance.MineDailyGain.Count)
+            if (
+                !IsValidMineIndex(index)
+                || gsm.Data?.Balance?.MineDailyGain == null
+                || index >= gsm.Data.Balance.MineDailyGain.Count
+            )
             {
                 return 0;
             }
@@ -99,7 +106,9 @@ namespace Tempt
             }
 
             int index = MineIndex;
-            return IsValidMineIndex(index) && !run.MineActivated[index] && run.Gold >= GetActivationCost();
+            return IsValidMineIndex(index)
+                && !run.MineActivated[index]
+                && run.Gold >= GetActivationCost();
         }
 
         public bool TryActivateMine()
@@ -182,7 +191,10 @@ namespace Tempt
         private static bool TryGetRun(out GameRunState run)
         {
             run = null;
-            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.CurrentRun == null)
+            if (
+                !GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                || gsm.CurrentRun == null
+            )
             {
                 return false;
             }
@@ -192,8 +204,18 @@ namespace Tempt
             return true;
         }
 
-        private static int ResolveSafeIndexFromScene()
+        private int ResolveSafeIndexFromScene()
         {
+            switch (gameObject.scene.name)
+            {
+                case "Safe4":
+                    return 4;
+                case "Safe5":
+                    return 5;
+                case "Safe3":
+                    return 3;
+            }
+
             if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.Scenes == null)
             {
                 return 3;
