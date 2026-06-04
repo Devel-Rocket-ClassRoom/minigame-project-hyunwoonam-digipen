@@ -19,11 +19,14 @@ namespace Tempt
 
         public int MaxStage => GetMaxStage(World);
 
-        public ErosionSystem()
-        {
-        }
+        public ErosionSystem() { }
 
-        public ErosionSystem(ErosionStateModel model, EventBus events, BalanceData balance = null, WorldData world = null)
+        public ErosionSystem(
+            ErosionStateModel model,
+            EventBus events,
+            BalanceData balance = null,
+            WorldData world = null
+        )
         {
             Model = model;
             Events = events;
@@ -68,7 +71,9 @@ namespace Tempt
 
             if (Balance?.ErosionCurve == null)
             {
-                UnityEngine.Debug.LogError("[ErosionSystem] BalanceData.ErosionCurve 참조가 없습니다.");
+                UnityEngine.Debug.LogError(
+                    "[ErosionSystem] BalanceData.ErosionCurve 참조가 없습니다."
+                );
                 return;
             }
 
@@ -80,11 +85,13 @@ namespace Tempt
 
             float dayFactor = UnityEngine.Mathf.Pow(
                 Balance.ErosionCurve.ExpBase,
-                System.Math.Max(0, currentDay - Balance.ErosionCurve.InflectionDay));
+                System.Math.Max(0, currentDay - Balance.ErosionCurve.InflectionDay)
+            );
             float nextRate = UnityEngine.Mathf.Clamp(
                 Model.GetRate(stage) + Balance.ErosionCurve.DailyBase * dayFactor,
                 0f,
-                100f);
+                100f
+            );
             Model.StageRates[stage] = nextRate;
             Events?.RaiseStageErosionChanged(stage, nextRate);
 
@@ -166,7 +173,10 @@ namespace Tempt
             }
 
             float t = UnityEngine.Mathf.Clamp01(rate / 100f);
-            float power = Balance.ErosionMonsterMultiplierCurvePower > 0f ? Balance.ErosionMonsterMultiplierCurvePower : 1f;
+            float power =
+                Balance.ErosionMonsterMultiplierCurvePower > 0f
+                    ? Balance.ErosionMonsterMultiplierCurvePower
+                    : 1f;
             t = UnityEngine.Mathf.Pow(t, power);
             return UnityEngine.Mathf.Lerp(1f, maxMultiplier, t);
         }
@@ -179,4 +189,3 @@ namespace Tempt
         }
     }
 }
-

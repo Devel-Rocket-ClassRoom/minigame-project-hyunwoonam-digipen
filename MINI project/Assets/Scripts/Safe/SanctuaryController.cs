@@ -44,7 +44,10 @@ namespace Tempt
 
         public bool CanPurify(int stageIndex)
         {
-            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.CurrentRun == null)
+            if (
+                !GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                || gsm.CurrentRun == null
+            )
             {
                 return false;
             }

@@ -223,3 +223,42 @@ Balance:
 - 루트 전체 화면 Stretch, 요구된 8개 레이어 순서, 버튼 0개, 표시 문구가 `GAME OVER`뿐임을 정적 감사했다.
 - `1366x768`, `1600x900`, `1920x1080`, `2560x1440`에서 중앙 `1120x240` 콘텐츠가 화면 범위 안에 유지됨을 확인했다.
 - 최종 저장 상태에서 `ErosionGameOverRoot.activeSelf=false`임을 확인했다.
+
+## 10. 2026-06-04 침식 Game Over 연결 및 Any Key 복귀
+
+원인:
+- 침식 전체 100% 게임오버 경로는 `GlobalOverlayController.ShowAllStagesEroded()`로 분리되어 있었지만, 내부에서 일반 전투 패배용 `ShowGameOver()`를 그대로 호출해 기존 `GameOver` 패널이 표시됐다.
+
+수행:
+- `GlobalOverlayController`에 Boot의 `ErosionGameOverRoot` 직렬화 참조를 추가했다.
+- 일반 전투 패배는 기존 `GameOver`, 전체 침식 게임오버는 `ErosionGameOverRoot`를 표시하도록 분리했다.
+- 게임오버 표시 전 기존 게임오버 패널들을 모두 닫아 두 패널이 겹치지 않도록 했다.
+- 기존 `Input.anyKeyDown` 입력 대기와 `HideGameOver()` 경로를 두 게임오버 패널이 공유하도록 확장했다.
+- Boot 씬의 `GlobalOverlayController.gameOverPanel`과 `erosionGameOverPanel`을 각각 기존 `GameOver`, 수정된 `ErosionGameOverRoot`에 직접 연결했다.
+
+검증:
+- 수정 전 PlayMode 재현: `ShowAllStagesEroded()` 호출 시 기존 `GameOver=true`, `ErosionGameOverRoot=false`.
+- 수정 후 PlayMode: `ShowAllStagesEroded()` 호출 시 기존 `GameOver=false`, `ErosionGameOverRoot=true`.
+- 침식 루트 내부의 `PRESS ANY KEY TO RETURN` 텍스트 존재를 확인했다.
+- 공용 복귀 경로가 일반/침식 게임오버 패널을 모두 닫는 것을 확인했다.
+- 일반 전투 패배용 `ShowGameOver()`가 기존 `GameOver`를 계속 표시하는 것을 확인했다.
+
+## 11. 2026-06-04 Safe2 전체 침식 임시 테스트 트리거
+
+수행:
+- Unity Editor 테스트에서 Safe2에 도달하면 모든 단계 침식률을 100%로 만드는 임시 트리거를 추가했다.
+- `SanctuaryController.SetupZoneFeatures()`에서 성소 UI 초기 갱신 후 `ErosionSystem.DebugForceAllStagesFullyEroded()`를 호출한다.
+- 임시 트리거는 `UNITY_EDITOR` 조건부 코드라 에디터 테스트에서만 동작한다.
+- 모든 단계에 대해 침식 변경/완전 침식 이벤트를 정상 순서로 발행한 뒤 전체 침식 이벤트를 발행해 실제 게임오버 흐름을 통과한다.
+
+검증:
+- Safe2 `OnEnter()` 호출 후 `ErosionGameOverRoot=true`, 기존 `GameOver=false`를 확인했다.
+- `dotnet build "MINI project/Assembly-CSharp.csproj"`: 경고 0 / 오류 0.
+
+제거 위치:
+- 테스트 완료 후 `SanctuaryController.SetupZoneFeatures()`의 `DebugForceAllStagesFullyEroded()` 호출과 `ErosionSystem.DebugForceAllStagesFullyEroded()` 메서드를 함께 제거한다.
+
+제거 완료:
+- 2026-06-04 사용자 요청으로 Safe2 전체 침식 임시 테스트 트리거를 제거했다.
+- Safe2는 다시 정상적으로 침식 시스템을 활성화하고 성소 UI만 갱신한다.
+- 침식 전체 100% 발생 시 `ErosionGameOverRoot` 표시 및 Any Key 복귀 기능은 유지한다.
