@@ -1,120 +1,368 @@
 using System;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Tempt
 {
-    /// <summary>
-    /// 전투 종료 후 보상 화면. EXP/골드/획득 아이템을 표시하고
-    /// 인벤토리 초과 아이템이 있을 경우 버리기/가져오기 선택 UI를 제공한다.
-    ///
-    /// 흐름:
-    ///   1) GameSystemManager.EndCombat → UIManager.ShowCombatReward(summary, overflowIds, onClose) 호출.
-    ///   2) Show()가 summary를 패널에 바인딩.
-    ///   3) overflow 있으면 OverflowPanel 활성화 → 플레이어가 각 초과 아이템을 Take 또는 Discard.
-    ///   4) 모든 초과 아이템 처리 완료 → Continue 버튼 활성화.
-    ///   5) Continue 클릭 → onClose 콜백 → EndCombat 후처리(씬 전환).
-    /// </summary>
     public sealed class CombatRewardPage : MonoBehaviour
     {
-        /// <summary>페이지가 닫힐 때 호출되는 콜백(씬 전환 트리거).</summary>
-        private Action onCloseCallback;
-
-        /// <summary>현재 표시 중인 보상 요약.</summary>
-        private NodeRewardSummary currentSummary;
-
-        /// <summary>아직 처리되지 않은 인벤토리 초과 아이템 ID 목록.</summary>
-        private List<int> pendingOverflowIds = new List<int>();
-
-        /// <summary>
-        /// 보상 화면 표시. UIManagert가 호출.
-        /// </summary>
-        /// <param name="summary">집계된 보상 요약.</param>
-        /// <param name="overflowIds">인벤토리 초과로 아직 미확정인 아이템 ID 목록.</param>
-        /// <param name="onClose">화면 닫힘 콜백.</param>
-        public void Show(NodeRewardSummary summary, List<int> overflowIds, Action onClose)
+        private sealed class ItemRowView
         {
-            // 동작 요약:
-            // - currentSummary = summary, pendingOverflowIds = new List(overflowIds), onCloseCallback = onClose.
-            // - gameObject.SetActive(true).
-            // - BindSummaryPanel(summary) — EXP/골드/획득 아이템 목록 UI에 바인딩.
-            // - overflowIds.Count > 0 → OverflowPanel 활성화, RefreshOverflowPanel().
-            //   아니면 → ContinueButton 즉시 활성화.
+            public GameObject Root;
+            public Button Button;
+            public Graphic Background;
+            public Color BaseColor;
+            public TMP_Text Icon;
+            public TMP_Text Name;
+            public TMP_Text Quantity;
         }
 
-        /// <summary>
-        /// 화면 숨김.
-        /// </summary>
+        [SerializeField]
+        private TMP_Text statusText;
+
+        [SerializeField]
+        private TMP_Text expValueText;
+
+        [SerializeField]
+        private TMP_Text goldValueText;
+
+        [SerializeField]
+        private Transform itemRowsRoot;
+
+        [SerializeField]
+        private Button[] itemRowButtons = Array.Empty<Button>();
+
+        [SerializeField]
+        private Button getItemsButton;
+
+        [SerializeField]
+        private Button doneButton;
+
+        [SerializeField]
+        private Color selectedRowColor = new Color(0.42f, 0.30f, 0.08f, 0.92f);
+
+        private readonly List<ItemRowView> rows = new List<ItemRowView>();
+        private Action onCloseCallback;
+        private CombatRewardClaimSession claimSession;
+        private DataManager data;
+        private bool initialized;
+        private bool closing;
+
+        public bool Show(
+            NodeRewardSummary summary,
+            CombatRewardClaimSession session,
+            DataManager rewardData,
+            Action onClose
+        )
+        {
+            if (!EnsureInitialized() || session == null)
+            {
+                return false;
+            }
+
+            claimSession = session;
+            data = rewardData;
+            onCloseCallback = onClose;
+            closing = false;
+
+            gameObject.SetActive(true);
+            BindSummary(summary);
+            EnsureRowCount(session.Entries.Count);
+            WireButtons();
+            RefreshRows();
+            SetStatus("Select item rewards to claim.");
+            return true;
+        }
+
         public void Hide()
         {
-            // 동작 요약: gameObject.SetActive(false).
+            RemoveButtonListeners();
+            gameObject.SetActive(false);
         }
 
-        /// <summary>
-        /// 요약 패널에 EXP, 골드, 획득 아이템 목록을 바인딩.
-        /// </summary>
-        private void BindSummaryPanel(NodeRewardSummary summary)
+        private void BindSummary(NodeRewardSummary summary)
         {
-            // 동작 요약:
-            // - ExpLabel.text = $"+{summary.TotalExp} EXP".
-            // - GoldLabel.text = $"+{summary.TotalGold} G".
-            // - summary.DroppedItemIds 순회 → 획득 아이템 셀 생성(아이콘 + 이름).
-            //   (인벤토리에 이미 넣은 것과 overflow 구분 없이 전체 드랍 목록 표시)
+            int exp = summary != null ? summary.TotalExp : 0;
+            int gold = summary != null ? summary.TotalGold : 0;
+            expValueText.text = "+" + exp;
+            goldValueText.text = "+" + gold;
         }
 
-        /// <summary>
-        /// 초과 아이템 패널 갱신. 남은 pendingOverflowIds 각각에 대해
-        /// [아이템 이름] [가져오기] [버리기] 행을 생성.
-        /// </summary>
-        private void RefreshOverflowPanel()
+        private void WireButtons()
         {
-            // 동작 요약:
-            // - OverflowListParent 자식 오브젝트 모두 Destroy.
-            // - pendingOverflowIds 순회:
-            //     * ItemData data = GameSystemManager.Instance.Data.Items[itemId].
-            //     * OverflowRowt 셀 Instantiate → BindRow(row, itemId, data) 호출.
-            // - pendingOverflowIds.Count == 0 → OverflowPanel 비활성, ContinueButton 활성화.
+            RemoveButtonListeners();
+            getItemsButton.onClick.AddListener(HandleGetItemsClicked);
+            doneButton.onClick.AddListener(HandleDoneClicked);
         }
 
-        /// <summary>
-        /// 초과 아이템 하나를 인벤토리에 가져오기. 플레이어가 [가져오기] 클릭 시 호출.
-        /// 인벤토리에 공간이 없으면 다른 아이템을 버려야 함(DiscardFromInventory 흐름).
-        /// </summary>
-        public void OnOverflowTakeClicked(int itemId)
+        private void RemoveButtonListeners()
         {
-            // 동작 요약:
-            // - InventoryState inv = GameSystemManager.Instance.CurrentRun.Player.Inventory.
-            // - ItemData data = GameSystemManager.Instance.Data.Items[itemId].
-            // - data.IsStackable:
-            //     * inv.TryAdd(itemId, 1) 성공 → pendingOverflowIds에서 itemId 하나 제거.
-            //     * 실패 → 인벤토리 꽉 찼음 토스트 표시 (버리기 필요 안내).
-            // - !data.IsStackable:
-            //     * inv.TryAddEquip(new Item(data)) 성공 → 제거.
-            //     * 실패 → 토스트.
-            // - RefreshOverflowPanel().
+            getItemsButton?.onClick.RemoveAllListeners();
+            doneButton?.onClick.RemoveAllListeners();
+
+            for (int i = 0; i < rows.Count; i++)
+            {
+                rows[i].Button?.onClick.RemoveAllListeners();
+            }
         }
 
-        /// <summary>
-        /// 초과 아이템 하나를 버리기. 플레이어가 [버리기] 클릭 시 호출.
-        /// </summary>
-        public void OnOverflowDiscardClicked(int itemId)
+        private void RefreshRows()
         {
-            // 동작 요약:
-            // - pendingOverflowIds에서 itemId 하나 제거.
-            //   (드랍된 아이템은 아직 인벤토리에 없으므로 단순 제거만 하면 됨)
-            // - RefreshOverflowPanel().
+            if (claimSession == null)
+            {
+                return;
+            }
+
+            IReadOnlyList<CombatRewardClaimSession.Entry> entries = claimSession.Entries;
+            for (int i = 0; i < rows.Count; i++)
+            {
+                ItemRowView row = rows[i];
+                if (i >= entries.Count || entries[i].RemainingCount <= 0)
+                {
+                    row.Root.SetActive(false);
+                    continue;
+                }
+
+                CombatRewardClaimSession.Entry entry = entries[i];
+                row.Root.SetActive(true);
+                row.Background.color = entry.IsSelected ? selectedRowColor : row.BaseColor;
+                row.Name.text = ResolveItemName(entry.ItemId);
+                row.Quantity.text = "x" + entry.RemainingCount;
+                if (row.Icon != null)
+                {
+                    row.Icon.text = "#" + entry.ItemId;
+                }
+
+                row.Button.onClick.RemoveAllListeners();
+                int capturedItemId = entry.ItemId;
+                row.Button.onClick.AddListener(() =>
+                {
+                    claimSession.ToggleSelection(capturedItemId);
+                    RefreshRows();
+                });
+            }
+
+            getItemsButton.interactable = HasRemainingItems();
         }
 
-        /// <summary>
-        /// Continue 버튼 클릭. 모든 초과 처리 완료 후에만 활성화됨.
-        /// </summary>
-        public void OnContinueClicked()
+        private void HandleGetItemsClicked()
         {
-            // 동작 요약:
-            // - pendingOverflowIds.Count > 0 → 미처리 항목 있으면 무시(버튼이 비활성 상태여야 하므로 방어 코드).
-            // - Hide().
-            // - onCloseCallback?.Invoke().
+            if (closing || claimSession == null)
+            {
+                return;
+            }
+
+            bool hadSelection = HasSelectedItems();
+            int claimedCount = claimSession.ClaimSelected();
+            RefreshRows();
+
+            if (claimedCount > 0)
+            {
+                SetStatus("Claimed " + claimedCount + " item(s).");
+            }
+            else if (hadSelection)
+            {
+                SetStatus("Inventory space is insufficient.");
+            }
+            else
+            {
+                SetStatus("No items were selected.");
+            }
+        }
+
+        private void HandleDoneClicked()
+        {
+            if (closing)
+            {
+                return;
+            }
+
+            closing = true;
+            if (claimSession != null && !claimSession.GetItemsPressed)
+            {
+                claimSession.ClaimRemainingSequentially();
+            }
+
+            Action callback = onCloseCallback;
+            onCloseCallback = null;
+            Hide();
+            callback?.Invoke();
+        }
+
+        private bool EnsureInitialized()
+        {
+            if (initialized)
+            {
+                return true;
+            }
+
+            bool valid =
+                statusText != null
+                && expValueText != null
+                && goldValueText != null
+                && itemRowsRoot != null
+                && itemRowButtons != null
+                && itemRowButtons.Length > 0
+                && getItemsButton != null
+                && doneButton != null;
+
+            if (!valid)
+            {
+                Debug.LogError(
+                    "[CombatRewardPage] RewardPanel 필수 UI 참조가 Inspector 에 연결되지 않았습니다."
+                );
+                return false;
+            }
+
+            rows.Clear();
+            for (int i = 0; i < itemRowButtons.Length; i++)
+            {
+                ItemRowView row = CreateRowView(itemRowButtons[i]);
+                if (row == null)
+                {
+                    Debug.LogError(
+                        "[CombatRewardPage] ItemRow 버튼 또는 ItemName/Quantity 참조가 누락되었습니다: "
+                            + i
+                    );
+                    return false;
+                }
+
+                rows.Add(row);
+            }
+
+            initialized = true;
+            return true;
+        }
+
+        private void EnsureRowCount(int count)
+        {
+            if (rows.Count == 0 || itemRowsRoot == null)
+            {
+                return;
+            }
+
+            GameObject template = rows[0].Root;
+            while (rows.Count < count)
+            {
+                GameObject clone = Instantiate(template, itemRowsRoot);
+                clone.name = template.name + "_Generated_" + rows.Count;
+                ItemRowView row = CreateRowView(clone.GetComponent<Button>());
+                if (row == null)
+                {
+                    Destroy(clone);
+                    break;
+                }
+
+                rows.Add(row);
+            }
+        }
+
+        private ItemRowView CreateRowView(Button button)
+        {
+            if (button == null)
+            {
+                return null;
+            }
+
+            Transform root = button.transform;
+            Graphic background = button.targetGraphic != null
+                ? button.targetGraphic
+                : root.GetComponent<Graphic>();
+            TMP_Text name = FindChildText(root, "ItemName");
+            TMP_Text quantity = FindChildText(root, "Quantity");
+            if (background == null || name == null || quantity == null)
+            {
+                return null;
+            }
+
+            button.targetGraphic = background;
+            button.transition = Selectable.Transition.None;
+            return new ItemRowView
+            {
+                Root = root.gameObject,
+                Button = button,
+                Background = background,
+                BaseColor = background.color,
+                Icon = FindChildText(root, "IconMark"),
+                Name = name,
+                Quantity = quantity,
+            };
+        }
+
+        private string ResolveItemName(int itemId)
+        {
+            if (
+                data?.Items != null
+                && data.Items.TryGetValue(itemId, out ItemData itemData)
+                && itemData != null
+            )
+            {
+                return itemData.NameKey;
+            }
+
+            return "Missing Item #" + itemId;
+        }
+
+        private bool HasSelectedItems()
+        {
+            if (claimSession == null)
+            {
+                return false;
+            }
+
+            IReadOnlyList<CombatRewardClaimSession.Entry> entries = claimSession.Entries;
+            for (int i = 0; i < entries.Count; i++)
+            {
+                if (entries[i].IsSelected && entries[i].RemainingCount > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool HasRemainingItems()
+        {
+            if (claimSession == null)
+            {
+                return false;
+            }
+
+            IReadOnlyList<CombatRewardClaimSession.Entry> entries = claimSession.Entries;
+            for (int i = 0; i < entries.Count; i++)
+            {
+                if (entries[i].RemainingCount > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void SetStatus(string message)
+        {
+            if (statusText != null)
+            {
+                statusText.text = message ?? string.Empty;
+            }
+        }
+
+        private static TMP_Text FindChildText(Transform root, string childName)
+        {
+            TMP_Text[] labels = root.GetComponentsInChildren<TMP_Text>(true);
+            for (int i = 0; i < labels.Length; i++)
+            {
+                if (labels[i].name == childName)
+                {
+                    return labels[i];
+                }
+            }
+
+            return null;
         }
     }
 }
-

@@ -1,10 +1,8 @@
-using System.Collections.Generic;
-
 namespace Tempt
 {
     public static class RewardGrant
     {
-        public static void ApplyCombatRewards(GameRunState run, DataManager data, EventBus events, NodeRewardSummary summary, List<int> overflowIds)
+        public static void ApplyNonItemRewards(GameRunState run, DataManager data, EventBus events, NodeRewardSummary summary)
         {
             if (summary == null)
             {
@@ -18,33 +16,25 @@ namespace Tempt
                 run.Gold += summary.TotalGold;
                 events?.RaiseGoldChanged(run.Gold);
             }
-
-            GrantDroppedItems(run, data, summary, overflowIds);
         }
 
-        private static void GrantDroppedItems(GameRunState run, DataManager data, NodeRewardSummary summary, List<int> overflowIds)
+        public static bool TryGrantItem(GameRunState run, DataManager data, int itemId)
         {
-            if (summary?.DroppedItemIds == null || run?.Player?.Inventory == null || data?.Items == null)
+            if (
+                run?.Player?.Inventory == null
+                || data?.Items == null
+                || !data.Items.TryGetValue(itemId, out ItemData itemData)
+                || itemData == null
+            )
             {
-                return;
+                return false;
             }
 
-            foreach (int itemId in summary.DroppedItemIds)
-            {
-                if (!data.Items.TryGetValue(itemId, out ItemData itemData))
-                {
-                    continue;
-                }
-
-                bool added = itemData.Stackable
-                    ? run.Player.Inventory.TryAdd(itemId, 1)
-                    : run.Player.Inventory.TryAddEquip(new Item { Data = itemData, Enhancement = 0 });
-
-                if (!added && overflowIds != null)
-                {
-                    overflowIds.Add(itemId);
-                }
-            }
+            return itemData.Stackable
+                ? run.Player.Inventory.TryAdd(itemData, 1)
+                : run.Player.Inventory.TryAddEquip(
+                    new Item { Data = itemData, Enhancement = 0 }
+                );
         }
     }
 }

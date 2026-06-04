@@ -5,24 +5,74 @@ namespace Tempt
     /// </summary>
     public sealed class LockerState : StackableContainer
     {
+        public const int InitialCapacity = 16;
+        public const int CapacityStep = 4;
+        public const int MaxCapacity = 24;
+
         /// <summary>활성화 여부(주점에서 구매 시 true).</summary>
         public bool Unlocked;
+
+        /// <summary>현재 보관함 슬롯 수. 비활성 상태는 0.</summary>
+        public int Capacity;
+
+        public int UsedSlots => StackableItems.Count + EquipItems.Count;
+
+        public bool IsMaxCapacity => Unlocked && Capacity >= MaxCapacity;
 
         /// <summary>주점에서 보관함 구매 시 활성화.</summary>
         public void Unlock()
         {
-            // 동작 요약: Unlocked = true. 비활성 → 활성 1회만 유효.
             if (!Unlocked)
             {
                 Unlocked = true;
+                Capacity = InitialCapacity;
             }
+        }
+
+        public bool Upgrade()
+        {
+            NormalizeCapacity();
+            if (!Unlocked || IsMaxCapacity)
+            {
+                return false;
+            }
+
+            Capacity = System.Math.Min(MaxCapacity, Capacity + CapacityStep);
+            return true;
+        }
+
+        public void NormalizeCapacity()
+        {
+            if (!Unlocked)
+            {
+                Capacity = 0;
+                return;
+            }
+
+            if (Capacity < InitialCapacity)
+            {
+                Capacity = InitialCapacity;
+            }
+
+            Capacity = System.Math.Min(MaxCapacity, Capacity);
+        }
+
+        public bool CanAddStack(int itemId)
+        {
+            NormalizeCapacity();
+            return Unlocked && (StackableItems.ContainsKey(itemId) || UsedSlots < Capacity);
+        }
+
+        public bool CanAddEquip()
+        {
+            NormalizeCapacity();
+            return Unlocked && UsedSlots < Capacity;
         }
 
         /// <summary>소모/재료 아이템 추가(InventoryState.MoveToLocker가 호출).</summary>
         public bool Add(int itemId, int count)
         {
-            // 동작 요약: StackableItems[itemId] += count.
-            if (count <= 0)
+            if (count <= 0 || !CanAddStack(itemId))
             {
                 return false;
             }
@@ -39,7 +89,11 @@ namespace Tempt
         /// <summary>장비 아이템 추가.</summary>
         public bool AddEquip(Item item)
         {
-            // 동작 요약: EquipItems.Add(item).
+            if (!CanAddEquip())
+            {
+                return false;
+            }
+
             bool added = AddEquipCore(item);
             if (added)
             {

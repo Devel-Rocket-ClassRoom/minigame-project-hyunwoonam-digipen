@@ -35,6 +35,11 @@ namespace Tempt
         /// <summary>장비 슬롯이 가득 찼는가.</summary>
         public bool IsEquipFull() => EquipItems.Count >= MaxEquipSlots;
 
+        public bool CanAcceptStack(int itemId, int count)
+        {
+            return TryGetItemData(itemId, out ItemData itemData) && CanAddStack(itemData, count);
+        }
+
         /// <summary>
         /// itemData 기준으로 인벤토리가 가득 찼는가.
         /// Stackable=true → IsStackableFull, false → IsEquipFull.

@@ -262,3 +262,73 @@ Balance:
 - 2026-06-04 사용자 요청으로 Safe2 전체 침식 임시 테스트 트리거를 제거했다.
 - Safe2는 다시 정상적으로 침식 시스템을 활성화하고 성소 UI만 갱신한다.
 - 침식 전체 100% 발생 시 `ErosionGameOverRoot` 표시 및 Any Key 복귀 기능은 유지한다.
+
+## 12. 2026-06-04 Combat 승리 보상 패널 연결
+
+수행:
+- 전투 승리 시 아이템까지 즉시 지급하던 흐름을 EXP/골드 즉시 지급과 아이템 선택 지급으로 분리했다.
+- `CombatRewardClaimSession`을 추가해 중복 아이템 수량, 선택 상태, 남은 수량, `Get Items` 사용 여부를 관리한다.
+- `Get Items`는 선택된 아이템 중 인벤토리에 들어가는 수량만 획득하고, 실패한 수량은 목록에 남긴다.
+- `Done`은 `Get Items`를 누르지 않았을 때만 남은 아이템을 순차적으로 가능한 만큼 획득한다.
+- `Get Items`를 한 번이라도 누른 뒤 `Done`을 누르면 남은 아이템을 추가 획득하지 않고 기존 승리 후 안전지대/FloorMap 전환을 실행한다.
+- `CombatRewardPage`를 실제 동작 코드로 교체해 EXP/Gold Value, ItemRow 선택/수량/숨김, Get Items, Done을 연결했다.
+- Combat 씬 `RewardPanel`에 `CombatRewardPage`를 부착하고 `CombatHud.RewardPage`에 연결했다.
+- `ItemRow_01~06`에 실제 `Button`을 추가하고, RewardPanel은 전투 시작 시 비활성 상태로 저장했다.
+- 6종을 넘는 고유 드랍은 첫 ItemRow를 복제해 ScrollArea에 표시한다.
+- RewardPanel 참조가 없거나 초기화에 실패하면 아이템을 가능한 만큼 순차 획득한 뒤 기존 승리 후 전환을 실행한다.
+
+검증:
+- `CombatRewardClaimSession` RED→GREEN 검증에서 중복 집계, 선택 부분 획득, 실패 수량 유지, Get Items 이후 Done 무획득, Get Items 미사용 Done 순차 획득을 확인했다.
+- Unity Editor 상호작용 검증에서 EXP/Gold Value 갱신, ItemRow 선택, 성공 행 숨김, 실패 행 유지, Get Items/Done 콜백 동작을 확인했다.
+- `RewardGrant.TryGrantItem` 검증에서 스택 최대치 및 장비 슬롯 최대치 도달 시 인벤토리를 변경하지 않고 실패하는 것을 확인했다.
+- `RewardGrant.ApplyNonItemRewards`가 EXP/골드만 지급하고 드랍 아이템은 지급하지 않는 것을 확인했다.
+- Combat 씬 정적 감사에서 RewardPanel 시작 비활성, ItemRow 버튼 6개, `CombatHud.RewardPage` 및 모든 직렬화 참조 연결을 확인했다.
+- 8개 고유 아이템 보상으로 실행해 ItemRow 동적 복제와 ScrollArea 표시 경로를 확인했다.
+- `dotnet build "MINI project/Assembly-CSharp.csproj"`: 경고 0 / 오류 0.
+- Unity Console 최종 조회: Error 0 / Warning 0.
+
+## 13. 2026-06-04 Safe1 Tavern Storage 실제 데이터 연결
+
+수행:
+- `LockerState`에 활성화 상태와 별도로 저장되는 용량을 추가했다.
+  - 비활성 `0`, 활성화 `16`, 업그레이드마다 `+4`, 최대 `24`.
+  - 스택 아이템 종류당 1칸, 장비 인스턴스당 1칸으로 사용량을 계산한다.
+  - 가득 찬 보관함은 새 아이템 종류와 장비를 거부하며, 이미 존재하는 스택 수량 증가는 허용한다.
+- `TavernStorage` 도메인 서비스를 추가했다.
+  - 임시 비용은 활성화 `1 G`, 이후 업그레이드 `2 G`, `3 G`.
+  - 활성화/업그레이드, 인벤토리↔보관함 이동, 폐기, 저장 체크포인트를 담당한다.
+- `LockerSnapshot`에 용량을 저장/복원하고, 용량 필드가 없는 기존 저장은 활성 보관함을 `16`칸으로 보정한다.
+- `TavernStorageUI`, `TavernStorageSlotView`를 추가했다.
+  - 상태, 사용량/용량, 다음 비용/MAX, 실제 아이템 상세, 선택 수량, 이동/회수/폐기/활성화/업그레이드를 실제 런 데이터에 연결한다.
+  - 아이템 선택 전 `AMOUNT 0`, 선택 후 `1`부터 선택한 실제 수량까지 조절한다.
+  - 최대 용량에서는 `MAX`를 노란색으로 표시하고 업그레이드 버튼을 비활성화한다.
+- Safe1 `Content_STORAGE`의 예시 아이템 텍스트를 전부 제거했다.
+- 인벤토리 30칸과 보관함 최대 24칸을 4열 스크롤 슬롯으로 배치했다.
+- 유지보수를 위해 신규 UI 코드에는 런타임 이름 검색, `AddComponent`, 버튼 `AddListener`를 사용하지 않았다.
+- UI 참조 배열과 슬롯/동작 버튼의 `OnClick`은 Safe1 씬 Inspector 영구 참조로 직접 연결했다.
+
+검증:
+- 보관함 도메인 감사에서 활성화/업그레이드 비용 `1/2/3`, 용량 `16/20/24`, 최대 용량 차단, 기존 스택 추가 허용, 저장 복원을 확인했다.
+- Safe1 정적 감사에서 직렬화 참조 누락 `0`, 슬롯 뷰 `54`, 슬롯 영구 이벤트 `54`, 동작 버튼 영구 이벤트 `6`을 확인했다.
+- 모든 슬롯의 예시 아이템 텍스트가 비어 있고 기본 흰색 테두리이며, 슬롯 위치가 서로 겹치지 않음을 확인했다.
+- `dotnet build "MINI project\Assembly-CSharp.csproj"`: 경고 0 / 오류 0.
+- Unity Console 최종 조회: Error 0 / Warning 0.
+
+## 14. 2026-06-04 Safe1 Tavern Lodging 실제 데이터 연결
+
+수행:
+- `TavernLodging` 도메인 서비스를 추가했다.
+  - 숙박 인원은 플레이어 본인과 현재 활성 파티 동료를 합산한다.
+  - 임시 비용은 1인당 `1 G`이며, 골드가 부족하면 휴식을 거부한다.
+  - 성공 시 비용을 차감하고 플레이어와 활성 동료의 HP/MP를 완전 회복한 뒤 날짜를 하루 진행한다.
+  - 날짜 변경 이벤트, 침식 일일 진행, 골드 변경 이벤트, 저장 체크포인트를 연결했다.
+- `TavernLodgingUI`를 추가해 `Line_Lodging_Cost_Use_1Day`에 1인당 비용, 파티 인원, 총비용을 영어로 표시한다.
+- Safe1 `Content_LODGING`에 `TavernLodgingUI`를 부착하고 비용 TMP, REST 버튼, `Rest()` OnClick을 Inspector 영구 참조로 직접 연결했다.
+- REST 버튼은 대상 Image를 흰색으로 두고 일반/선택 상태는 회색, 눌림 상태는 빨간색으로 설정했다.
+- 기존 눌림 색상이 보이지 않던 직접 원인은 REST 버튼이 `interactable=false`였고, 대상 Image 기본 회색과 ColorTint가 곱해지고 있었기 때문이다.
+
+검증:
+- 3인 파티에서 총비용 `3 G`, 골드 차감, 전원 HP/MP 완전 회복, 날짜 `+1`을 확인했다.
+- 골드 부족 시 골드, HP/MP, 날짜가 변경되지 않음을 확인했다.
+- Safe1 정적 감사에서 비용 TMP와 REST 버튼 직렬화 참조, `TavernLodgingUI.Rest` 영구 이벤트, 빨간 Pressed Color, 일반색과 같은 Selected Color를 확인했다.
+- `dotnet build "MINI project/Assembly-CSharp.csproj"`: 경고 0 / 오류 0.

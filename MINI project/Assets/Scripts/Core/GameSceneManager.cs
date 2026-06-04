@@ -29,6 +29,9 @@ namespace Tempt
         /// <summary>FSM 상태 변경 시 발생. (from, to)</summary>
         public event Action<SceneFsmState, SceneFsmState> OnSceneFsmStateChanged;
 
+        /// <summary>사전 로드된 씬 AsyncOperation. TransitionRoutine이 1회 소비 후 null 초기화.</summary>
+        public AsyncOperation PreloadedSceneOp { get; set; }
+
         private Coroutine loadSceneCoroutine;
         private bool hasPendingRequest;
         private SceneId pendingRequest;
@@ -46,7 +49,11 @@ namespace Tempt
                 return;
             }
 
-            if (CurrentSceneId == next && ActiveController != null && State == SceneFsmState.Running)
+            if (
+                CurrentSceneId == next
+                && ActiveController != null
+                && State == SceneFsmState.Running
+            )
             {
                 ActiveController.OnEnter();
                 return;
@@ -61,13 +68,35 @@ namespace Tempt
             RequestScene(SceneId.MainMenu);
         }
 
+        /// <summary>
+        /// 지정한 씬을 allowSceneActivation=false 상태로 미리 로드한다.
+        /// 반환된 AsyncOperation을 PreloadedSceneOp에 설정 후 RequestScene 호출 시 TransitionRoutine이 소비한다.
+        /// 씬이 빌드 세팅에 없으면 null 반환.
+        /// </summary>
+        public AsyncOperation PreloadSceneAsync(SceneId id)
+        {
+            string sceneName = SceneNameOf(id);
+            if (!Application.CanStreamedLevelBeLoaded(sceneName))
+            {
+                Debug.LogError(
+                    "[GameSceneManager] 빌드 세팅에 씬이 없습니다(preload): " + sceneName
+                );
+                return null;
+            }
+            AsyncOperation op = SceneManager.LoadSceneAsync(sceneName);
+            op.allowSceneActivation = false;
+            return op;
+        }
+
         /// <summary>지정한 안전지대로 이동.</summary>
         /// <param name="safeZoneIndex">0~5.</param>
         public void LoadSafeZone(int safeZoneIndex)
         {
             if (safeZoneIndex < 0 || safeZoneIndex > 5)
             {
-                Debug.LogWarning("[GameSceneManager] SafeZone index out of range: " + safeZoneIndex);
+                Debug.LogWarning(
+                    "[GameSceneManager] SafeZone index out of range: " + safeZoneIndex
+                );
                 return;
             }
 
@@ -93,27 +122,27 @@ namespace Tempt
         {
             switch (id)
             {
-                case SceneId.Boot: 
+                case SceneId.Boot:
                     return "Boot";
-                case SceneId.MainMenu: 
+                case SceneId.MainMenu:
                     return "MainMenu";
-                case SceneId.Safe0: 
+                case SceneId.Safe0:
                     return "Safe0";
-                case SceneId.Safe1: 
+                case SceneId.Safe1:
                     return "Safe1";
-                case SceneId.Safe2: 
+                case SceneId.Safe2:
                     return "Safe2";
-                case SceneId.Safe3: 
+                case SceneId.Safe3:
                     return MineSceneOr("Safe3");
-                case SceneId.Safe4: 
+                case SceneId.Safe4:
                     return MineSceneOr("Safe4");
-                case SceneId.Safe5: 
+                case SceneId.Safe5:
                     return MineSceneOr("Safe5");
-                case SceneId.FloorMap: 
+                case SceneId.FloorMap:
                     return "FloorMap";
-                case SceneId.Combat: 
+                case SceneId.Combat:
                     return "Combat";
-                default: 
+                default:
                     throw new ArgumentOutOfRangeException(nameof(id), id, "Unknown scene id");
             }
         }
@@ -147,7 +176,16 @@ namespace Tempt
 
             string sceneName = SceneNameOf(next);
 
-            if (Application.CanStreamedLevelBeLoaded(sceneName))
+            AsyncOperation preloaded = PreloadedSceneOp;
+            PreloadedSceneOp = null;
+
+            if (preloaded != null)
+            {
+                preloaded.allowSceneActivation = true;
+                while (!preloaded.isDone)
+                    yield return null;
+            }
+            else if (Application.CanStreamedLevelBeLoaded(sceneName))
             {
                 AsyncOperation op = SceneManager.LoadSceneAsync(sceneName);
 
@@ -173,7 +211,9 @@ namespace Tempt
 
             if (ActiveController == null)
             {
-                Debug.LogError("[GameSceneManager] SceneControllerBase missing in scene: " + sceneName);
+                Debug.LogError(
+                    "[GameSceneManager] SceneControllerBase missing in scene: " + sceneName
+                );
             }
             else
             {
@@ -208,7 +248,8 @@ namespace Tempt
             GameObject[] roots = scene.GetRootGameObjects();
             for (int i = 0; i < roots.Length; i++)
             {
-                SceneControllerBase controller = roots[i].GetComponentInChildren<SceneControllerBase>(true);
+                SceneControllerBase controller = roots[i]
+                    .GetComponentInChildren<SceneControllerBase>(true);
 
                 if (controller != null)
                 {

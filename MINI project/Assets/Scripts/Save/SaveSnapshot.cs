@@ -618,6 +618,7 @@ namespace Tempt
             var snapshot = new LockerSnapshot
             {
                 Unlocked = locker != null && locker.Unlocked,
+                Capacity = locker != null ? locker.Capacity : 0,
                 StackableItems = new List<InventoryEntry>(),
                 EquipItems = new List<EquipItemEntry>(),
             };
@@ -660,6 +661,8 @@ namespace Tempt
             }
 
             locker.Unlocked = snapshot.Unlocked;
+            locker.Capacity = snapshot.Capacity;
+            locker.NormalizeCapacity();
             if (snapshot.StackableItems != null)
             {
                 foreach (InventoryEntry entry in snapshot.StackableItems)
@@ -1175,6 +1178,9 @@ namespace Tempt
     {
         /// <summary>활성화 여부(주점에서 구매 시 true).</summary>
         public bool Unlocked;
+
+        /// <summary>현재 보관함 슬롯 수.</summary>
+        public int Capacity;
 
         /// <summary>보관 중인 소모/재료 아이템.</summary>
         public List<InventoryEntry> StackableItems;

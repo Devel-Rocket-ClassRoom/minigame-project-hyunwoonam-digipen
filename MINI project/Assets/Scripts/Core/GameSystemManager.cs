@@ -537,7 +537,7 @@ namespace Tempt
 
         /// <summary>
         /// 전투 종료 분기. CombatControllert가 결과를 가지고 호출.
-        /// Victory 시 보상 집계 → 인벤토리 삽입 → CombatRewardPage 표시 순서로 처리.
+        /// Victory 시 보상 집계 → EXP/골드 지급 → CombatRewardPage 표시 순서로 처리.
         /// </summary>
         /// <param name="result">전투 결과.</param>
         /// <param name="controller">보상 집계용 컨트롤러 참조.</param>
@@ -556,27 +556,16 @@ namespace Tempt
             // 1) 보상 집계
             //    - NodeRewardSummary summary = controller.CollectNodeRewards().
             //
-            // 2) EXP 처리
-            //    - 플레이어와 동료는 전투 중 몬스터 처치 시 각자 자동으로 EXP 습득.
-            //      (EntityBase.OnKill 훅 또는 DamageCalculator 처리 — 별도 분배 없음)
-            //    - 여기서는 추가 EXP 지급 없음.
+            // 2) EXP/골드 지급
+            //    - RewardGrant.ApplyNonItemRewards로 한 번만 지급한다.
             //
-            // 3) 골드 추가
-            //    - CurrentRun.Gold += summary.TotalGold.
+            // 3) 아이템 보상 세션 생성
+            //    - 아이템은 RewardPanel에서 Get Items 또는 Done을 누를 때만 지급을 시도한다.
             //
-            // 4) 아이템 인벤토리 삽입 (오버플로우 분리)
-            //    - InventoryState inv = CurrentRun.Player.Inventory.
-            //    - List<int> overflowIds = new List<int>().
-            //    - summary.DroppedItemIds 순회:
-            //        * ItemData data = Data.Items[itemId].
-            //        * data.IsStackable → inv.TryAdd(itemId, 1) 실패 시 overflowIds.Add(itemId).
-            //        * !data.IsStackable → new Item(data) 생성 후 inv.TryAddEquip() 실패 시 overflowIds.Add(itemId).
+            // 4) 보상 UI 표시
+            //    - RewardPage 참조가 없거나 초기화에 실패하면 가능한 아이템을 순차 획득 후 이동한다.
             //
-            // 5) 보상 UI 표시 (항상 표시, 오버플로우 있을 때는 버리기 UI 함께)
-            //    - controller.Hud.RewardPage.Show(summary, overflowIds, OnRewardClosed).
-            //      (CombatHudt가 CombatRewardPaget를 자식으로 보유)
-            //
-            // 6) [OnRewardClosed 콜백 내부]
+            // 5) [OnRewardClosed 콜백 내부]
             //    - CurrentRun.FloorMap.MarkCleared(CombatContext.Node.NodeId).
             //    - isBossNode → SafeUnlocks.Unlock(단계), Scenes.LoadSafeZone(단계).
             //    - isRechallenge → Scenes.LoadSafeZone(현재 단계).
@@ -626,19 +615,24 @@ namespace Tempt
                 summary = new NodeRewardSummary();
             }
 
-            var overflowIds = new System.Collections.Generic.List<int>();
-            RewardGrant.ApplyCombatRewards(CurrentRun, Data, Events, summary, overflowIds);
+            RewardGrant.ApplyNonItemRewards(CurrentRun, Data, Events, summary);
+            var claimSession = new CombatRewardClaimSession(
+                summary.DroppedItemIds,
+                itemId => RewardGrant.TryGrantItem(CurrentRun, Data, itemId)
+            );
 
             System.Action closeAction = () => FinishVictoryAfterReward();
 
-            if (controller?.Hud?.RewardPage != null)
+            if (
+                controller?.Hud?.RewardPage != null
+                && controller.Hud.RewardPage.Show(summary, claimSession, Data, closeAction)
+            )
             {
-                controller.Hud.RewardPage.Show(summary, overflowIds, closeAction);
+                return;
             }
-            else
-            {
-                closeAction();
-            }
+
+            claimSession.ClaimRemainingSequentially();
+            closeAction();
         }
 
         /// <summary>
