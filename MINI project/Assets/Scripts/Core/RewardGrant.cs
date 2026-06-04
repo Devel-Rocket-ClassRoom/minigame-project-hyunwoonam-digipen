@@ -10,6 +10,7 @@ namespace Tempt
             }
 
             RunProgression.AddExpToPlayer(run, data, events, summary.TotalExp);
+            RunProgression.AddExpToActiveCompanions(run, data, summary.TotalExp);
 
             if (run != null)
             {

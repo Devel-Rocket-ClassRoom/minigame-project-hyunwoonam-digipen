@@ -209,7 +209,8 @@ namespace Tempt
                     NodeVisualState(node),
                     state.GetInvestedPoints(pair.Key),
                     state.GetRequiredPoints(pair.Key),
-                    selectedNodeId == pair.Key
+                    selectedNodeId == pair.Key,
+                    viewOnly
                 );
             }
 

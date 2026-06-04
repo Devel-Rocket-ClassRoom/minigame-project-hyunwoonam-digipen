@@ -1,11 +1,13 @@
 namespace Tempt
 {
     /// <summary>
-    /// 동료 베이스. 게임 시작 시 룬 트리가 무작위로 고정되고, 레벨업 시 정해진 트리 순서로 자동 해금.
+    /// 동료 베이스. 레벨업 시 현재 투자 가능한 룬 중 하나를 자동 선택한다.
     /// 행동 결정은 직업별 고정 우선순위 규칙(CompanionActionSelector)을 사용.
     /// </summary>
     public abstract class TeamBase : CharacterBase
     {
+        private int runeSeed;
+
         /// <summary>동료 데이터 ID(CompanionData 참조).</summary>
         public int CompanionDataId;
 
@@ -30,6 +32,7 @@ namespace Tempt
             // - 직업별 ActionRuleKey 설정.
             // - 기본 스탯 설정.
             CompanionDataId = companionDataId;
+            runeSeed = seed;
             Equipment = new EquipmentSlots();
             Stats = new StatBlock();
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Data.Companions.TryGetValue(companionDataId, out CompanionData data))
@@ -50,17 +53,9 @@ namespace Tempt
             Rune.UnlockStarter();
         }
 
-        // Wave0refactor 2026-05-27: CharacterBase.LevelUp 이 이미 SyncPassivesFromRunes 를
-        // 호출하므로 여기서는 다시 호출하지 않는다. 동료 룬 자동 해금만 처리한다.
         /// <inheritdoc/>
         protected override void OnLeveledUp()
         {
-            // 동작 요약:
-            // - 직업별 성장 적용.
-            // - Rune.UnlockNextNodeIfPossible() — 미해금 노드 1개 자동 진행.
-            // - SyncPassivesFromRunes 는 CharacterBase.LevelUp 에서 이미 호출됨.
-            //   (동료 룬이 자동 해금되어 패시브가 변하더라도 다음 라운드의 PrepareForCombat 에서
-            //    ApplyAllPassiveEffects 가 다시 합산하므로 즉시 재호출은 불필요)
             if (Stats != null)
             {
                 Stats.BaseMaxHP += 6;
@@ -70,22 +65,32 @@ namespace Tempt
                 Stats.RecalculateFinalStats();
             }
 
-            Rune?.UnlockNextNodeIfPossible();
+            if (Rune != null)
+            {
+                int seed = unchecked(runeSeed * 397 ^ Level * 31 ^ Rune.UnlockedCount);
+                Rune.InvestRandomAvailable(new System.Random(seed));
+            }
         }
 
         /// <inheritdoc/>
         protected override System.Collections.Generic.IReadOnlyList<int> GetUnlockedRuneNodeIds()
         {
-            // 동작 요약:
-            // - Rune?.FixedSequence의 앞 UnlockedCount개(해금된 노드)만 잘라 반환.
-            // - Rune이 null이면 빈 목록 반환.
-            if (Rune?.FixedSequence == null)
+            var result = new System.Collections.Generic.List<int>();
+            if (Rune?.Tree?.AllNodes == null)
             {
-                return new System.Collections.Generic.List<int>();
+                return result;
             }
 
-            int count = System.Math.Min(Rune.UnlockedCount, Rune.FixedSequence.Count);
-            return Rune.FixedSequence.GetRange(0, count);
+            Rune.SyncTreeStateFromProgress();
+            foreach (RuneNode node in Rune.Tree.AllNodes.Values)
+            {
+                if (node?.Data != null && node.HasInvestment)
+                {
+                    result.Add(node.Data.Id);
+                }
+            }
+
+            return result;
         }
     }
 

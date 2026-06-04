@@ -85,11 +85,13 @@ namespace Tempt
             VisualState visualState,
             int investedPoints,
             int requiredPoints,
-            bool selected
+            bool selected,
+            bool inspectableWhenLocked = false
         )
         {
             EnsureButton();
-            bool interactable = visualState != VisualState.Locked;
+            bool interactable =
+                visualState != VisualState.Locked || inspectableWhenLocked;
             if (button != null)
             {
                 button.interactable = interactable;

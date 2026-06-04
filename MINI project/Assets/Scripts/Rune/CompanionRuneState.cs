@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace Tempt
 {
     /// <summary>
-    /// 동료 룬 상태. 게임 시작 시 정해진 노드 순서대로 레벨업할 때마다 자동 해금.
+    /// 동료 룬 상태. 레벨업할 때마다 현재 투자 가능한 노드 중 하나에 자동 투자한다.
     /// </summary>
     public sealed class CompanionRuneState
     {
@@ -13,10 +13,10 @@ namespace Tempt
         /// <summary>고정 트리.</summary>
         public RuneTree Tree;
 
-        /// <summary>해금 순서 시퀀스(시작 룬 포함).</summary>
+        /// <summary>자동 투자 이력(시작 룬 포함, 같은 노드 중복 가능).</summary>
         public List<int> FixedSequence;
 
-        /// <summary>현재까지 해금된 개수(시퀀스 인덱스).</summary>
+        /// <summary>현재까지 적용된 투자 이력 개수.</summary>
         public int UnlockedCount;
 
         /// <summary>
@@ -24,41 +24,112 @@ namespace Tempt
         /// </summary>
         public void UnlockStarter()
         {
-            // 동작 요약: FixedSequence[0] 해금, UnlockedCount = 1.
-            if (FixedSequence == null || FixedSequence.Count == 0)
+            if (Tree?.Starter?.Data == null)
             {
                 return;
             }
 
-            if (Tree?.AllNodes != null && Tree.AllNodes.TryGetValue(FixedSequence[0], out RuneNode starter))
+            if (FixedSequence == null)
             {
-                starter.Unlocked = true;
+                FixedSequence = new List<int>();
             }
 
-            UnlockedCount = 1;
+            int starterId = Tree.Starter.Data.Id;
+            if (FixedSequence.Count == 0)
+            {
+                FixedSequence.Add(starterId);
+            }
+
+            Tree.Starter.Unlocked = true;
+            UnlockedCount = System.Math.Max(1, System.Math.Min(UnlockedCount, FixedSequence.Count));
         }
 
         /// <summary>
-        /// 다음 노드 자동 해금. 레벨업 시 1회 호출.
+        /// 현재 투자 가능한 노드 중 하나에 1포인트 자동 투자한다.
         /// </summary>
-        public bool UnlockNextNodeIfPossible()
+        public bool InvestRandomAvailable(System.Random random)
         {
-            // 동작 요약:
-            // - UnlockedCount < FixedSequence.Count 검사.
-            // - 다음 노드 Unlocked = true; UnlockedCount += 1.
-            if (FixedSequence == null || UnlockedCount >= FixedSequence.Count)
+            if (random == null || Tree?.AllNodes == null)
             {
                 return false;
             }
 
-            int nextId = FixedSequence[UnlockedCount];
-            if (Tree?.AllNodes != null && Tree.AllNodes.TryGetValue(nextId, out RuneNode node))
+            UnlockStarter();
+            SyncTreeStateFromProgress();
+
+            var candidates = new List<RuneNode>();
+            foreach (RuneNode node in Tree.AllNodes.Values)
             {
-                node.Unlocked = true;
+                if (
+                    node?.Data != null
+                    && node.RequiredPoints > 0
+                    && node.InvestedPoints < node.RequiredPoints
+                    && Tree.CanUnlock(node)
+                )
+                {
+                    candidates.Add(node);
+                }
             }
 
-            UnlockedCount++;
+            if (candidates.Count == 0)
+            {
+                return false;
+            }
+
+            candidates.Sort((left, right) => left.Data.Id.CompareTo(right.Data.Id));
+            RuneNode selected = candidates[random.Next(candidates.Count)];
+            if (UnlockedCount < FixedSequence.Count)
+            {
+                FixedSequence.RemoveRange(UnlockedCount, FixedSequence.Count - UnlockedCount);
+            }
+
+            FixedSequence.Add(selected.Data.Id);
+            UnlockedCount = FixedSequence.Count;
+            SyncTreeStateFromProgress();
             return true;
+        }
+
+        public void SyncTreeStateFromProgress()
+        {
+            if (Tree?.AllNodes == null)
+            {
+                return;
+            }
+
+            if (FixedSequence == null)
+            {
+                FixedSequence = new List<int>();
+            }
+
+            foreach (RuneNode node in Tree.AllNodes.Values)
+            {
+                node.InvestedPoints = 0;
+                node.Unlocked = false;
+            }
+
+            int count = System.Math.Min(UnlockedCount, FixedSequence.Count);
+            UnlockedCount = count;
+            for (int i = 0; i < count; i++)
+            {
+                if (!Tree.AllNodes.TryGetValue(FixedSequence[i], out RuneNode node))
+                {
+                    continue;
+                }
+
+                if (node.RequiredPoints <= 0)
+                {
+                    node.Unlocked = node.Data.RequiredRuneId == 0;
+                    continue;
+                }
+
+                node.InvestedPoints = System.Math.Min(node.RequiredPoints, node.InvestedPoints + 1);
+                node.Unlocked = node.InvestedPoints >= node.RequiredPoints;
+            }
+
+            if (Tree.Starter != null)
+            {
+                Tree.Starter.Unlocked = true;
+            }
         }
 
         /// <summary>
@@ -79,14 +150,21 @@ namespace Tempt
                 return result;
             }
 
-            for (int i = 0; i < UnlockedCount && i < FixedSequence.Count; i++)
+            SyncTreeStateFromProgress();
+            foreach (RuneNode node in Tree.AllNodes.Values)
             {
-                if (!Tree.AllNodes.TryGetValue(FixedSequence[i], out RuneNode node) || node.Data == null)
+                if (node?.Data == null)
                 {
                     continue;
                 }
 
-                int value = (int)node.Data.EffectValue;
+                float ratio =
+                    node.RequiredPoints > 0
+                        ? node.InvestedPoints / (float)node.RequiredPoints
+                        : node.Unlocked
+                            ? 1f
+                            : 0f;
+                int value = UnityEngine.Mathf.RoundToInt(node.Data.EffectValue * ratio);
                 switch (node.Data.EffectType)
                 {
                     case RuneEffectType.AddMaxHP: result.HP += value; break;

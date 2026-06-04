@@ -95,6 +95,7 @@ namespace Tempt
         private ForgeEnhanceController forgeEnhanceController;
         private TavernRecruitmentController tavernRecruitmentController;
         private GuildPartyController guildPartyController;
+        private GuildCompanionsController guildCompanionsController;
         private ShopMode currentShopMode = ShopMode.Buy;
         private ShopStockEntry selectedBuyStock;
         private ShopSellEntry selectedSellEntry;
@@ -156,6 +157,7 @@ namespace Tempt
 
         public void CloseFacilities()
         {
+            guildCompanionsController?.CloseRuneTree();
             foreach (string key in Facilities)
             {
                 if (facilityGroups.TryGetValue(key, out GameObject group))
@@ -180,6 +182,11 @@ namespace Tempt
         public bool TryCloseTopPanel()
         {
             CacheHierarchy();
+            if (guildCompanionsController != null && guildCompanionsController.TryCloseRuneTree())
+            {
+                return true;
+            }
+
             if (mainFacilityPanel == null || !mainFacilityPanel.activeSelf)
             {
                 return false;
@@ -422,12 +429,16 @@ namespace Tempt
         private void CacheGuildPartyHierarchy()
         {
             guildPartyController = null;
+            guildCompanionsController = null;
             if (!facilityGroups.TryGetValue("GUILD", out GameObject guildGroup))
             {
                 return;
             }
 
             guildPartyController = guildGroup.GetComponent<GuildPartyController>();
+            guildCompanionsController = guildGroup.GetComponentInChildren<GuildCompanionsController>(
+                true
+            );
         }
 
         private void WireButtons()

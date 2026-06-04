@@ -124,6 +124,12 @@ namespace Tempt
             StartFlash(new Color(1f, 0.18f, 0.12f, 1f));
         }
 
+        /// <summary>방어 중 피격 연출(가드). 일반 피격과 구분되는 파랑 플래시.</summary>
+        public void PlayGuardHitFx()
+        {
+            StartFlash(new Color(0.4f, 0.72f, 1f, 1f));
+        }
+
         /// <summary>회복 연출.</summary>
         public void PlayHealFx()
         {

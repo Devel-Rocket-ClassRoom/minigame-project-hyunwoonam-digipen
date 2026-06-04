@@ -332,3 +332,58 @@ Balance:
 - 골드 부족 시 골드, HP/MP, 날짜가 변경되지 않음을 확인했다.
 - Safe1 정적 감사에서 비용 TMP와 REST 버튼 직렬화 참조, `TavernLodgingUI.Rest` 영구 이벤트, 빨간 Pressed Color, 일반색과 같은 Selected Color를 확인했다.
 - `dotnet build "MINI project/Assembly-CSharp.csproj"`: 경고 0 / 오류 0.
+
+## 15. 2026-06-05 Safe1 Guild Content_COMPANIONS 연결
+
+수행:
+- `GuildCompanionsController`를 추가해 `Content_COMPANIONS`를 현재 파티 권위 데이터에 연결했다.
+  - Slot 1은 Player, Slot 2~4는 `CurrentRun.Roster.Active` 최대 3명을 표시한다.
+  - 빈 행 기본값은 `SLOT 1 EMPTY`~`SLOT 4 EMPTY`로 교체했다.
+  - 선택한 파티원의 Level, EXP, Rune, Description을 `COMPANION_STATUS_Section`에 표시한다.
+- `PrimaryButton_OPEN_RUNE_TREE`를 Safe1 기존 `RuneTreePanel`에 연결했다.
+  - Header Name에 선택한 파티원 이름을 표시한다.
+  - Player와 Companion 모두 읽기 전용으로 표시하며 직접 룬 투자는 차단한다.
+  - 잠긴 룬도 선택해 DetailPanel의 Title, Type, Desc, 현재 투자 수치 / 최대 수치를 확인할 수 있다.
+- 동료 룬은 표시용 `PlayerRuneState` 복사본으로 변환해 원본 `CompanionRuneState`를 변경하지 않는다.
+- Safe1 시설 ESC 처리에서 열린 Guild RuneTreePanel을 먼저 닫도록 연결했다.
+- `OWNED_COMPANIONS_Section` 행의 기존 Image가 `raycastTarget=false`여서 포인터 클릭이 차단되던 문제를 수정했다.
+  - Safe1 씬의 4개 행 Image에 Raycast Target을 활성화했다.
+  - `GuildCompanionsController`가 초기화 시 행 Button의 Target Graphic Raycast Target을 보장한다.
+
+검증:
+- Safe1 정적 감사에서 `GuildCompanionsController` 활성, 필수 직렬화 참조 누락 0, 4개 행 Button 연결, RuneTreePanel 기본 비활성을 확인했다.
+- PlayMode 테스트 파티에서 Player + Active Companion + 빈 슬롯 순서와 상태 4종 표시를 확인했다.
+- Companion RuneTreePanel Header Name, 전체 12개 룬 노드 선택 가능, 해금 룬 `1 / 1`, 잠긴 룬 `0 / 3`, DetailPanel 표시를 확인했다.
+- Player와 Companion 양쪽에서 `OnUnlockClicked()` 호출 후 룬 진행 상태가 변경되지 않는 것을 확인했다.
+- 실제 PointerClick 이벤트 경로로 Slot 2를 선택했을 때 Description이 Player에서 선택 동료 값으로 변경되는 것을 확인했다.
+- `dotnet build "MINI project/Assembly-CSharp.csproj"`: 경고 0 / 오류 0.
+
+## 16. 2026-06-05 전투 보상 동료 EXP 및 자동 룬 투자
+
+수행:
+- 전투 승리 EXP를 플레이어뿐 아니라 전투에 참가한 `CurrentRun.Roster.Active` 동료 각각에게도 동일하게 지급하도록 연결했다.
+- 벤치 동료는 전투 미참가자이므로 EXP 지급 대상에서 제외했다.
+- 동료가 레벨업할 때마다 현재 룬 트리에서 선행 조건을 만족하고 최대 투자치에 도달하지 않은 노드 중 하나에 자동으로 1포인트 투자한다.
+- 자동 선택은 동료 Seed, 현재 Level, 투자 이력을 이용해 결정하며, 동료 Seed를 `CompanionSnapshot`에 저장/복원한다.
+- 동료 룬 투자 이력은 같은 노드 중복을 허용하며, Guild 룬 트리에서 현재 투자치 / 최대 투자치로 표시한다.
+
+검증:
+- 실제 데이터로 활성 동료 2명과 벤치 동료 1명에게 `85 EXP` 보상을 지급했다.
+  - 활성 동료 각각 `Lv.1 → Lv.4`, 잔여 EXP `5`, 자동 룬 투자 3회를 확인했다.
+  - 벤치 동료는 `Lv.1`, EXP `0`을 유지하는 것을 확인했다.
+- 모든 자동 선택이 선택 당시 선행 조건을 만족하고 최대 투자치에 도달하지 않은 노드만 대상으로 하는 것을 확인했다.
+- 실제 룬 트리의 총 투자 가능량 `21`포인트까지 자동 투자 후 초과 투자 없이 후보가 소진되는 것을 확인했다.
+- SaveSnapshot 왕복 후 동료 Seed, Level, EXP, 룬 투자 이력이 유지되고 다음 레벨업 자동 투자가 기존 진행을 이어가는 것을 확인했다.
+
+## 17. 2026-06-05 전투 씬 아군 가로 배치
+
+수행:
+- 전투 런타임 아군 배치를 세로 배치에서 가로 배치로 변경했다.
+- 플레이어와 활성 동료는 동일한 `y=1.35`에 플레이어부터 오른쪽 순서로 배치된다.
+- 몬스터는 `y=2.35`에 배치해 아군보다 위쪽에 보이도록 진영 대비를 추가했다.
+- 파티 인원에 따라 `x=-3.35`를 중심으로 `1.1` 간격을 유지해 1~4인 파티 모두 화면 안에서 중앙 정렬된다.
+
+검증:
+- 4인 파티 좌표가 `(-5.00, 1.35)`, `(-3.90, 1.35)`, `(-2.80, 1.35)`, `(-1.70, 1.35)` 순서로 계산되는 것을 확인했다.
+- 몬스터 좌표가 인원수와 관계없이 `y=2.35`를 유지하는 것을 확인했다.
+- Combat 카메라의 Orthographic Size `5` 및 화면 비율 기준으로 1~4인 아군 배치가 화면 범위 안에 유지되는 것을 확인했다.

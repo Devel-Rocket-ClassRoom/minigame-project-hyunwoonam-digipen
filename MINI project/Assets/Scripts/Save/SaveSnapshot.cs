@@ -756,6 +756,7 @@ namespace Tempt
             return new CompanionSnapshot
             {
                 CompanionId = inst.CompanionDataId,
+                Seed = inst.Seed,
                 Level = inst.Level,
                 Exp = inst.Exp,
                 FixedRuneSequence =
@@ -773,6 +774,7 @@ namespace Tempt
             return new CompanionInstance
             {
                 CompanionDataId = src.CompanionId,
+                Seed = src.Seed,
                 Level = src.Level <= 0 ? 1 : src.Level,
                 Exp = src.Exp,
                 Stats = ToStats(src.Stats),
@@ -1022,16 +1024,19 @@ namespace Tempt
         /// <summary>동료 데이터 ID.</summary>
         public int CompanionId;
 
+        /// <summary>동료별 자동 룬 선택 시드.</summary>
+        public int Seed;
+
         /// <summary>레벨.</summary>
         public int Level;
 
         /// <summary>EXP.</summary>
         public int Exp;
 
-        /// <summary>고정 룬 트리 노드 ID 시퀀스(게임 시작 시 시드로 결정, 불변).</summary>
+        /// <summary>자동 룬 투자 이력. 시작 룬을 포함하며 같은 노드가 중복될 수 있다.</summary>
         public List<int> FixedRuneSequence;
 
-        /// <summary>현재까지 해금된 룬 노드 수(레벨업마다 +1).</summary>
+        /// <summary>현재까지 적용된 자동 룬 투자 이력 수.</summary>
         public int UnlockedCount;
 
         /// <summary>현재 HP/MP/스탯.</summary>

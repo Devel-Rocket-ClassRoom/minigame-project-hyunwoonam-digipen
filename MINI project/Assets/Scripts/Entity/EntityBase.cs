@@ -121,8 +121,31 @@ namespace Tempt
             }
 
             int actualDamage = Stats.TakeDamage(remainingDamage);
-            WorldUI?.PlayHitFx();
+            bool guarded = IsDefending;
+            if (guarded)
+            {
+                WorldUI?.PlayGuardHitFx();
+            }
+            else
+            {
+                WorldUI?.PlayHitFx();
+            }
+
+            SpawnFloatingDamage(actualDamage, guarded);
             return actualDamage;
+        }
+
+        private void SpawnFloatingDamage(int amount, bool guarded)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+
+            Vector3 position = WorldUI != null
+                ? WorldUI.EffectAnchorPosition
+                : transform.position + new Vector3(0f, 0.9f, 0f);
+            CombatFloatingText.SpawnDamage(position, amount, guarded);
         }
 
         /// <summary>
@@ -143,6 +166,14 @@ namespace Tempt
             Stats.CurrentHP = Mathf.Min(Stats.CurrentHP + rawHeal, Stats.MaxHP);
             int actualHeal = Stats.CurrentHP - before;
             WorldUI?.PlayHealFx();
+            if (actualHeal > 0)
+            {
+                Vector3 position = WorldUI != null
+                    ? WorldUI.EffectAnchorPosition
+                    : transform.position + new Vector3(0f, 0.9f, 0f);
+                CombatFloatingText.SpawnHeal(position, actualHeal);
+            }
+
             return actualHeal;
         }
 

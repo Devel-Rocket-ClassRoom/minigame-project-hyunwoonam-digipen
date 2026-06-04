@@ -56,6 +56,9 @@ namespace Tempt
         private Transform runtimeRoot;
         private EntityBase hoveredTarget;
 
+        /// <summary>라운드 전환 배너 1회 트리거용 직전 FSM 상태.</summary>
+        private CombatState lastFlowState;
+
         private sealed class DeadEnemyRemovalMarker : MonoBehaviour { }
 
         /// <inheritdoc/>
@@ -76,8 +79,9 @@ namespace Tempt
             PrepareRuntimeRoot();
             DisableSceneAuthoredCombatUnits();
 
-            Player = CreateRuntimePlayer(gsm.CurrentRun.Player);
-            Companions = CreateRuntimeCompanions(gsm.CurrentRun.Roster);
+            int allyCount = 1 + CountActiveCompanions(gsm.CurrentRun.Roster);
+            Player = CreateRuntimePlayer(gsm.CurrentRun.Player, allyCount);
+            Companions = CreateRuntimeCompanions(gsm.CurrentRun.Roster, allyCount);
 
             Spawner.SpawnFromNode(ctx.Node, runtimeRoot, BuildEnemyPositions(ctx.Node));
             Monsters = Spawner.SpawnedT ?? new List<MonsterBase>();
@@ -116,6 +120,7 @@ namespace Tempt
             combatEnded = false;
             playerActionSelector = new PlayerActionSelector();
             hoveredTarget = null;
+            lastFlowState = CombatState.Starting;
 
             Hud.Bind(this, Player);
             Hud.OnOpen();
@@ -188,11 +193,22 @@ namespace Tempt
         {
             Targeter?.Tick();
             Flow?.Tick();
-            if (Flow != null && Flow.State == CombatState.Ended && !combatEnded)
+            if (Flow != null)
             {
-                combatEnded = true;
-                CombatResult result = Flow.CheckOutcome() ?? CombatResult.Defeat;
-                GameSystemManager.Instance.EndCombat(result, this);
+                // 라운드 전환 진입 엣지에서 "Round N" 배너를 1회 표시(bookend 경계 인지).
+                if (Flow.State == CombatState.RoundTransition && lastFlowState != CombatState.RoundTransition)
+                {
+                    CombatRoundBanner.Show(Flow.RoundNumber);
+                }
+
+                lastFlowState = Flow.State;
+
+                if (Flow.State == CombatState.Ended && !combatEnded)
+                {
+                    combatEnded = true;
+                    CombatResult result = Flow.CheckOutcome() ?? CombatResult.Defeat;
+                    GameSystemManager.Instance.EndCombat(result, this);
+                }
             }
         }
 
@@ -363,11 +379,11 @@ namespace Tempt
             }
         }
 
-        private Player CreateRuntimePlayer(PlayerState state)
+        private Player CreateRuntimePlayer(PlayerState state, int allyCount)
         {
             GameObject go = new GameObject("Player.Runtime");
             go.transform.SetParent(runtimeRoot, false);
-            go.transform.position = AllyPosition(0);
+            go.transform.position = AllyPosition(0, allyCount);
 
             Player runtimePlayer = go.AddComponent<Player>();
             runtimePlayer.BindState(state);
@@ -375,7 +391,7 @@ namespace Tempt
             return runtimePlayer;
         }
 
-        private List<TeamBase> CreateRuntimeCompanions(CompanionRosterState roster)
+        private List<TeamBase> CreateRuntimeCompanions(CompanionRosterState roster, int allyCount)
         {
             var result = new List<TeamBase>();
             if (roster?.Active == null)
@@ -394,7 +410,7 @@ namespace Tempt
 
                 GameObject go = new GameObject("Companion.Runtime." + state.CompanionDataId);
                 go.transform.SetParent(runtimeRoot, false);
-                go.transform.position = AllyPosition(result.Count + 1);
+                go.transform.position = AllyPosition(result.Count + 1, allyCount);
 
                 CombatCompanion companion = go.AddComponent<CombatCompanion>();
                 companion.BindState(state);
@@ -409,6 +425,26 @@ namespace Tempt
             }
 
             return result;
+        }
+
+        private static int CountActiveCompanions(CompanionRosterState roster)
+        {
+            if (roster?.Active == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            int limit = Mathf.Min(3, roster.Active.Count);
+            for (int i = 0; i < limit; i++)
+            {
+                if (roster.Active[i] != null)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         private void ConfigureCombatUnit(
@@ -530,11 +566,13 @@ namespace Tempt
             return 48f;
         }
 
-        private static Vector3 AllyPosition(int index)
+        private static Vector3 AllyPosition(int index, int allyCount)
         {
-            float[] yOffsets = { 0f, -0.95f, 0.95f, -1.9f };
-            int safeIndex = Mathf.Clamp(index, 0, yOffsets.Length - 1);
-            return new Vector3(-3.35f, 1.85f + yOffsets[safeIndex], 0f);
+            int count = Mathf.Clamp(allyCount, 1, 4);
+            int safeIndex = Mathf.Clamp(index, 0, count - 1);
+            float spacing = 1.1f;
+            float startX = -3.35f - (count - 1) * spacing * 0.5f;
+            return new Vector3(startX + safeIndex * spacing, 1.35f, 0f);
         }
 
         private static IReadOnlyList<Vector3> BuildEnemyPositions(FloorNode node)
@@ -551,7 +589,7 @@ namespace Tempt
             float startX = 3.35f - (count - 1) * spacing * 0.5f;
             for (int i = 0; i < count; i++)
             {
-                positions.Add(new Vector3(startX + i * spacing, 1.85f, 0f));
+                positions.Add(new Vector3(startX + i * spacing, 2.35f, 0f));
             }
 
             return positions;
