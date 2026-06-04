@@ -1,0 +1,38 @@
+{
+    "asset": "bbb6ed64f513c5d42b373957c690b105",
+    "fileName": "019e8e03-d71d-740d-8afe-d7e548a0f2c8.png",
+    "prompt": "An empty, desolate clearing in a dark forest at night. Thick ethereal fog clings to the ground. The environment consists of dead grass, muddy earth, and twisted leafless trees in the background. NO tombstones, NO graves, NO markers, and NO stone structures. The central area is completely open and empty. Dark fantasy painterly style, deep blacks and dark blue lighting. High contrast and gritty texture matching the project's somber mood. Nighttime moonlit atmosphere.",
+    "negativePrompt": "",
+    "model": "gemini-3.1-flash",
+    "modelName": "Gemini 3.1 Nano Banana 2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "25b15c25187b4394cbb16ae5d35c07e4",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}

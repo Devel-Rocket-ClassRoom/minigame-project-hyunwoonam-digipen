@@ -50,6 +50,15 @@ namespace Tempt
         /// <summary>마석.</summary>
         public int ManaStone;
 
+        /// <summary>광산 활성 상태(Safe3~5).</summary>
+        public List<bool> MineActivated;
+
+        /// <summary>광산별 미수령 누적 골드.</summary>
+        public List<int> MineStored;
+
+        /// <summary>광산별 마지막 일일 적립 일자.</summary>
+        public List<int> LastMineGainDay;
+
         /// <summary>튜토리얼 진행.</summary>
         public TutorialSnapshot Tutorial;
 
@@ -80,6 +89,9 @@ namespace Tempt
                 ShopStock = FromShopStock(run.ShopStock),
                 Gold = run.Gold,
                 ManaStone = run.ManaStone,
+                MineActivated = FromBoolArray(run.MineActivated, 3),
+                MineStored = FromIntArray(run.MineStored, 3, 0),
+                LastMineGainDay = FromIntArray(run.LastMineGainDay, 3, -1),
                 Tutorial = new TutorialSnapshot
                 {
                     CompletedSteps =
@@ -114,6 +126,9 @@ namespace Tempt
                 ShopStock = ToShopStock(ShopStock),
                 Gold = Gold,
                 ManaStone = ManaStone,
+                MineActivated = ToBoolArray(MineActivated, 3),
+                MineStored = ToIntArray(MineStored, 3, 0),
+                LastMineGainDay = ToIntArray(LastMineGainDay, 3, -1),
                 Tutorial = new TutorialProgressState
                 {
                     CompletedSteps =
@@ -125,7 +140,52 @@ namespace Tempt
 
             run.CurrentFloor = ResolveCurrentFloor(run.FloorMap);
             run.HighestFloor = ResolveHighestClearedFloor(run.FloorMap);
+            run.EnsureMineState();
             return run;
+        }
+
+        private static List<bool> FromBoolArray(bool[] values, int count)
+        {
+            var result = new List<bool>();
+            for (int i = 0; i < count; i++)
+            {
+                result.Add(values != null && i < values.Length && values[i]);
+            }
+
+            return result;
+        }
+
+        private static bool[] ToBoolArray(List<bool> values, int count)
+        {
+            var result = new bool[count];
+            for (int i = 0; i < count; i++)
+            {
+                result[i] = values != null && i < values.Count && values[i];
+            }
+
+            return result;
+        }
+
+        private static List<int> FromIntArray(int[] values, int count, int fallback)
+        {
+            var result = new List<int>();
+            for (int i = 0; i < count; i++)
+            {
+                result.Add(values != null && i < values.Length ? values[i] : fallback);
+            }
+
+            return result;
+        }
+
+        private static int[] ToIntArray(List<int> values, int count, int fallback)
+        {
+            var result = new int[count];
+            for (int i = 0; i < count; i++)
+            {
+                result[i] = values != null && i < values.Count ? values[i] : fallback;
+            }
+
+            return result;
         }
 
         private static FloorMapSnapshot FromFloorMap(FloorMapModel map)

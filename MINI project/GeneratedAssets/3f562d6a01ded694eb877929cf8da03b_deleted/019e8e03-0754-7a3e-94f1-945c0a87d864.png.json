@@ -1,0 +1,38 @@
+{
+    "asset": "3f562d6a01ded694eb877929cf8da03b",
+    "fileName": "019e8e03-0754-7a3e-94f1-945c0a87d864.png",
+    "prompt": "A somber and atmospheric graveyard background for a dark fantasy RPG. The environment is a foggy, moonlit field with patches of dead grass and twisted, leafless trees. The ground is uneven with some muddy paths and low stone fences, but NO tombstones or graves are present. The composition leaves clear, open spaces for tombstones to be added later. The art style is painterly and moody, matching the deep blacks, dark blues, and dramatic low-key lighting of the provided reference image. Faint ethereal fog clings to the ground. High contrast, gritty texture.",
+    "negativePrompt": "",
+    "model": "gemini-3.1-flash",
+    "modelName": "Gemini 3.1 Nano Banana 2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "25b15c25187b4394cbb16ae5d35c07e4",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}

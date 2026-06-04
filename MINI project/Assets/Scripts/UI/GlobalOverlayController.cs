@@ -34,8 +34,12 @@ namespace Tempt
         private GameObject gameOverPanel;
 
         [SerializeField]
+        private GameObject erosionGameOverPanel;
+
+        [SerializeField]
         private QuitConfirmPopup quitConfirmPopup;
 
+        private GameObject activeGameOverPanel;
         private bool gameOverOpen;
         private float gameOverInputReadyTime;
 
@@ -106,18 +110,33 @@ namespace Tempt
                 return;
             }
 
-            inventoryPage.OnClose();
-            HideRunePage();
-            HideSkillPage();
-            HideStatRunePage();
-            gameOverPanel.SetActive(true);
-            gameOverOpen = true;
-            gameOverInputReadyTime = Time.unscaledTime + 0.2f;
+            ShowGameOverPanel(gameOverPanel);
         }
 
         public void ShowAllStagesEroded()
         {
-            ShowGameOver();
+            if (!TryResolveErosionGameOverPanel())
+            {
+                Debug.LogError(
+                    "[GlobalOverlayController] Boot ErosionGameOverRoot 패널을 찾을 수 없습니다."
+                );
+                return;
+            }
+
+            ShowGameOverPanel(erosionGameOverPanel);
+        }
+
+        private void ShowGameOverPanel(GameObject panel)
+        {
+            inventoryPage.OnClose();
+            HideRunePage();
+            HideSkillPage();
+            HideStatRunePage();
+            HideGameOverPanels();
+            panel.SetActive(true);
+            activeGameOverPanel = panel;
+            gameOverOpen = true;
+            gameOverInputReadyTime = Time.unscaledTime + 0.2f;
         }
 
         public void ShowQuitConfirm(System.Action onConfirm)
@@ -190,13 +209,8 @@ namespace Tempt
 
         public void HideGameOver()
         {
-            if (!TryResolveGameOverPanel())
-            {
-                gameOverOpen = false;
-                return;
-            }
-
-            gameOverPanel.SetActive(false);
+            HideGameOverPanels();
+            activeGameOverPanel = null;
             gameOverOpen = false;
         }
 
@@ -241,10 +255,10 @@ namespace Tempt
             EnsureShortcutPanelSizing(skillPageRoot);
             skillPageRoot.SetActive(true);
             EnsureShortcutPanelController(
-                    skillPageRoot,
-                    ShortcutInfoPanelController.PageKind.Skills,
-                    ref skillPageController
-                )
+                skillPageRoot,
+                ShortcutInfoPanelController.PageKind.Skills,
+                ref skillPageController
+            )
                 ?.Show(HideSkillPage);
         }
 
@@ -272,10 +286,10 @@ namespace Tempt
             EnsureShortcutPanelSizing(statRunePageRoot);
             statRunePageRoot.SetActive(true);
             EnsureShortcutPanelController(
-                    statRunePageRoot,
-                    ShortcutInfoPanelController.PageKind.Status,
-                    ref statPageController
-                )
+                statRunePageRoot,
+                ShortcutInfoPanelController.PageKind.Status,
+                ref statPageController
+            )
                 ?.Show(HideStatRunePage);
         }
 
@@ -320,6 +334,41 @@ namespace Tempt
 
             gameOverPanel = found.gameObject;
             return true;
+        }
+
+        private bool TryResolveErosionGameOverPanel()
+        {
+            if (erosionGameOverPanel != null)
+            {
+                return true;
+            }
+
+            if (persistentRoot == null)
+            {
+                return false;
+            }
+
+            Transform found = FindChildRecursive(persistentRoot.transform, "ErosionGameOverRoot");
+            erosionGameOverPanel = found != null ? found.gameObject : null;
+            return erosionGameOverPanel != null;
+        }
+
+        private void HideGameOverPanels()
+        {
+            if (gameOverPanel != null)
+            {
+                gameOverPanel.SetActive(false);
+            }
+
+            if (erosionGameOverPanel != null)
+            {
+                erosionGameOverPanel.SetActive(false);
+            }
+
+            if (activeGameOverPanel != null)
+            {
+                activeGameOverPanel.SetActive(false);
+            }
         }
 
         private bool TryResolveQuitConfirmPopup()

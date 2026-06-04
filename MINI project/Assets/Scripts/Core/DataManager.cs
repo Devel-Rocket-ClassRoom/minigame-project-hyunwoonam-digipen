@@ -374,23 +374,23 @@ namespace Tempt
         private static Dictionary<int, MonsterData> BuildFallbackMonsters()
         {
             var table = new Dictionary<int, MonsterData>();
-            AddMonster(table, 1001, "monster.slime", false, 1, 24, 4, 7, 1, 8, 5, 5, 1);
-            AddMonster(table, 1002, "monster.imp", false, 2, 34, 6, 9, 2, 10, 7, 7, 1);
-            AddMonster(table, 1003, "monster.guard", false, 3, 46, 8, 12, 4, 9, 10, 10, 2);
-            AddMonster(table, 1004, "monster.knight", false, 4, 58, 10, 15, 5, 11, 14, 14, 2);
-            AddMonster(table, 1005, "monster.wraith", false, 5, 72, 12, 18, 6, 13, 18, 18, 2);
-            AddMonster(table, 1006, "monster.elite", false, 6, 88, 14, 22, 8, 14, 24, 24, 3);
-            AddMonster(table, 1901, "monster.boss.stage1", true, 3, 90, 12, 14, 4, 9, 30, 30, 3);
-            AddMonster(table, 1902, "monster.boss.stage2", true, 5, 130, 16, 20, 6, 11, 45, 45, 3);
-            AddMonster(table, 1903, "monster.boss.stage3", true, 7, 180, 20, 27, 8, 13, 65, 65, 3);
-            AddMonster(table, 1904, "monster.boss.stage4", true, 9, 240, 25, 34, 10, 14, 90, 90, 3);
+            AddMonster(table, 1001, "monster.slime", false, 1, 1, 4, 7, 1, 8, 5, 5, 1);
+            AddMonster(table, 1002, "monster.imp", false, 2, 1, 6, 9, 2, 10, 7, 7, 1);
+            AddMonster(table, 1003, "monster.guard", false, 3, 1, 8, 12, 4, 9, 10, 10, 2);
+            AddMonster(table, 1004, "monster.knight", false, 4, 1, 10, 15, 5, 11, 14, 14, 2);
+            AddMonster(table, 1005, "monster.wraith", false, 5, 1, 12, 18, 6, 13, 18, 18, 2);
+            AddMonster(table, 1006, "monster.elite", false, 6, 1, 14, 22, 8, 14, 24, 24, 3);
+            AddMonster(table, 1901, "monster.boss.stage1", true, 3, 1, 12, 14, 4, 9, 30, 30, 3);
+            AddMonster(table, 1902, "monster.boss.stage2", true, 5, 1, 16, 20, 6, 11, 45, 45, 3);
+            AddMonster(table, 1903, "monster.boss.stage3", true, 7, 1, 20, 27, 8, 13, 65, 65, 3);
+            AddMonster(table, 1904, "monster.boss.stage4", true, 9, 1, 25, 34, 10, 14, 90, 90, 3);
             AddMonster(
                 table,
                 1905,
                 "monster.boss.stage5",
                 true,
                 11,
-                310,
+                1,
                 30,
                 42,
                 12,
@@ -405,7 +405,7 @@ namespace Tempt
                 "monster.boss.final",
                 true,
                 13,
-                420,
+                1,
                 40,
                 55,
                 16,
@@ -969,8 +969,9 @@ namespace Tempt
                 EnhanceMinSuccessRate = 0.2f,
                 EnhancePityFailCount = 5,
                 MineDailyGain = new List<int> { 1, 2, 3 },
+                MineActivationCost = 1,
                 ErosionAltarReduction = 10f,
-                ErosionAltarCost = 3,
+                ErosionAltarCost = 1,
                 MinActionTimeSec = 0.1f,
                 RuneResetRefundRate = 0.8f,
                 RuneResetCostGold = 1,

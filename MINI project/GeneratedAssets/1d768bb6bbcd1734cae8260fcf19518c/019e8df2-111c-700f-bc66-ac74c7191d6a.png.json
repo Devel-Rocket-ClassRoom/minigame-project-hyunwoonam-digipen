@@ -1,0 +1,38 @@
+{
+    "asset": "1d768bb6bbcd1734cae8260fcf19518c",
+    "fileName": "019e8df2-111c-700f-bc66-ac74c7191d6a.png",
+    "prompt": "Front view of a clean monolithic black stone stele, obelisk shape, sharp edges, weathered stone texture, absolutely no text, no runes, isolated on a solid neutral background for easy removal. Dark fantasy aesthetic, painterly style matching the provided reference image. Golden highlights on stone edges. Cinematic lighting.",
+    "negativePrompt": "",
+    "model": "gemini-3.1-flash",
+    "modelName": "Gemini 3.1 Nano Banana 2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "64c1f3c0fba386940bc07f5fc2a03fbc",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}

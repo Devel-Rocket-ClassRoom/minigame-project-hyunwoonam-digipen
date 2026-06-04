@@ -1,0 +1,38 @@
+{
+    "asset": "2a120b75aca148c4baff21835f733096",
+    "fileName": "019e8df0-22e8-7d96-b6a8-d4e3227a156c.png",
+    "prompt": "A clean, monolithic black stone stele, dark obsidian obelisk with sharp edges. Weathered but smooth stone texture, absolutely no text, no runes, and no inscriptions on the surface. Painterly anime art style matching the provided reference image. Dark grey and deep black tones. Low angle perspective looking up. Cinematic lighting.",
+    "negativePrompt": "",
+    "model": "gemini-3.1-flash",
+    "modelName": "Gemini 3.1 Nano Banana 2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "64c1f3c0fba386940bc07f5fc2a03fbc",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}

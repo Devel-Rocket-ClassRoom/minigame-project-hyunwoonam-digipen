@@ -1,0 +1,38 @@
+{
+    "asset": "986079c993758f949a5d18d1b89d4edc",
+    "fileName": "019e8e0b-34bb-7bc4-9b58-5fc3486e7bbd.png",
+    "prompt": "The exact same tombstone design as the reference image, but with faint weathered text and ancient engravings carved into the front surface. Maintain the same shape, texture, and lighting. No other changes. Isolated on a neutral background.",
+    "negativePrompt": "",
+    "model": "gemini-3.1-flash",
+    "modelName": "Gemini 3.1 Nano Banana 2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "5ed1432a3b0d11c438a1a33b64d195bd",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}

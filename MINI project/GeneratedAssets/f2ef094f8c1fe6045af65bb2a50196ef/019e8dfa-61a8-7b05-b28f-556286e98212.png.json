@@ -1,0 +1,38 @@
+{
+    "asset": "f2ef094f8c1fe6045af65bb2a50196ef",
+    "fileName": "019e8dfa-61a8-7b05-b28f-556286e98212.png",
+    "prompt": "A monolithic black stone stele, obsidian obelisk with sharp vertical edges. Rotate the object approximately 30 degrees to the right so the shadowed left face moves towards the center and becomes more front-facing. Deep obsidian tones, weathered stone texture, high contrast. No text, no runes. Golden highlights on edges. Painterly dark fantasy style matching the reference. Isolated on a neutral background.",
+    "negativePrompt": "",
+    "model": "gemini-3.1-flash",
+    "modelName": "Gemini 3.1 Nano Banana 2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "a3a10c65fb59609419e1e9613be8d742",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}

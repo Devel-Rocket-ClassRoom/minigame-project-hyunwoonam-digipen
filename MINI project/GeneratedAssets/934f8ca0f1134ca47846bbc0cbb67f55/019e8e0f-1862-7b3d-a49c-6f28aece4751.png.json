@@ -1,0 +1,38 @@
+{
+  "asset": "934f8ca0f1134ca47846bbc0cbb67f55",
+  "fileName": "019e8e0f-1862-7b3d-a49c-6f28aece4751.png",
+  "prompt": "Make the tombstone look brand new and polished. Remove all moss, cracks, weathering, and aging effects. The surface should be smooth, clean, and pristine stone. Maintain the same front-facing rotated angle and shape. Dark fantasy aesthetic, painterly style. Golden highlights on edges. Isolated on a neutral background.",
+  "negativePrompt": "",
+  "model": "flux-2-dev",
+  "modelName": "Flux 2 (Dev)",
+  "customSeed": -1,
+  "w3CTraceId": "",
+  "feedback": 1,
+  "refinementMode": "Generation",
+  "pixelateTargetSize": 0,
+  "pixelateKeepImageSize": false,
+  "pixelatePixelBlockSize": 0,
+  "pixelatePixelGridSize": 0,
+  "pixelateMode": 0,
+  "pixelateOutlineThickness": 0,
+  "doodles": {
+    "m_Items": [
+      {
+        "doodleReferenceType": 7,
+        "doodle": [],
+        "label": "Image",
+        "strength": 0.25,
+        "invertStrength": false,
+        "assetReferenceGuid": "934f8ca0f1134ca47846bbc0cbb67f55",
+        "unlabeledIndex": -1
+      }
+    ]
+  },
+  "upscaleFactor": 0,
+  "dimensions": {
+    "width": 1024,
+    "height": 1024
+  },
+  "spriteSheet": false,
+  "duration": 0.0
+}
