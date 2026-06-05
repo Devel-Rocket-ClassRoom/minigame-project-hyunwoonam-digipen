@@ -115,7 +115,7 @@ namespace Tempt
                 return;
             }
 
-            dayLabel.text = "Day " + day;
+            dayLabel.text = Loc.Format("safe_day_fmt", day);
         }
 
         private void WireEnterFloorMapButton()

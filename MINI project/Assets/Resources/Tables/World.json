@@ -7,7 +7,7 @@
       "BossFloor": 3,
       "UnlocksSafeZoneIndex": 1,
       "DifficultyMin": 1,
-      "DifficultyMax": 2
+      "DifficultyMax": 3
     },
     {
       "StageIndex": 2,
@@ -15,8 +15,8 @@
       "FloorEnd": 10,
       "BossFloor": 11,
       "UnlocksSafeZoneIndex": 2,
-      "DifficultyMin": 2,
-      "DifficultyMax": 4
+      "DifficultyMin": 5,
+      "DifficultyMax": 7
     },
     {
       "StageIndex": 3,
@@ -24,8 +24,8 @@
       "FloorEnd": 18,
       "BossFloor": 19,
       "UnlocksSafeZoneIndex": 3,
-      "DifficultyMin": 3,
-      "DifficultyMax": 6
+      "DifficultyMin": 9,
+      "DifficultyMax": 11
     },
     {
       "StageIndex": 4,
@@ -33,8 +33,8 @@
       "FloorEnd": 28,
       "BossFloor": 29,
       "UnlocksSafeZoneIndex": 4,
-      "DifficultyMin": 4,
-      "DifficultyMax": 8
+      "DifficultyMin": 13,
+      "DifficultyMax": 15
     },
     {
       "StageIndex": 5,
@@ -42,8 +42,8 @@
       "FloorEnd": 38,
       "BossFloor": 39,
       "UnlocksSafeZoneIndex": 5,
-      "DifficultyMin": 5,
-      "DifficultyMax": 10
+      "DifficultyMin": 17,
+      "DifficultyMax": 19
     },
     {
       "StageIndex": 6,
@@ -51,8 +51,8 @@
       "FloorEnd": 48,
       "BossFloor": 49,
       "UnlocksSafeZoneIndex": 5,
-      "DifficultyMin": 6,
-      "DifficultyMax": 12
+      "DifficultyMin": 21,
+      "DifficultyMax": 23
     }
   ],
   "SafeZones": [

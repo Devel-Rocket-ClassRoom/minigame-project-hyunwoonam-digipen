@@ -2,8 +2,8 @@ Id,NameKey,DescKey,SkillType,AcquireType,PurchasePrice,MpCost,DamageScale,HealSc
 1,skill.slash,,Active,Default,0,0,1.2,0,0,EnemySingle,,Destruction_air_normal,0.35,0,1
 2,skill.fire,,Active,Default,0,4,0.85,0,0,EnemyAll,,explosion_3,0.5,1,1
 3,skill.heal,,Active,Default,0,3,0,1.1,0,AllySingle,,Destruction_air_blue,0.45,0,1
-4,skill.power_strike,,Active,Shop,1,5,2.0,0,0,EnemySingle,,Shotgun_hit_normal,0.45,1,1
-5,skill.cleave,,Active,Shop,1,5,1.25,0,0,EnemyAll,,Destruction_air_normal,0.5,1,1
-6,skill.execution,,Active,Shop,2,8,2.8,0,0,EnemySingle,,Shotgun_hit_normal,0.55,2,1
-7,skill.flame_burst,,Active,Shop,2,7,1.7,0,0,EnemyAll,,explosion_3,0.6,2,1
+4,skill.power_strike,,Active,Shop,45,5,2.0,0,0,EnemySingle,,Shotgun_hit_normal,0.45,1,1
+5,skill.cleave,,Active,Shop,55,5,1.25,0,0,EnemyAll,,Destruction_air_normal,0.5,1,1
+6,skill.execution,,Active,Shop,95,8,2.8,0,0,EnemySingle,,Shotgun_hit_normal,0.55,2,1
+7,skill.flame_burst,,Active,Shop,110,7,1.7,0,0,EnemyAll,,explosion_3,0.6,2,1
 900,skill.bite,,Active,MonsterOnly,0,0,1.05,0,0,EnemySingle,,Destruction_air_blue,0.35,0,1

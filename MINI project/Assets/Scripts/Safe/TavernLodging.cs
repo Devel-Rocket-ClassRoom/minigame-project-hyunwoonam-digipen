@@ -3,7 +3,7 @@ namespace Tempt
     /// <summary>Safe1 주점 숙박 비용, 회복, 일자 진행 규칙.</summary>
     public static class TavernLodging
     {
-        public const int CostPerPerson = 1;
+        private const int DefaultCostPerPerson = 1;
 
         public static int GetPartySize(GameRunState run)
         {
@@ -18,23 +18,38 @@ namespace Tempt
 
         public static int GetRestCost(GameRunState run)
         {
-            return GetPartySize(run) * CostPerPerson;
+            return GetRestCost(run, ResolveBalance());
+        }
+
+        public static int GetRestCost(GameRunState run, BalanceData balance)
+        {
+            return GetPartySize(run) * GetCostPerPerson(balance);
         }
 
         public static bool CanRest(GameRunState run)
         {
-            int cost = GetRestCost(run);
+            return CanRest(run, ResolveBalance());
+        }
+
+        public static bool CanRest(GameRunState run, BalanceData balance)
+        {
+            int cost = GetRestCost(run, balance);
             return cost > 0 && run != null && run.Gold >= cost;
         }
 
         public static bool TryRest(GameRunState run)
         {
-            if (!CanRest(run))
+            return TryRest(run, ResolveBalance());
+        }
+
+        public static bool TryRest(GameRunState run, BalanceData balance)
+        {
+            if (!CanRest(run, balance))
             {
                 return false;
             }
 
-            int cost = GetRestCost(run);
+            int cost = GetRestCost(run, balance);
             run.Gold -= cost;
             run.Player.Stats?.RestoreToFull();
 
@@ -49,6 +64,23 @@ namespace Tempt
             run.CurrentDay += 1;
             RaiseChanged(run);
             return true;
+        }
+
+        public static int GetCostPerPerson(BalanceData balance)
+        {
+            return System.Math.Max(
+                1,
+                balance != null && balance.TavernLodgingCostPerPerson > 0
+                    ? balance.TavernLodgingCostPerPerson
+                    : DefaultCostPerPerson
+            );
+        }
+
+        private static BalanceData ResolveBalance()
+        {
+            return GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                ? gsm.Data?.Balance
+                : null;
         }
 
         private static void RaiseChanged(GameRunState run)

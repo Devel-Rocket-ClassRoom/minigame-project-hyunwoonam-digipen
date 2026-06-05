@@ -3,13 +3,20 @@ namespace Tempt
     /// <summary>Safe1 주점 보관함의 활성화, 업그레이드, 이동, 폐기 규칙.</summary>
     public static class TavernStorage
     {
-        public const int ActivationCost = 1;
+        private const int DefaultActivationCost = 1;
+        private const int DefaultUpgradeBaseCost = 2;
+        private const int DefaultUpgradeCostStep = 1;
 
         public static int GetNextUpgradeCost(LockerState locker)
         {
+            return GetNextUpgradeCost(locker, ResolveBalance());
+        }
+
+        public static int GetNextUpgradeCost(LockerState locker, BalanceData balance)
+        {
             if (locker == null || !locker.Unlocked)
             {
-                return ActivationCost;
+                return ActivationCost(balance);
             }
 
             locker.NormalizeCapacity();
@@ -20,10 +27,15 @@ namespace Tempt
 
             int completedUpgrades =
                 (locker.Capacity - LockerState.InitialCapacity) / LockerState.CapacityStep;
-            return completedUpgrades + 2;
+            return UpgradeBaseCost(balance) + completedUpgrades * UpgradeCostStep(balance);
         }
 
         public static bool TryActivateOrUpgrade(GameRunState run)
+        {
+            return TryActivateOrUpgrade(run, ResolveBalance());
+        }
+
+        public static bool TryActivateOrUpgrade(GameRunState run, BalanceData balance)
         {
             LockerState locker = run?.Player?.Locker;
             if (locker == null)
@@ -31,7 +43,7 @@ namespace Tempt
                 return false;
             }
 
-            int cost = GetNextUpgradeCost(locker);
+            int cost = GetNextUpgradeCost(locker, balance);
             if (cost <= 0 || run.Gold < cost)
             {
                 return false;
@@ -110,7 +122,12 @@ namespace Tempt
             return moved;
         }
 
-        public static bool TryDiscardStack(GameRunState run, bool fromStorage, int itemId, int count)
+        public static bool TryDiscardStack(
+            GameRunState run,
+            bool fromStorage,
+            int itemId,
+            int count
+        )
         {
             bool removed = fromStorage
                 ? run?.Player?.Locker?.Remove(itemId, count) == true
@@ -154,6 +171,43 @@ namespace Tempt
             {
                 gsm.Save?.SaveSnapshot();
             }
+        }
+
+        private static BalanceData ResolveBalance()
+        {
+            return GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                ? gsm.Data?.Balance
+                : null;
+        }
+
+        private static int ActivationCost(BalanceData balance)
+        {
+            return System.Math.Max(
+                1,
+                balance != null && balance.TavernStorageActivationCost > 0
+                    ? balance.TavernStorageActivationCost
+                    : DefaultActivationCost
+            );
+        }
+
+        private static int UpgradeBaseCost(BalanceData balance)
+        {
+            return System.Math.Max(
+                1,
+                balance != null && balance.TavernStorageUpgradeBaseCost > 0
+                    ? balance.TavernStorageUpgradeBaseCost
+                    : DefaultUpgradeBaseCost
+            );
+        }
+
+        private static int UpgradeCostStep(BalanceData balance)
+        {
+            return System.Math.Max(
+                0,
+                balance != null && balance.TavernStorageUpgradeCostStep >= 0
+                    ? balance.TavernStorageUpgradeCostStep
+                    : DefaultUpgradeCostStep
+            );
         }
     }
 }

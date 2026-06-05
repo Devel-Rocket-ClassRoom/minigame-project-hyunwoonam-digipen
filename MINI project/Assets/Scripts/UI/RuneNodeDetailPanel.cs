@@ -101,19 +101,19 @@ namespace Tempt
             {
                 if (unlocked)
                 {
-                    unlockButtonLabel.text = "MASTERED";
+                    unlockButtonLabel.text = Loc.Get("rune_mastered");
                 }
                 else if (viewOnly)
                 {
-                    unlockButtonLabel.text = "VIEW ONLY";
+                    unlockButtonLabel.text = Loc.Get("rune_view_only");
                 }
                 else if (unlockable)
                 {
-                    unlockButtonLabel.text = "INVEST POINT";
+                    unlockButtonLabel.text = Loc.Get("rune_invest");
                 }
                 else
                 {
-                    unlockButtonLabel.text = "LOCKED";
+                    unlockButtonLabel.text = Loc.Get("rune_locked");
                 }
             }
         }

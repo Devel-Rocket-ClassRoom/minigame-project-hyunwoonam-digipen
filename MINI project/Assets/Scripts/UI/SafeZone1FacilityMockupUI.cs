@@ -24,6 +24,7 @@ namespace Tempt
             public Button Button;
             public Graphic Background;
             public Color BaseColor;
+            public Outline Border;
             public TextMeshProUGUI Name;
             public TextMeshProUGUI Role;
             public TextMeshProUGUI Description;
@@ -57,7 +58,13 @@ namespace Tempt
             "FORGE",
             "SHRINE",
         };
+        private const float ShopRowPreferredHeight = 78f;
         private const int Safe1ShopSellPrice = 1;
+        private static readonly Color ShopRowBaseColor = new Color(0.09f, 0.09f, 0.09f, 0.96f);
+        private static readonly Color ShopRowSelectedColor = new Color(0.42f, 0.30f, 0.08f, 0.96f);
+        private static readonly Color ShopRowBorderColor = new Color(0.70f, 0.62f, 0.42f, 1f);
+        private static readonly Color ShopRowSelectedBorderColor = new Color(1f, 0.76f, 0.18f, 1f);
+        private static readonly Color ShopRowTextColor = new Color(0.88f, 0.88f, 0.86f, 1f);
 
         private readonly Dictionary<string, GameObject> facilityGroups =
             new Dictionary<string, GameObject>();
@@ -106,7 +113,7 @@ namespace Tempt
         private Color activeButton = new Color(0.16f, 0.035f, 0.047f, 1f);
         private Color inactiveButton = new Color(0.09f, 0.09f, 0.09f, 1f);
         private Color redText = new Color(1f, 0.20f, 0.27f, 1f);
-        private Color selectedShopRow = new Color(0.42f, 0.30f, 0.08f, 0.92f);
+        private Color selectedShopRow = ShopRowSelectedColor;
 
         private void Awake()
         {
@@ -314,10 +321,14 @@ namespace Tempt
             }
 
             Transform root = shopGroup.transform;
-            shopBuyRowsRoot = root.Find(
+            shopBuyRowsRoot = FindFirstExisting(
+                root,
+                "MiddleContentArea/Content_BUY/LeftColumn/MERCHANT_STOCK_Section/Rows_ScrollView/Rows",
                 "MiddleContentArea/Content_BUY/LeftColumn/MERCHANT_STOCK_Section/Rows"
             );
-            shopSellRowsRoot = root.Find(
+            shopSellRowsRoot = FindFirstExisting(
+                root,
+                "MiddleContentArea/Content_SELL/LeftColumn/SELLABLE_ITEMS_Section/Rows_ScrollView/Rows",
                 "MiddleContentArea/Content_SELL/LeftColumn/SELLABLE_ITEMS_Section/Rows"
             );
             shopBuyDetailBody = root.Find(
@@ -329,6 +340,8 @@ namespace Tempt
 
             CacheShopRows(shopBuyRowsRoot, shopBuyRows);
             CacheShopRows(shopSellRowsRoot, shopSellRows);
+            EnsureRowsScrollContent(shopBuyRowsRoot);
+            EnsureRowsScrollContent(shopSellRowsRoot);
             CacheDetailLines(shopBuyDetailBody, shopBuyDetailLines);
             CacheDetailLines(shopSellDetailBody, shopSellDetailLines);
 
@@ -436,9 +449,8 @@ namespace Tempt
             }
 
             guildPartyController = guildGroup.GetComponent<GuildPartyController>();
-            guildCompanionsController = guildGroup.GetComponentInChildren<GuildCompanionsController>(
-                true
-            );
+            guildCompanionsController =
+                guildGroup.GetComponentInChildren<GuildCompanionsController>(true);
         }
 
         private void WireButtons()
@@ -832,10 +844,10 @@ namespace Tempt
             SetDetailBody(shopBuyDetailBody, true);
             SetDetailLines(
                 shopBuyDetailLines,
-                item.NameKey,
+                LocalizeKey(item.NameKey),
                 BuildItemRole(item),
                 BuildItemDescription(item),
-                "Buy Price",
+                Loc.Get("shop_buy_price"),
                 price + " G"
             );
 
@@ -851,7 +863,7 @@ namespace Tempt
 
             if (shopPurchaseButtonLabel != null)
             {
-                shopPurchaseButtonLabel.text = "PURCHASE";
+                shopPurchaseButtonLabel.text = Loc.Get("shop_purchase");
             }
         }
 
@@ -876,10 +888,10 @@ namespace Tempt
             SetDetailBody(shopSellDetailBody, true);
             SetDetailLines(
                 shopSellDetailLines,
-                item.NameKey,
+                LocalizeKey(item.NameKey),
                 BuildItemRole(item),
                 BuildItemDescription(item),
-                "Sell Price",
+                Loc.Get("shop_sell_price"),
                 Safe1ShopSellPrice + " G"
             );
 
@@ -892,7 +904,7 @@ namespace Tempt
 
             if (shopSellButtonLabel != null)
             {
-                shopSellButtonLabel.text = "SELL";
+                shopSellButtonLabel.text = Loc.Get("shop_sell");
             }
         }
 
@@ -1160,6 +1172,8 @@ namespace Tempt
 
         private static ShopRowView CreateShopRowView(Transform row)
         {
+            EnsureShopRowLayout(row);
+
             Graphic background = row.GetComponent<Graphic>();
             if (background == null)
             {
@@ -1170,6 +1184,17 @@ namespace Tempt
             }
 
             background.raycastTarget = true;
+            background.color = ShopRowBaseColor;
+
+            Outline border = row.GetComponent<Outline>();
+            if (border == null)
+            {
+                border = row.gameObject.AddComponent<Outline>();
+            }
+
+            border.effectColor = ShopRowBorderColor;
+            border.effectDistance = new Vector2(1f, -1f);
+            border.useGraphicAlpha = false;
 
             Button button = row.GetComponent<Button>();
             if (button == null)
@@ -1184,7 +1209,8 @@ namespace Tempt
                 Root = row.gameObject,
                 Button = button,
                 Background = background,
-                BaseColor = background.color,
+                BaseColor = ShopRowBaseColor,
+                Border = border,
                 Name = FindChildText(row, "Name"),
                 Role = FindChildText(row, "Role"),
                 Description = FindChildText(row, "Description"),
@@ -1332,6 +1358,96 @@ namespace Tempt
             return child != null ? child.GetComponentInChildren<TextMeshProUGUI>(true) : null;
         }
 
+        private static Transform FindFirstExisting(Transform root, params string[] paths)
+        {
+            if (root == null || paths == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < paths.Length; i++)
+            {
+                Transform found = root.Find(paths[i]);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            return null;
+        }
+
+        private static void EnsureRowsScrollContent(Transform rowsRoot)
+        {
+            if (rowsRoot == null || !(rowsRoot is RectTransform rowsRect))
+            {
+                return;
+            }
+
+            EnsureShopRowsContainerLayout(rowsRoot);
+            ScrollRect scrollRect = rowsRoot.GetComponentInParent<ScrollRect>(true);
+            if (scrollRect != null && scrollRect.content != rowsRect)
+            {
+                scrollRect.content = rowsRect;
+            }
+        }
+
+        private static void EnsureShopRowsContainerLayout(Transform rowsRoot)
+        {
+            if (rowsRoot == null)
+            {
+                return;
+            }
+
+            VerticalLayoutGroup layout = rowsRoot.GetComponent<VerticalLayoutGroup>();
+            if (layout == null)
+            {
+                layout = rowsRoot.gameObject.AddComponent<VerticalLayoutGroup>();
+            }
+
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            layout.childScaleWidth = false;
+            layout.childScaleHeight = false;
+            layout.spacing = Mathf.Max(0f, layout.spacing);
+
+            ContentSizeFitter fitter = rowsRoot.GetComponent<ContentSizeFitter>();
+            if (fitter == null)
+            {
+                fitter = rowsRoot.gameObject.AddComponent<ContentSizeFitter>();
+            }
+
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        }
+
+        private static void EnsureShopRowLayout(Transform row)
+        {
+            if (row == null)
+            {
+                return;
+            }
+
+            LayoutElement layout = row.GetComponent<LayoutElement>();
+            if (layout == null)
+            {
+                layout = row.gameObject.AddComponent<LayoutElement>();
+            }
+
+            float height = ShopRowPreferredHeight;
+            if (row is RectTransform rect && rect.sizeDelta.y > 0f)
+            {
+                height = Mathf.Max(ShopRowPreferredHeight, rect.sizeDelta.y);
+            }
+
+            layout.ignoreLayout = false;
+            layout.minHeight = height;
+            layout.preferredHeight = height;
+            layout.flexibleHeight = 0f;
+        }
+
         private static Transform FindDescendant(Transform root, string targetName)
         {
             if (root == null)
@@ -1377,7 +1493,7 @@ namespace Tempt
 
             if (!string.IsNullOrEmpty(item.DescKey))
             {
-                return item.DescKey;
+                return LocalizeKey(item.DescKey);
             }
 
             if (item.Category == ItemCategory.Equipment)
@@ -1400,7 +1516,7 @@ namespace Tempt
                 return "Returns to the current safe zone.";
             }
 
-            return item.NameKey;
+            return LocalizeKey(item.NameKey);
         }
 
         private static string BuildEquipmentStatText(EquipmentStatMod mod)
@@ -1435,7 +1551,7 @@ namespace Tempt
         {
             row.Root.SetActive(true);
             if (row.Name != null)
-                row.Name.text = item != null ? item.NameKey : string.Empty;
+                row.Name.text = item != null ? LocalizeKey(item.NameKey) : string.Empty;
             if (row.Role != null)
                 row.Role.text = role;
             if (row.Description != null)
@@ -1468,9 +1584,34 @@ namespace Tempt
 
         private void SetRowSelected(ShopRowView row, bool selected)
         {
-            if (row?.Background != null)
+            if (row == null)
             {
-                row.Background.color = selected ? selectedShopRow : row.BaseColor;
+                return;
+            }
+
+            if (row.Background != null)
+            {
+                row.Background.color = selected ? ShopRowSelectedColor : ShopRowBaseColor;
+            }
+
+            if (row.Border != null)
+            {
+                row.Border.effectColor = selected
+                    ? ShopRowSelectedBorderColor
+                    : ShopRowBorderColor;
+            }
+
+            SetTextColor(row.Name, ShopRowTextColor);
+            SetTextColor(row.Role, ShopRowTextColor);
+            SetTextColor(row.Description, ShopRowTextColor);
+            SetTextColor(row.Cost, ShopRowTextColor);
+        }
+
+        private static void SetTextColor(TextMeshProUGUI label, Color color)
+        {
+            if (label != null)
+            {
+                label.color = color;
             }
         }
 
@@ -1501,6 +1642,11 @@ namespace Tempt
                 lines[3].text = priceLabel;
             if (lines.Count > 4)
                 lines[4].text = price;
+        }
+
+        private static string LocalizeKey(string key)
+        {
+            return string.IsNullOrEmpty(key) ? string.Empty : Loc.Get(key);
         }
 
         private static void ConfigureGuildButton(

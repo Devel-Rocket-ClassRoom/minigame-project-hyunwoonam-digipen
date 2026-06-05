@@ -7,7 +7,7 @@ namespace Tempt
     /// 몬스터 베이스. CharacterBaset를 사용하지 않으며 룬/EXP 미보유.
     /// 행동은 MonsterActionSelectort가 가중치로 선택. 침식 변이 셰이더 적용 훅 보유.
     /// 드랍은 DropTableId를 통해 DataManager.ResolveDrops()로 결정.
-    /// 각각의 몬스터 코드(Monster1 등)에서 DropTableId를 포함한 스탯/스킬/애니메이션을 재정의한다.
+    /// 공통 Monster 런타임에 데이터 테이블의 스탯/스킬/드랍을 주입해 사용한다.
     /// </summary>
     public abstract class MonsterBase : EntityBase
     {
@@ -26,7 +26,7 @@ namespace Tempt
         /// <summary>
         /// 드랍 테이블 ID. DataManager.ResolveDrops(DropTableId)로 실제 드랍 결정.
         /// 0이면 드랍 없음.
-        /// 각 몬스터 코드(Monster1 등)에서 재정의(override 또는 InitializeFromData 복사).
+        /// InitializeFromData에서 데이터 테이블 값을 복사한다.
         /// </summary>
         public int DropTableId;
 
@@ -90,8 +90,8 @@ namespace Tempt
         public void ApplyErosionVisual()
         {
             IsEroded = true;
-            SpriteRenderer sr = GetComponent<SpriteRenderer>();
-            if (sr != null)
+            SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>();
+            foreach (SpriteRenderer sr in renderers)
             {
                 sr.color = Color.Lerp(sr.color, new Color(0.30f, 0.18f, 0.35f, 1f), 0.55f);
             }

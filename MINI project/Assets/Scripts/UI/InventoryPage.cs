@@ -31,76 +31,170 @@ namespace Tempt
         }
 
         [Header("Root")]
-        [SerializeField] private GameObject root;
-        [SerializeField] private Button quickTabButton;
-        [SerializeField] private Button equippedTabButton;
-        [SerializeField] private GameObject quickItemsPanel;
-        [SerializeField] private GameObject equippedPanel;
+        [SerializeField]
+        private GameObject root;
+
+        [SerializeField]
+        private Button quickTabButton;
+
+        [SerializeField]
+        private Button equippedTabButton;
+
+        [SerializeField]
+        private GameObject quickItemsPanel;
+
+        [SerializeField]
+        private GameObject equippedPanel;
 
         [Header("Header")]
-        [SerializeField] private TMP_Text goldLabel;
+        [SerializeField]
+        private TMP_Text goldLabel;
 
         [Header("Quick Items")]
-        [SerializeField] private Button[] consumableSlotButtons = new Button[ConsumableSlots.SlotCount];
-        [SerializeField] private TMP_Text[] consumableSlotLabels = new TMP_Text[ConsumableSlots.SlotCount];
+        [SerializeField]
+        private Button[] consumableSlotButtons = new Button[ConsumableSlots.SlotCount];
+
+        [SerializeField]
+        private TMP_Text[] consumableSlotLabels = new TMP_Text[ConsumableSlots.SlotCount];
 
         [Header("Equipped")]
-        [SerializeField] private Button weaponSlotButton;
-        [SerializeField] private Button armorBodySlotButton;
-        [SerializeField] private Button armorArmsSlotButton;
-        [SerializeField] private Button armorLegsSlotButton;
-        [SerializeField] private TMP_Text weaponSlotLabel;
-        [SerializeField] private TMP_Text armorBodySlotLabel;
-        [SerializeField] private TMP_Text armorArmsSlotLabel;
-        [SerializeField] private TMP_Text armorLegsSlotLabel;
-        [SerializeField] private TMP_Text weaponSlotStatsLabel;
-        [SerializeField] private TMP_Text armorBodySlotStatsLabel;
-        [SerializeField] private TMP_Text armorArmsSlotStatsLabel;
-        [SerializeField] private TMP_Text armorLegsSlotStatsLabel;
+        [SerializeField]
+        private Button weaponSlotButton;
+
+        [SerializeField]
+        private Button armorBodySlotButton;
+
+        [SerializeField]
+        private Button armorArmsSlotButton;
+
+        [SerializeField]
+        private Button armorLegsSlotButton;
+
+        [SerializeField]
+        private TMP_Text weaponSlotLabel;
+
+        [SerializeField]
+        private TMP_Text armorBodySlotLabel;
+
+        [SerializeField]
+        private TMP_Text armorArmsSlotLabel;
+
+        [SerializeField]
+        private TMP_Text armorLegsSlotLabel;
+
+        [SerializeField]
+        private TMP_Text weaponSlotStatsLabel;
+
+        [SerializeField]
+        private TMP_Text armorBodySlotStatsLabel;
+
+        [SerializeField]
+        private TMP_Text armorArmsSlotStatsLabel;
+
+        [SerializeField]
+        private TMP_Text armorLegsSlotStatsLabel;
 
         [Header("Inventory Grid")]
-        [SerializeField] private ScrollRect inventoryScrollRect;
-        [SerializeField] private Button[] inventorySlotButtons;
-        [SerializeField] private TMP_Text[] inventorySlotLabels;
+        [SerializeField]
+        private ScrollRect inventoryScrollRect;
+
+        [SerializeField]
+        private Button[] inventorySlotButtons;
+
+        [SerializeField]
+        private TMP_Text[] inventorySlotLabels;
 
         [Header("Detail")]
-        [SerializeField] private ItemInfoPanel infoPanel;
+        [SerializeField]
+        private ItemInfoPanel infoPanel;
 
         [Header("Simple Discard Confirm Panel")]
-        [SerializeField] private GameObject simpleDiscardPanel;
-        [SerializeField] private TMP_Text simpleDiscardCategoryLabel;
-        [SerializeField] private TMP_Text simpleDiscardNameLabel;
-        [SerializeField] private TMP_Text simpleDiscardStatsLabel;
-        [SerializeField] private TMP_Text simpleDiscardQuantityLabel;
-        [SerializeField] private TMP_Text simpleDiscardWarningLabel;
-        [SerializeField] private Button simpleDiscardConfirmButton;
-        [SerializeField] private Button simpleDiscardCancelButton;
-        [SerializeField] private Button simpleDiscardCloseButton;
+        [SerializeField]
+        private GameObject simpleDiscardPanel;
+
+        [SerializeField]
+        private TMP_Text simpleDiscardCategoryLabel;
+
+        [SerializeField]
+        private TMP_Text simpleDiscardNameLabel;
+
+        [SerializeField]
+        private TMP_Text simpleDiscardStatsLabel;
+
+        [SerializeField]
+        private TMP_Text simpleDiscardQuantityLabel;
+
+        [SerializeField]
+        private TMP_Text simpleDiscardWarningLabel;
+
+        [SerializeField]
+        private Button simpleDiscardConfirmButton;
+
+        [SerializeField]
+        private Button simpleDiscardCancelButton;
+
+        [SerializeField]
+        private Button simpleDiscardCloseButton;
 
         [Header("Quantity Discard Panel")]
-        [SerializeField] private GameObject quantityDiscardPanel;
-        [SerializeField] private TMP_Text quantityDiscardCategoryLabel;
-        [SerializeField] private TMP_Text quantityDiscardNameLabel;
-        [SerializeField] private TMP_Text quantityDiscardDescriptionLabel;
-        [SerializeField] private TMP_Text quantityDiscardOwnedLabel;
-        [SerializeField] private TMP_Text quantityDiscardCountLabel;
-        [SerializeField] private TMP_Text quantityDiscardValueLabel;
-        [SerializeField] private TMP_Text quantityDiscardWarningLabel;
-        [SerializeField] private TMP_Text quantityDiscardConfirmLabel;
-        [SerializeField] private Button quantityDiscardMinusButton;
-        [SerializeField] private Button quantityDiscardPlusButton;
-        [SerializeField] private Button quantityDiscardMinButton;
-        [SerializeField] private Button quantityDiscardMaxButton;
-        [SerializeField] private Button quantityDiscardConfirmButton;
-        [SerializeField] private Button quantityDiscardCancelButton;
-        [SerializeField] private Button quantityDiscardCloseButton;
+        [SerializeField]
+        private GameObject quantityDiscardPanel;
+
+        [SerializeField]
+        private TMP_Text quantityDiscardCategoryLabel;
+
+        [SerializeField]
+        private TMP_Text quantityDiscardNameLabel;
+
+        [SerializeField]
+        private TMP_Text quantityDiscardDescriptionLabel;
+
+        [SerializeField]
+        private TMP_Text quantityDiscardOwnedLabel;
+
+        [SerializeField]
+        private TMP_Text quantityDiscardCountLabel;
+
+        [SerializeField]
+        private TMP_Text quantityDiscardValueLabel;
+
+        [SerializeField]
+        private TMP_Text quantityDiscardWarningLabel;
+
+        [SerializeField]
+        private TMP_Text quantityDiscardConfirmLabel;
+
+        [SerializeField]
+        private Button quantityDiscardMinusButton;
+
+        [SerializeField]
+        private Button quantityDiscardPlusButton;
+
+        [SerializeField]
+        private Button quantityDiscardMinButton;
+
+        [SerializeField]
+        private Button quantityDiscardMaxButton;
+
+        [SerializeField]
+        private Button quantityDiscardConfirmButton;
+
+        [SerializeField]
+        private Button quantityDiscardCancelButton;
+
+        [SerializeField]
+        private Button quantityDiscardCloseButton;
 
         [Header("Colors")]
-        [SerializeField] private Color selectedSlotColor = new Color(1f, 0.86f, 0.1f, 1f);
-        [SerializeField] private Color selectedTabColor = new Color(0.78f, 0.78f, 0.78f, 1f);
+        [SerializeField]
+        private Color selectedSlotColor = new Color(1f, 0.86f, 0.1f, 1f);
+
+        [SerializeField]
+        private Color selectedTabColor = new Color(0.78f, 0.78f, 0.78f, 1f);
 
         private readonly List<CenterEntry> centerEntries = new List<CenterEntry>();
-        private readonly Dictionary<Button, Color> originalButtonColors = new Dictionary<Button, Color>();
+        private readonly Dictionary<Button, Color> originalButtonColors =
+            new Dictionary<Button, Color>();
         private InventoryTab activeTab = InventoryTab.Equipped;
         private int selectedQuickSlotIndex = -1;
         private EquipmentSlotId selectedEquipmentSlot = EquipmentSlotId.None;
@@ -163,10 +257,34 @@ namespace Tempt
 
             PlayerState player = run.Player;
             RefreshGold(run.Gold);
-            SetEquipmentSlot(EquipmentSlotId.Weapon, weaponSlotButton, weaponSlotLabel, weaponSlotStatsLabel, player.Equipment?.Weapon);
-            SetEquipmentSlot(EquipmentSlotId.ArmorBody, armorBodySlotButton, armorBodySlotLabel, armorBodySlotStatsLabel, player.Equipment?.ArmorBody);
-            SetEquipmentSlot(EquipmentSlotId.ArmorArms, armorArmsSlotButton, armorArmsSlotLabel, armorArmsSlotStatsLabel, player.Equipment?.ArmorArms);
-            SetEquipmentSlot(EquipmentSlotId.ArmorLegs, armorLegsSlotButton, armorLegsSlotLabel, armorLegsSlotStatsLabel, player.Equipment?.ArmorLegs);
+            SetEquipmentSlot(
+                EquipmentSlotId.Weapon,
+                weaponSlotButton,
+                weaponSlotLabel,
+                weaponSlotStatsLabel,
+                player.Equipment?.Weapon
+            );
+            SetEquipmentSlot(
+                EquipmentSlotId.ArmorBody,
+                armorBodySlotButton,
+                armorBodySlotLabel,
+                armorBodySlotStatsLabel,
+                player.Equipment?.ArmorBody
+            );
+            SetEquipmentSlot(
+                EquipmentSlotId.ArmorArms,
+                armorArmsSlotButton,
+                armorArmsSlotLabel,
+                armorArmsSlotStatsLabel,
+                player.Equipment?.ArmorArms
+            );
+            SetEquipmentSlot(
+                EquipmentSlotId.ArmorLegs,
+                armorLegsSlotButton,
+                armorLegsSlotLabel,
+                armorLegsSlotStatsLabel,
+                player.Equipment?.ArmorLegs
+            );
             RefreshQuickSlots(player, data);
             RefreshInventoryGrid(player, data);
             ApplySelectionColors();
@@ -219,13 +337,19 @@ namespace Tempt
             simpleDiscardConfirmButton.onClick.AddListener(ConfirmSimpleDiscard);
 
             quantityDiscardMinusButton.onClick.RemoveAllListeners();
-            quantityDiscardMinusButton.onClick.AddListener(() => SetQuantityDiscardAmount(quantityDiscardAmount - 1));
+            quantityDiscardMinusButton.onClick.AddListener(() =>
+                SetQuantityDiscardAmount(quantityDiscardAmount - 1)
+            );
             quantityDiscardPlusButton.onClick.RemoveAllListeners();
-            quantityDiscardPlusButton.onClick.AddListener(() => SetQuantityDiscardAmount(quantityDiscardAmount + 1));
+            quantityDiscardPlusButton.onClick.AddListener(() =>
+                SetQuantityDiscardAmount(quantityDiscardAmount + 1)
+            );
             quantityDiscardMinButton.onClick.RemoveAllListeners();
             quantityDiscardMinButton.onClick.AddListener(() => SetQuantityDiscardAmount(1));
             quantityDiscardMaxButton.onClick.RemoveAllListeners();
-            quantityDiscardMaxButton.onClick.AddListener(() => SetQuantityDiscardAmount(quantityDiscardOwnedCount));
+            quantityDiscardMaxButton.onClick.AddListener(() =>
+                SetQuantityDiscardAmount(quantityDiscardOwnedCount)
+            );
             quantityDiscardCancelButton.onClick.RemoveAllListeners();
             quantityDiscardCancelButton.onClick.AddListener(CloseDiscardPanels);
             quantityDiscardCloseButton.onClick.RemoveAllListeners();
@@ -270,12 +394,19 @@ namespace Tempt
                 button.onClick.RemoveAllListeners();
                 button.onClick.AddListener(() => HandleQuickSlotClicked(index));
 
-                int itemId = player.Consumables != null && player.Consumables.SlotItemIds != null && index < player.Consumables.SlotItemIds.Length
-                    ? player.Consumables.SlotItemIds[index]
-                    : 0;
-                if (itemId == 0 || data.Items == null || !data.Items.TryGetValue(itemId, out ItemData itemData))
+                int itemId =
+                    player.Consumables != null
+                    && player.Consumables.SlotItemIds != null
+                    && index < player.Consumables.SlotItemIds.Length
+                        ? player.Consumables.SlotItemIds[index]
+                        : 0;
+                if (
+                    itemId == 0
+                    || data.Items == null
+                    || !data.Items.TryGetValue(itemId, out ItemData itemData)
+                )
                 {
-                    label.text = "EMPTY";
+                    label.text = Loc.Get("ui_empty");
                     continue;
                 }
 
@@ -284,12 +415,18 @@ namespace Tempt
             }
         }
 
-        private void SetEquipmentSlot(EquipmentSlotId slot, Button button, TMP_Text nameLabel, TMP_Text statsLabel, Item item)
+        private void SetEquipmentSlot(
+            EquipmentSlotId slot,
+            Button button,
+            TMP_Text nameLabel,
+            TMP_Text statsLabel,
+            Item item
+        )
         {
             button.interactable = true;
             if (item?.Data == null)
             {
-                nameLabel.text = "EMPTY";
+                nameLabel.text = Loc.Get("ui_empty");
                 statsLabel.text = "-";
                 return;
             }
@@ -341,12 +478,14 @@ namespace Tempt
                     continue;
                 }
 
-                centerEntries.Add(new CenterEntry
-                {
-                    Type = CenterEntryType.Stack,
-                    ItemId = stack.Key,
-                    Count = stack.Value,
-                });
+                centerEntries.Add(
+                    new CenterEntry
+                    {
+                        Type = CenterEntryType.Stack,
+                        ItemId = stack.Key,
+                        Count = stack.Value,
+                    }
+                );
             }
         }
 
@@ -364,11 +503,9 @@ namespace Tempt
                     continue;
                 }
 
-                centerEntries.Add(new CenterEntry
-                {
-                    Type = CenterEntryType.Equipment,
-                    Item = item,
-                });
+                centerEntries.Add(
+                    new CenterEntry { Type = CenterEntryType.Equipment, Item = item }
+                );
             }
         }
 
@@ -398,9 +535,11 @@ namespace Tempt
             selectedEquipmentSlot = EquipmentSlotId.None;
             ApplySelectionColors();
 
-            int itemId = run.Player.Consumables?.SlotItemIds != null && index < run.Player.Consumables.SlotItemIds.Length
-                ? run.Player.Consumables.SlotItemIds[index]
-                : 0;
+            int itemId =
+                run.Player.Consumables?.SlotItemIds != null
+                && index < run.Player.Consumables.SlotItemIds.Length
+                    ? run.Player.Consumables.SlotItemIds[index]
+                    : 0;
             if (itemId == 0 || !data.Items.TryGetValue(itemId, out ItemData itemData))
             {
                 infoPanel.Hide();
@@ -417,15 +556,18 @@ namespace Tempt
                 null,
                 false,
                 "DISCARD",
-                canEdit ? () =>
-                {
-                    if (run.Player.Consumables.TrySetSlot(index, 0, run.Player.Inventory))
+                canEdit
+                    ? () =>
                     {
-                        infoPanel.Hide();
-                        Refresh();
+                        if (run.Player.Consumables.TrySetSlot(index, 0, run.Player.Inventory))
+                        {
+                            infoPanel.Hide();
+                            Refresh();
+                        }
                     }
-                } : null,
-                true);
+                    : null,
+                true
+            );
         }
 
         private void HandleEquipmentSlotClicked(EquipmentSlotId slot)
@@ -451,23 +593,30 @@ namespace Tempt
                 item,
                 "Equipped",
                 "UNEQUIP",
-                canEdit ? () =>
-                {
-                    if (EquipFlow.Unequip(run.Player, slot))
+                canEdit
+                    ? () =>
                     {
-                        infoPanel.Hide();
-                        Refresh();
+                        if (EquipFlow.Unequip(run.Player, slot))
+                        {
+                            infoPanel.Hide();
+                            Refresh();
+                        }
                     }
-                } : null,
+                    : null,
                 true,
                 null,
                 null,
-                false);
+                false
+            );
         }
 
         private void HandleInventorySlotClicked(int index)
         {
-            if (index < 0 || index >= centerEntries.Count || !TryGetRunData(out GameRunState run, out DataManager data))
+            if (
+                index < 0
+                || index >= centerEntries.Count
+                || !TryGetRunData(out GameRunState run, out DataManager data)
+            )
             {
                 return;
             }
@@ -491,7 +640,8 @@ namespace Tempt
                 return;
             }
 
-            bool canUse = itemData.Category == ItemCategory.Consumable
+            bool canUse =
+                itemData.Category == ItemCategory.Consumable
                 && activeTab == InventoryTab.QuickItems
                 && selectedQuickSlotIndex >= 0
                 && !IsCombatScene();
@@ -500,24 +650,34 @@ namespace Tempt
                 entry.Count,
                 "Inventory x" + entry.Count,
                 "USE",
-                canUse ? () =>
-                {
-                    if (run.Player.Consumables.TrySetSlot(selectedQuickSlotIndex, entry.ItemId, run.Player.Inventory))
+                canUse
+                    ? () =>
                     {
-                        Refresh();
-                        HandleQuickSlotClicked(selectedQuickSlotIndex);
+                        if (
+                            run.Player.Consumables.TrySetSlot(
+                                selectedQuickSlotIndex,
+                                entry.ItemId,
+                                run.Player.Inventory
+                            )
+                        )
+                        {
+                            Refresh();
+                            HandleQuickSlotClicked(selectedQuickSlotIndex);
+                        }
                     }
-                } : null,
+                    : null,
                 true,
                 "DISCARD",
                 !IsCombatScene() ? () => OpenQuantityDiscardPanel(itemData, entry.Count) : null,
-                true);
+                true
+            );
         }
 
         private void ShowEquipmentCenterEntry(CenterEntry entry, GameRunState run)
         {
             Item item = entry.Item;
-            bool slotMatches = activeTab == InventoryTab.Equipped
+            bool slotMatches =
+                activeTab == InventoryTab.Equipped
                 && selectedEquipmentSlot != EquipmentSlotId.None
                 && item?.Data != null
                 && item.Data.EquipSlot == selectedEquipmentSlot;
@@ -526,18 +686,21 @@ namespace Tempt
                 item,
                 "Inventory",
                 "EQUIP",
-                canEquip ? () =>
-                {
-                    if (EquipFlow.Equip(run.Player, item))
+                canEquip
+                    ? () =>
                     {
-                        infoPanel.Hide();
-                        Refresh();
+                        if (EquipFlow.Equip(run.Player, item))
+                        {
+                            infoPanel.Hide();
+                            Refresh();
+                        }
                     }
-                } : null,
+                    : null,
                 true,
                 "DISCARD",
                 !IsCombatScene() ? () => OpenSimpleDiscardPanel(item) : null,
-                true);
+                true
+            );
         }
 
         private void OpenSimpleDiscardPanel(Item item)
@@ -553,7 +716,7 @@ namespace Tempt
             simpleDiscardNameLabel.text = item.Data.NameKey + " +" + item.Enhancement;
             simpleDiscardStatsLabel.text = ItemInfoPanel.FormatEquipMod(item);
             simpleDiscardQuantityLabel.text = "x1";
-            simpleDiscardWarningLabel.text = "Discard this equipment?\n<color=#F87171>Discarded items cannot be recovered.</color>";
+            simpleDiscardWarningLabel.text = Loc.Get("inv_discard_equip_warning");
             simpleDiscardPanel.SetActive(true);
             simpleDiscardPanel.transform.SetAsLastSibling();
         }
@@ -571,7 +734,9 @@ namespace Tempt
             CloseDiscardPanels();
             quantityDiscardCategoryLabel.text = itemData.SubCategory;
             quantityDiscardNameLabel.text = itemData.NameKey;
-            quantityDiscardDescriptionLabel.text = string.IsNullOrEmpty(itemData.DescKey) ? ItemInfoPanel.FormatItemEffect(itemData) : itemData.DescKey;
+            quantityDiscardDescriptionLabel.text = string.IsNullOrEmpty(itemData.DescKey)
+                ? ItemInfoPanel.FormatItemEffect(itemData)
+                : itemData.DescKey;
             quantityDiscardOwnedLabel.text = "x" + ownedCount;
             quantityDiscardPanel.SetActive(true);
             quantityDiscardPanel.transform.SetAsLastSibling();
@@ -586,15 +751,28 @@ namespace Tempt
 
         private void RefreshQuantityDiscardPanel()
         {
-            quantityDiscardAmount = Mathf.Clamp(quantityDiscardAmount, 1, Mathf.Max(1, quantityDiscardOwnedCount));
-            quantityDiscardCountLabel.text = quantityDiscardAmount + " / " + quantityDiscardOwnedCount;
+            quantityDiscardAmount = Mathf.Clamp(
+                quantityDiscardAmount,
+                1,
+                Mathf.Max(1, quantityDiscardOwnedCount)
+            );
+            quantityDiscardCountLabel.text =
+                quantityDiscardAmount + " / " + quantityDiscardOwnedCount;
             quantityDiscardValueLabel.text = quantityDiscardAmount.ToString();
-            quantityDiscardWarningLabel.text = "Discard <color=#EAB308>x" + quantityDiscardAmount + "</color> items?\nDiscarded items cannot be recovered.";
-            quantityDiscardConfirmLabel.text = "DISCARD x" + quantityDiscardAmount;
+            quantityDiscardWarningLabel.text = Loc.Format(
+                "inv_discard_qty_warning_fmt",
+                quantityDiscardAmount
+            );
+            quantityDiscardConfirmLabel.text = Loc.Format(
+                "inv_discard_qty_confirm_fmt",
+                quantityDiscardAmount
+            );
             quantityDiscardMinusButton.interactable = quantityDiscardAmount > 1;
             quantityDiscardMinButton.interactable = quantityDiscardAmount > 1;
-            quantityDiscardPlusButton.interactable = quantityDiscardAmount < quantityDiscardOwnedCount;
-            quantityDiscardMaxButton.interactable = quantityDiscardAmount < quantityDiscardOwnedCount;
+            quantityDiscardPlusButton.interactable =
+                quantityDiscardAmount < quantityDiscardOwnedCount;
+            quantityDiscardMaxButton.interactable =
+                quantityDiscardAmount < quantityDiscardOwnedCount;
         }
 
         private void ConfirmSimpleDiscard()
@@ -616,7 +794,11 @@ namespace Tempt
 
         private void ConfirmQuantityDiscard()
         {
-            if (quantityDiscardItemId <= 0 || quantityDiscardAmount <= 0 || !TryGetRunData(out GameRunState run, out _))
+            if (
+                quantityDiscardItemId <= 0
+                || quantityDiscardAmount <= 0
+                || !TryGetRunData(out GameRunState run, out _)
+            )
             {
                 CloseDiscardPanels();
                 return;
@@ -633,7 +815,11 @@ namespace Tempt
 
         private void ClearQuickSlotsIfStackEmpty(PlayerState player, int itemId)
         {
-            if (player?.Inventory == null || player.Consumables?.SlotItemIds == null || player.Inventory.CountOf(itemId) > 0)
+            if (
+                player?.Inventory == null
+                || player.Consumables?.SlotItemIds == null
+                || player.Inventory.CountOf(itemId) > 0
+            )
             {
                 return;
             }
@@ -664,21 +850,56 @@ namespace Tempt
         {
             quickItemsPanel.SetActive(activeTab == InventoryTab.QuickItems);
             equippedPanel.SetActive(activeTab == InventoryTab.Equipped);
-            SetButtonColor(quickTabButton, activeTab == InventoryTab.QuickItems ? selectedTabColor : OriginalColorOf(quickTabButton));
-            SetButtonColor(equippedTabButton, activeTab == InventoryTab.Equipped ? selectedTabColor : OriginalColorOf(equippedTabButton));
+            SetButtonColor(
+                quickTabButton,
+                activeTab == InventoryTab.QuickItems
+                    ? selectedTabColor
+                    : OriginalColorOf(quickTabButton)
+            );
+            SetButtonColor(
+                equippedTabButton,
+                activeTab == InventoryTab.Equipped
+                    ? selectedTabColor
+                    : OriginalColorOf(equippedTabButton)
+            );
         }
 
         private void ApplySelectionColors()
         {
             for (int i = 0; i < consumableSlotButtons.Length; i++)
             {
-                SetButtonColor(consumableSlotButtons[i], i == selectedQuickSlotIndex ? selectedSlotColor : OriginalColorOf(consumableSlotButtons[i]));
+                SetButtonColor(
+                    consumableSlotButtons[i],
+                    i == selectedQuickSlotIndex
+                        ? selectedSlotColor
+                        : OriginalColorOf(consumableSlotButtons[i])
+                );
             }
 
-            SetButtonColor(weaponSlotButton, selectedEquipmentSlot == EquipmentSlotId.Weapon ? selectedSlotColor : OriginalColorOf(weaponSlotButton));
-            SetButtonColor(armorBodySlotButton, selectedEquipmentSlot == EquipmentSlotId.ArmorBody ? selectedSlotColor : OriginalColorOf(armorBodySlotButton));
-            SetButtonColor(armorArmsSlotButton, selectedEquipmentSlot == EquipmentSlotId.ArmorArms ? selectedSlotColor : OriginalColorOf(armorArmsSlotButton));
-            SetButtonColor(armorLegsSlotButton, selectedEquipmentSlot == EquipmentSlotId.ArmorLegs ? selectedSlotColor : OriginalColorOf(armorLegsSlotButton));
+            SetButtonColor(
+                weaponSlotButton,
+                selectedEquipmentSlot == EquipmentSlotId.Weapon
+                    ? selectedSlotColor
+                    : OriginalColorOf(weaponSlotButton)
+            );
+            SetButtonColor(
+                armorBodySlotButton,
+                selectedEquipmentSlot == EquipmentSlotId.ArmorBody
+                    ? selectedSlotColor
+                    : OriginalColorOf(armorBodySlotButton)
+            );
+            SetButtonColor(
+                armorArmsSlotButton,
+                selectedEquipmentSlot == EquipmentSlotId.ArmorArms
+                    ? selectedSlotColor
+                    : OriginalColorOf(armorArmsSlotButton)
+            );
+            SetButtonColor(
+                armorLegsSlotButton,
+                selectedEquipmentSlot == EquipmentSlotId.ArmorLegs
+                    ? selectedSlotColor
+                    : OriginalColorOf(armorLegsSlotButton)
+            );
         }
 
         private void CacheButtonColors()
@@ -735,20 +956,22 @@ namespace Tempt
 
             foreach (TMP_Text label in consumableSlotLabels)
             {
-                if (label != null) label.text = "EMPTY";
+                if (label != null)
+                    label.text = Loc.Get("ui_empty");
             }
 
-            weaponSlotLabel.text = "EMPTY";
-            armorBodySlotLabel.text = "EMPTY";
-            armorArmsSlotLabel.text = "EMPTY";
-            armorLegsSlotLabel.text = "EMPTY";
+            weaponSlotLabel.text = Loc.Get("ui_empty");
+            armorBodySlotLabel.text = Loc.Get("ui_empty");
+            armorArmsSlotLabel.text = Loc.Get("ui_empty");
+            armorLegsSlotLabel.text = Loc.Get("ui_empty");
             weaponSlotStatsLabel.text = "-";
             armorBodySlotStatsLabel.text = "-";
             armorArmsSlotStatsLabel.text = "-";
             armorLegsSlotStatsLabel.text = "-";
             foreach (TMP_Text label in inventorySlotLabels)
             {
-                if (label != null) label.text = string.Empty;
+                if (label != null)
+                    label.text = string.Empty;
             }
         }
 
@@ -766,25 +989,37 @@ namespace Tempt
 
             switch (slot)
             {
-                case EquipmentSlotId.Weapon: return equipment.Weapon;
-                case EquipmentSlotId.ArmorBody: return equipment.ArmorBody;
-                case EquipmentSlotId.ArmorArms: return equipment.ArmorArms;
-                case EquipmentSlotId.ArmorLegs: return equipment.ArmorLegs;
-                default: return null;
+                case EquipmentSlotId.Weapon:
+                    return equipment.Weapon;
+                case EquipmentSlotId.ArmorBody:
+                    return equipment.ArmorBody;
+                case EquipmentSlotId.ArmorArms:
+                    return equipment.ArmorArms;
+                case EquipmentSlotId.ArmorLegs:
+                    return equipment.ArmorLegs;
+                default:
+                    return null;
             }
         }
 
         private static bool IsCombatScene()
         {
             return GameSystemManager.TryGetInstance(out GameSystemManager gsm)
-                && (gsm.CombatContext != null || (gsm.Scenes != null && gsm.Scenes.CurrentSceneId == SceneId.Combat));
+                && (
+                    gsm.CombatContext != null
+                    || (gsm.Scenes != null && gsm.Scenes.CurrentSceneId == SceneId.Combat)
+                );
         }
 
         private static bool TryGetRunData(out GameRunState run, out DataManager data)
         {
             run = null;
             data = null;
-            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.CurrentRun?.Player == null || gsm.Data == null)
+            if (
+                !GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                || gsm.CurrentRun?.Player == null
+                || gsm.Data == null
+            )
             {
                 return false;
             }
@@ -796,7 +1031,8 @@ namespace Tempt
 
         private bool ValidateReferences()
         {
-            bool valid = root != null
+            bool valid =
+                root != null
                 && quickTabButton != null
                 && equippedTabButton != null
                 && quickItemsPanel != null
@@ -851,7 +1087,9 @@ namespace Tempt
                 && quantityDiscardCloseButton != null;
             if (!valid)
             {
-                Debug.LogError("[InventoryPage] 필수 UI 참조가 Boot 씬에서 직접 할당되어 있지 않습니다.");
+                Debug.LogError(
+                    "[InventoryPage] 필수 UI 참조가 Boot 씬에서 직접 할당되어 있지 않습니다."
+                );
                 return false;
             }
 

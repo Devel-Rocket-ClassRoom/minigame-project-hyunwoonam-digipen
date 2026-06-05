@@ -1,1 +1,363 @@
 Key,ko,en
+opt_title,옵션,OPTIONS
+opt_display,화면,DISPLAY
+opt_fullscreen,전체화면,FULLSCREEN
+opt_windowed,창모드,WINDOWED
+opt_audio,오디오,AUDIO
+opt_volume,마스터 볼륨,MASTER VOLUME
+opt_language,언어,LANGUAGE
+opt_lang_ko,한국어,한국어
+opt_lang_en,ENGLISH,ENGLISH
+opt_apply,적용,APPLY
+opt_close,닫기,CLOSE
+menu_new_game,새 게임,NEW GAME
+menu_continue,이어하기,CONTINUE
+menu_options,옵션,OPTIONS
+menu_exit,종료,EXIT
+ui_empty,비어있음,EMPTY
+ui_equipped,장착됨,Equipped
+ui_inventory,인벤토리,Inventory
+ui_stored,보관됨,Stored
+ui_cancel,취소,CANCEL
+ui_confirm,확인,CONFIRM
+ui_close,닫기,CLOSE
+ui_gold_fmt,G: {0},G: {0}
+ui_qty_fmt,x{0},x{0}
+inv_discard_equip_warning,"장비를 버리겠습니까?\n<color=#F87171>버린 아이템은 회수할 수 없습니다.</color>","Discard this equipment?\n<color=#F87171>Discarded items cannot be recovered.</color>"
+inv_discard_qty_warning_fmt,"<color=#EAB308>x{0}</color>개를 버리겠습니까?\n버린 아이템은 회수할 수 없습니다.","Discard <color=#EAB308>x{0}</color> items?\nDiscarded items cannot be recovered."
+inv_discard_qty_confirm_fmt,버리기 x{0},DISCARD x{0}
+item_owned_fmt,보유 {0},Owned {0}
+item_stored_fmt,보관 {0},Stored {0}
+item_buy_sell_fmt,구매 {0} / 판매 {1},Buy {0} / Sell {1}
+item_sell_fmt,판매 {0},Sell {0}
+shop_purchase,구매,PURCHASE
+shop_sell,판매,SELL
+shop_gold_fmt,골드 {0},Gold {0}
+skill_buy_fmt,구매 {0}G,Buy {0}G
+rune_mastered,숙달,MASTERED
+rune_view_only,보기 전용,VIEW ONLY
+rune_invest,포인트 투자,INVEST POINT
+rune_locked,잠김,LOCKED
+guild_name_fmt,이름 : {0},Name : {0}
+guild_level_fmt,레벨: {0},Level: {0}
+guild_exp_fmt,경험치: {0} / {1},EXP: {0} / {1}
+guild_rune_fmt,룬: {0},Rune: {0}
+guild_desc_fmt,설명: {0},Description: {0}
+guild_slot_empty_fmt,{0}번 슬롯 비어있음,SLOT {0} EMPTY
+guild_party_count_fmt,0 / {0},0 / {0}
+combat_round_fmt,{0}라운드,Round {0}
+combat_level_fmt,Lv. {0},Lv. {0}
+safe_day_fmt,{0}일차,Day {0}
+tavern_no_item,아이템 미선택,NO ITEM SELECTED
+tavern_select_help,플레이어 인벤토리 또는 보관함에서 아이템을 선택하세요.,Select an item from Player Inventory or Tavern Storage.
+tavern_amount_fmt,수량 {0},AMOUNT {0}
+skill_mp_fmt,MP {0},MP {0}
+skill_cooldown_fmt,쿨다운 {0},Cooldown {0}
+companion.iren,이렌,Iren
+companion.iren.desc,최종 구간을 노리는 고속 검객. 낮은 방어를 속도와 결정력으로 보완한다.,A swift duelist built for the final ascent. Low defense is offset by speed and decisive strikes.
+companion.ordric,오드릭,Ordric
+companion.ordric.desc,무거운 갑주로 전열을 고정하는 노련한 수호자. 느리지만 오래 버틴다.,A veteran guardian who anchors the front line in heavy armor. Slow, but difficult to bring down.
+companion.morvain,모르베인,Morvain
+companion.morvain.desc,금지된 주문을 다루는 후반 마법 딜러. 넓은 피해와 높은 마나가 강점이다.,A late-game spellcaster versed in forbidden rites. Excels at wide damage and deep mana reserves.
+companion.aurelia,아우렐리아,Aurelia
+companion.aurelia.desc,붕괴 직전의 파티를 붙잡는 상급 지원가. 회복과 안정성이 강점이다.,A senior supporter who keeps a collapsing party together. Strong healing and stability.
+item.hp_potion_s,하급 체력 물약,Minor HP Potion
+item.hp_potion_s.desc,체력을 30 회복한다.,Restores 30 HP.
+item.mp_potion_s,하급 마나 물약,Minor MP Potion
+item.mp_potion_s.desc,마나를 12 회복한다.,Restores 12 MP.
+item.escape,귀환 연막,Escape Smoke
+item.escape.desc,전투에서 안전지대로 후퇴한다.,Retreats from combat to safety.
+item.hp_potion_m,중급 체력 물약,Standard HP Potion
+item.hp_potion_m.desc,체력을 75 회복한다.,Restores 75 HP.
+item.mp_potion_m,중급 마나 물약,Standard MP Potion
+item.mp_potion_m.desc,마나를 32 회복한다.,Restores 32 MP.
+item.hp_potion_l,상급 체력 물약,Greater HP Potion
+item.hp_potion_l.desc,체력을 150 회복한다.,Restores 150 HP.
+item.mp_potion_l,상급 마나 물약,Greater MP Potion
+item.mp_potion_l.desc,마나를 70 회복한다.,Restores 70 MP.
+item.hp_potion_xl,특급 체력 물약,Superior HP Potion
+item.hp_potion_xl.desc,체력을 250 회복한다.,Restores 250 HP.
+item.t1_sword,낡은 철검,Worn Iron Sword
+item.t1_sword.desc,초반용 무기. 공격력을 조금 올린다.,An early weapon that slightly raises ATK.
+item.t1_body,누빈 갑옷,Padded Armor
+item.t1_body.desc,초반용 몸통 방어구. 체력과 방어를 보강한다.,Early body armor that improves HP and DEF.
+item.t1_arms,가죽 팔보호대,Leather Bracers
+item.t1_arms.desc,초반용 팔 방어구. 공격과 방어를 조금 올린다.,Early arm gear that improves ATK and DEF.
+item.t1_legs,여행 장화,Traveler Boots
+item.t1_legs.desc,초반용 다리 방어구. 속도를 조금 올린다.,Early leg gear that improves SPD.
+item.t2_sword,용병 장검,Mercenary Longsword
+item.t2_sword.desc,중반 진입용 무기. 공격과 속도를 올린다.,A mid-entry weapon that improves ATK and SPD.
+item.t2_body,사슬 갑옷,Chain Armor
+item.t2_body.desc,중반 진입용 몸통 방어구. 체력과 방어를 올린다.,Mid-entry body armor that improves HP and DEF.
+item.t2_arms,징박힌 장갑,Studded Gloves
+item.t2_arms.desc,중반 진입용 팔 방어구. 공격과 방어를 올린다.,Mid-entry arm gear that improves ATK and DEF.
+item.t2_legs,추적자 각반,Stalker Greaves
+item.t2_legs.desc,중반 진입용 다리 방어구. 속도와 방어를 올린다.,Mid-entry leg gear that improves SPD and DEF.
+item.t3_sword,흑철 검,Blackiron Sword
+item.t3_sword.desc,중반 장비. 공격력을 크게 올린다.,A midgame weapon that strongly improves ATK.
+item.t3_body,흑철 흉갑,Blackiron Cuirass
+item.t3_body.desc,중반 장비. 높은 체력과 방어를 제공한다.,Midgame armor with high HP and DEF.
+item.t3_arms,흑철 건틀릿,Blackiron Gauntlets
+item.t3_arms.desc,중반 장비. 공격과 방어를 균형 있게 올린다.,Midgame arm gear that balances ATK and DEF.
+item.t3_legs,흑철 각반,Blackiron Greaves
+item.t3_legs.desc,중반 장비. 속도와 생존력을 올린다.,Midgame leg gear that improves SPD and survival.
+item.t4_sword,침식된 칼날,Eroded Blade
+item.t4_sword.desc,후반 장비. 강한 공격력을 제공한다.,Late-game weapon with strong ATK.
+item.t4_body,침식된 갑주,Eroded Plate
+item.t4_body.desc,후반 장비. 큰 체력과 방어를 제공한다.,Late-game armor with large HP and DEF.
+item.t4_arms,침식된 완갑,Eroded Vambraces
+item.t4_arms.desc,후반 장비. 공격과 방어를 크게 올린다.,Late-game arm gear that strongly improves ATK and DEF.
+item.t4_legs,침식된 군화,Eroded Sabatons
+item.t4_legs.desc,후반 장비. 속도와 방어를 크게 올린다.,Late-game leg gear that strongly improves SPD and DEF.
+item.t5_sword,종말의 검,Doomsday Sword
+item.t5_sword.desc,최종 구간용 무기. 압도적인 공격력을 제공한다.,Final-stage weapon with overwhelming ATK.
+item.t5_body,종말의 갑주,Doomsday Armor
+item.t5_body.desc,최종 구간용 몸통 방어구. 막대한 체력과 방어를 제공한다.,Final-stage armor with massive HP and DEF.
+item.t5_arms,종말의 건틀릿,Doomsday Gauntlets
+item.t5_arms.desc,최종 구간용 팔 방어구. 공격과 방어를 크게 보강한다.,Final-stage arm gear with high ATK and DEF.
+item.t5_legs,종말의 각반,Doomsday Greaves
+item.t5_legs.desc,최종 구간용 다리 방어구. 속도와 생존력을 크게 보강한다.,Final-stage leg gear with high SPD and survival.
+monster.goblin.s01.skirmisher,고블린 척후병,Goblin Skirmisher
+monster.goblin.s01.skirmisher.desc,탑 입구를 어지럽히는 민첩한 고블린이다.,A nimble goblin harassing the tower entrance.
+monster.goblin.s01.scout,고블린 정찰병,Goblin Scout
+monster.goblin.s01.scout.desc,빠르게 움직이며 약한 대상을 노리는 고블린이다.,A fast goblin that seeks weak targets.
+monster.goblin.s01.guard,고블린 경비병,Goblin Guard
+monster.goblin.s01.guard.desc,하층 통로를 지키는 방어적인 고블린이다.,A defensive goblin guarding the lower passage.
+monster.goblin.s01.chieftain,고블린 족장,Goblin Chieftain
+monster.goblin.s01.chieftain.desc,하층 고블린 무리를 이끄는 족장이다.,The chieftain leading the lower goblin pack.
+monster.orc.s02.grunt,오크 그런트,Orc Grunt
+monster.orc.s02.grunt.desc,거친 힘으로 길목을 막는 오크 병사다.,A rough orc soldier blocking the passage.
+monster.orc.s02.scout,오크 정찰병,Orc Scout
+monster.orc.s02.scout.desc,전투 전열의 빈틈을 노리는 오크 정찰병이다.,An orc scout that looks for gaps in the line.
+monster.orc.s02.guard,오크 경비병,Orc Guard
+monster.orc.s02.guard.desc,오크 주둔지를 지키는 단단한 경비병이다.,A sturdy guard defending the orc encampment.
+monster.orc.s02.captain,오크 대장,Orc Captain
+monster.orc.s02.captain.desc,오크 소부대를 지휘하는 대장이다.,A captain commanding a small orc unit.
+monster.zombie.s03.walker,좀비 워커,Zombie Walker
+monster.zombie.s03.walker.desc,썩은 몸으로 천천히 압박하는 좀비다.,A zombie that slowly pressures with a rotting body.
+monster.zombie.s03.plague,역병 좀비,Plague Zombie
+monster.zombie.s03.plague.desc,오염된 살점으로 버티는 역병 좀비다.,A plague zombie sustained by corrupted flesh.
+monster.zombie.s03.biter,좀비 바이터,Zombie Biter
+monster.zombie.s03.biter.desc,질긴 몸으로 달라붙는 공격적인 좀비다.,An aggressive zombie with a stubborn body.
+monster.zombie.s03.abomination,좀비 어보미네이션,Zombie Abomination
+monster.zombie.s03.abomination.desc,시체와 원한이 뒤섞인 거대한 좀비다.,A huge zombie mass of corpses and resentment.
+monster.skeleton.s04.guard,스켈레톤 수문병,Skeleton Guard
+monster.skeleton.s04.guard.desc,뼈 방패로 전열을 버티는 수문병이다.,A shield-bearing skeleton holding the front line.
+monster.skeleton.s04.scout,스켈레톤 정찰병,Skeleton Scout
+monster.skeleton.s04.scout.desc,가벼운 뼈 갑옷으로 빠르게 움직이는 정찰병이다.,A light-boned scout that moves quickly.
+monster.skeleton.s04.lancer,본 랜서,Bone Lancer
+monster.skeleton.s04.lancer.desc,긴 창으로 빈틈을 찌르는 스켈레톤이다.,A skeleton that pierces openings with a long lance.
+monster.skeleton.s04.bone_lord,본 로드,Bone Lord
+monster.skeleton.s04.bone_lord.desc,스켈레톤 병단을 통솔하는 뼈의 군주다.,A bone lord commanding the skeleton host.
+monster.devil.s05.imp,데빌 임프,Devil Imp
+monster.devil.s05.imp.desc,불길한 마력을 품은 하급 데빌이다.,A lesser devil carrying ominous magic.
+monster.devil.s05.fiend,데빌 핀드,Devil Fiend
+monster.devil.s05.fiend.desc,날카로운 공격으로 전열을 무너뜨리는 데빌이다.,A devil that breaks the front line with sharp attacks.
+monster.devil.s05.warlock,데빌 워록,Devil Warlock
+monster.devil.s05.warlock.desc,금지된 힘을 끌어 쓰는 데빌 술사다.,A devil caster drawing on forbidden power.
+monster.devil.s05.archdevil,아크데빌,Archdevil
+monster.devil.s05.archdevil.desc,상층 데빌 무리를 지배하는 강력한 악마다.,A powerful devil ruling the upper host.
+monster.zombie.s06.grave_horror,무덤 괴수,Grave Horror
+monster.zombie.s06.grave_horror.desc,최종 구간까지 기어오른 거대한 좀비 괴수다.,A huge zombie horror that crawled into the final stage.
+monster.skeleton.s06.reaper,스켈레톤 사신,Skeleton Reaper
+monster.skeleton.s06.reaper.desc,최종 구간에서 생명을 거두는 뼈 사신이다.,A skeletal reaper that harvests life in the final stage.
+monster.devil.s06.hellcaller,헬콜러,Hellcaller
+monster.devil.s06.hellcaller.desc,좀비와 스켈레톤 사이에서 지옥의 힘을 부르는 데빌이다.,A devil calling hellish power among zombies and skeletons.
+monster.devil.s06.tower_devil,탑의 데빌,Tower Devil
+monster.devil.s06.tower_devil.desc,탑의 침식을 조종하는 최종 데빌 지배자다.,The final devil ruler controlling the tower erosion.
+ui_missing,누락,MISSING
+ui_missing_id_fmt,누락\n#{0},MISSING\n#{0}
+ui_max,최대,MAX
+ui_today,오늘,TODAY
+ui_owned,보유,Owned
+ui_not_owned,미보유,Not owned
+ui_player,플레이어,Player
+ui_empty_parenthesized,(비어있음),(Empty)
+combat_select_action,행동 선택,Select action
+combat_select_ally,아군 선택,Select ally
+combat_select_enemy,적 선택,Select enemy
+combat_guarded_damage_fmt,방어 -{0},Guard -{0}
+forge_enhance,강화,ENHANCE
+tavern_recruit,고용,RECRUIT
+tavern_recruited,고용 완료,RECRUITED
+tavern_locked,잠김,LOCKED
+sanctuary_purify,정화,PURIFY
+tavern_storage_open,열림,OPEN
+THE TOWER,THE TOWER,THE TOWER
+18   F L O O R S   O F   D E S P A I R,절망의 18층,18   F L O O R S   O F   D E S P A I R
+I.     CONTINUE,I.     이어하기,I.     CONTINUE
+II.    NEW GAME,II.    새 게임,II.    NEW GAME
+III.   OPTION,III.   옵션,III.   OPTION
+IV.    QUIT,IV.    종료,IV.    QUIT
+OPTION,옵션,OPTION
+QUIT,종료,QUIT
+AUDIO,오디오,AUDIO
+DISPLAY,화면,DISPLAY
+FULLSCREEN,전체화면,FULLSCREEN
+LANGUAGE,언어,LANGUAGE
+VOLUME,볼륨,VOLUME
+APPLY,적용,APPLY
+YES,예,YES
+No,아니오,No
+FLOOR MAP,층 지도,FLOOR MAP
+ENTER FLOOR MAP,층 지도 진입,ENTER FLOOR MAP
+SAFE ZONE 0,안전지대 0,SAFE ZONE 0
+SAFE ZONE 1,안전지대 1,SAFE ZONE 1
+SAFE ZONE 2,안전지대 2,SAFE ZONE 2
+SAFE ZONE 3,안전지대 3,SAFE ZONE 3
+SAFE ZONE 4,안전지대 4,SAFE ZONE 4
+SAFE ZONE 5,안전지대 5,SAFE ZONE 5
+RUNE SELECT,룬 선택,RUNE SELECT
+CHOOSE THE RUNE YOU WILL CARRY,사용할 룬을 선택하세요,CHOOSE THE RUNE YOU WILL CARRY
+SELECTED RUNE,선택한 룬,SELECTED RUNE
+CONFIRM RUNE,룬 확정,CONFIRM RUNE
+REQUIRED,필요,REQUIRED
+Starter Effect,시작 효과,Starter Effect
+DEALER,딜러,DEALER
+TANKER,탱커,TANKER
+MAGIC DEALER,마법 딜러,MAGIC DEALER
+SUPPORTER,서포터,SUPPORTER
+DEALER RUNE,딜러 룬,DEALER RUNE
+DEFENSIVE RUNE,방어 룬,DEFENSIVE RUNE
+CRIMSON OATH,진홍의 맹세,CRIMSON OATH
+IRON VOW,강철의 서약,IRON VOW
+ASHEN SCRIPT,잿빛 문서,ASHEN SCRIPT
+SILVER HYMN,은빛 찬가,SILVER HYMN
+Single-target damage and fast execution.,단일 대상 피해와 빠른 실행에 특화됩니다.,Single-target damage and fast execution.
+High defense and survival-oriented combat.,높은 방어와 생존 중심 전투에 특화됩니다.,High defense and survival-oriented combat.
+Area skills and MP-focused spell damage.,광역 스킬과 MP 기반 마법 피해에 특화됩니다.,Area skills and MP-focused spell damage.
+Healing, protection, and long-run stability.,회복과 보호, 장기전 안정성에 특화됩니다.,Healing, protection, and long-run stability.
+GRAVEYARD,묘지,GRAVEYARD
+GRAVE OBJECT PREVIEW,묘비 오브젝트 미리보기,GRAVE OBJECT PREVIEW
+DEATH RECORD,사망 기록,DEATH RECORD
+RECORDED NAMES,기록된 이름,RECORDED NAMES
+NO CLEAR RECORD,클리어 기록 없음,NO CLEAR RECORD
+THE STONE IS SILENT,돌은 침묵하고 있다,THE STONE IS SILENT
+BLACK STELE,검은 비석,BLACK STELE
+STELE OBJECT PREVIEW,비석 오브젝트 미리보기,STELE OBJECT PREVIEW
+CLEAR RECORD,클리어 기록,CLEAR RECORD
+DEATH RECORD · OPENED BY BACKGROUND OBJECT,사망 기록 · 배경 오브젝트로 열림,DEATH RECORD · OPENED BY BACKGROUND OBJECT
+CLEAR RECORD · OPENED BY BACKGROUND OBJECT,클리어 기록 · 배경 오브젝트로 열림,CLEAR RECORD · OPENED BY BACKGROUND OBJECT
+FIRST ENTRY ONLY · AUTO OPEN PANEL,최초 진입 전용 · 자동 패널 열림,FIRST ENTRY ONLY · AUTO OPEN PANEL
+VICTORY,승리,VICTORY
+REWARD,보상,REWARD
+ACQUIRED ITEMS,획득 아이템,ACQUIRED ITEMS
+GOLD,골드,GOLD
+EXP,경험치,EXP
+Get Items,아이템 받기,Get Items
+Done,완료,Done
+Name,이름,Name
+POTION,물약,POTION
+BONE DUST,뼛가루,BONE DUST
+BROKEN RUNE,부서진 룬,BROKEN RUNE
+DARK ORE,어둠 광석,DARK ORE
+OLD CHARM,낡은 부적,OLD CHARM
+RUSTED BLADE,녹슨 칼날,RUSTED BLADE
+SCROLL,두루마리,SCROLL
+HP,체력,HP
+MP,마나,MP
+ATK,공격,ATK
+DEF,방어,DEF
+SPD,속도,SPD
+CHARACTER,캐릭터,CHARACTER
+CURRENT STATS,현재 능력치,CURRENT STATS
+CURRENT STATS · EXPERIENCE,현재 능력치 · 경험치,CURRENT STATS · EXPERIENCE
+ACTIVE SKILLS,액티브 스킬,ACTIVE SKILLS
+ACTIVE SKILL,액티브 스킬,ACTIVE SKILL
+PASSIVE EFFECTS,패시브 효과,PASSIVE EFFECTS
+DETAIL,상세,DETAIL
+ITEM DETAIL,아이템 상세,ITEM DETAIL
+INVENTORY,인벤토리,INVENTORY
+WEAPON,무기,WEAPON
+BODY,몸통,BODY
+ARMS,팔,ARMS
+LEGS,다리,LEGS
+EFFECT,효과,EFFECT
+DISCARD,버리기,DISCARD
+DISCARD EQUIPMENT,장비 버리기,DISCARD EQUIPMENT
+DISCARD QUANTITY,수량 버리기,DISCARD QUANTITY
+DISCARD AMOUNT,버릴 수량,DISCARD AMOUNT
+EXIT GAME,게임 종료,EXIT GAME
+EXIT THE GAME?,게임을 종료할까요?,EXIT THE GAME?
+GAME OVER,게임 오버,GAME OVER
+Level,레벨,Level
+Current Floor,현재 층,Current Floor
+BUY,구매,BUY
+SELL,판매,SELL
+BUY · SELL,구매 · 판매,BUY · SELL
+Buy Price:,구매가:,Buy Price:
+Sell Price:,판매가:,Sell Price:
+Owned:,보유:,Owned:
+Cost,비용,Cost
+CURRENT,현재,CURRENT
+CONSUMABLE,소모품,CONSUMABLE
+ACCESSORY,장신구,ACCESSORY
+AVAILABLE COMPANIONS,고용 가능 동료,AVAILABLE COMPANIONS
+COMPANIONS,동료,COMPANIONS
+COMPANION ROSTER,동료 명단,COMPANION ROSTER
+COMPANION STATUS,동료 상태,COMPANION STATUS
+CURRENT PARTY,현재 파티,CURRENT PARTY
+ASSIGN TO PARTY,파티 배치,ASSIGN TO PARTY
+PARTY · COMPANIONS · SKILLS,파티 · 동료 · 스킬,PARTY · COMPANIONS · SKILLS
+LODGING · RECRUITMENT · STORAGE,숙박 · 고용 · 보관함,LODGING · RECRUITMENT · STORAGE
+RUNE TREE · CHANGE · RESET,룬 트리 · 변경 · 초기화,RUNE TREE · CHANGE · RESET
+CHANGE,변경,CHANGE
+RESET,초기화,RESET
+ACTIVATE STORAGE - 1 G,보관함 개방 - 1 G,ACTIVATE STORAGE - 1 G
+AMOUNT 0,수량 0,AMOUNT 0
+SANCTUARY,성소,SANCTUARY
+EROSION,침식,EROSION
+STAGE EROSION · PURIFY · RECOVER,스테이지 침식 · 정화 · 회복,STAGE EROSION · PURIFY · RECOVER
+STAGE PURIFICATION DETAIL,스테이지 정화 상세,STAGE PURIFICATION DETAIL
+PURIFY SELECTED STAGE,선택 스테이지 정화,PURIFY SELECTED STAGE
+Current Erosion,현재 침식,Current Erosion
+After Purify,정화 후,After Purify
+Owned Gold,보유 골드,Owned Gold
+Required Gold,필요 골드,Required Gold
+Linked Safe Zone,연결된 안전지대,Linked Safe Zone
+SELECTED,선택됨,SELECTED
+STABLE,안정,STABLE
+ERODING,침식 중,ERODING
+UNREACHED,미도달,UNREACHED
+LOW,낮음,LOW
+MID,중간,MID
+HIGH,높음,HIGH
+FINAL,최종,FINAL
+STAGE 1,스테이지 1,STAGE 1
+STAGE 2,스테이지 2,STAGE 2
+STAGE 3,스테이지 3,STAGE 3
+STAGE 4,스테이지 4,STAGE 4
+STAGE 5,스테이지 5,STAGE 5
+STAGE 6,스테이지 6,STAGE 6
+MINE,광산,MINE
+MINE I,광산 I,MINE I
+MINE II,광산 II,MINE II
+MINE III,광산 III,MINE III
+MINE ACTIVE,광산 활성화됨,MINE ACTIVE
+ACTIVATE MINE,광산 활성화,ACTIVATE MINE
+UNLOCK DAILY GOLD PRODUCTION,일일 골드 생산 해금,UNLOCK DAILY GOLD PRODUCTION
+GOLD STORAGE · DAILY PRODUCTION · ACTIVATION,골드 보관 · 일일 생산 · 활성화,GOLD STORAGE · DAILY PRODUCTION · ACTIVATION
+CURRENT MINE FACILITY,현재 광산 시설,CURRENT MINE FACILITY
+ACTIVATION INFO,활성화 정보,ACTIVATION INFO
+COLLECTION,수금,COLLECTION
+COLLECT GOLD,골드 수금,COLLECT GOLD
+AVAILABLE TO COLLECT,수금 가능,AVAILABLE TO COLLECT
+STORED GOLD,보관 골드,STORED GOLD
+TOTAL GOLD,총 골드,TOTAL GOLD
+DAILY GOLD,일일 골드,DAILY GOLD
+Daily Gain After Activation,활성화 후 일일 수익,Daily Gain After Activation
+Activation Cost,활성화 비용,Activation Cost
+Mine Status,광산 상태,Mine Status
+Storage Begins,보관 시작,Storage Begins
+After Collection,수금 후,After Collection
+Result,결과,Result
+BASIC VEIN,기본 광맥,BASIC VEIN
+DEEP VEIN,깊은 광맥,DEEP VEIN
+ACTIVE,활성,ACTIVE
+INACTIVE,비활성,INACTIVE
+READY,준비됨,READY
+STATUS,상태,STATUS
+NEXT DAY,다음 날,NEXT DAY
+TEMPORARY PANEL,임시 패널,TEMPORARY PANEL
+shop_buy_price,구매 가격,BUY PRICE
+shop_sell_price,판매 가격,SELL PRICE

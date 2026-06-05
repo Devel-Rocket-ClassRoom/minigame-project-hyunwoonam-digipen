@@ -7,8 +7,11 @@ namespace Tempt
     /// <summary>Safe1 Content_LODGING 표시/입력 계층. 참조와 REST OnClick은 Inspector에서 연결한다.</summary>
     public sealed class TavernLodgingUI : MonoBehaviour
     {
-        [SerializeField] private TMP_Text costText;
-        [SerializeField] private Button restButton;
+        [SerializeField]
+        private TMP_Text costText;
+
+        [SerializeField]
+        private Button restButton;
 
         private void Awake()
         {
@@ -41,10 +44,11 @@ namespace Tempt
 
             int partySize = TavernLodging.GetPartySize(run);
             int totalCost = TavernLodging.GetRestCost(run);
+            int costPerPerson = TavernLodging.GetCostPerPerson(GetBalance());
             string people = partySize == 1 ? "person" : "people";
             costText.text =
                 "Cost: "
-                + TavernLodging.CostPerPerson
+                + costPerPerson
                 + " G per person | Party: "
                 + partySize
                 + " "
@@ -114,6 +118,13 @@ namespace Tempt
 
             run = gsm.CurrentRun;
             return true;
+        }
+
+        private static BalanceData GetBalance()
+        {
+            return GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                ? gsm.Data?.Balance
+                : null;
         }
     }
 }

@@ -26,35 +26,72 @@ namespace Tempt
         }
 
         [Header("Status")]
-        [SerializeField] private TMP_Text stateValue;
-        [SerializeField] private TMP_Text storageValue;
-        [SerializeField] private TMP_Text upgradeLabel;
-        [SerializeField] private TMP_Text upgradeValue;
-        [SerializeField] private TMP_Text inventoryCount;
-        [SerializeField] private TMP_Text storageCount;
+        [SerializeField]
+        private TMP_Text stateValue;
+
+        [SerializeField]
+        private TMP_Text storageValue;
+
+        [SerializeField]
+        private TMP_Text upgradeLabel;
+
+        [SerializeField]
+        private TMP_Text upgradeValue;
+
+        [SerializeField]
+        private TMP_Text inventoryCount;
+
+        [SerializeField]
+        private TMP_Text storageCount;
 
         [Header("Item Detail")]
-        [SerializeField] private TMP_Text detailName;
-        [SerializeField] private TMP_Text detailMeta;
-        [SerializeField] private TMP_Text detailDescription;
-        [SerializeField] private TMP_Text amountText;
+        [SerializeField]
+        private TMP_Text detailName;
+
+        [SerializeField]
+        private TMP_Text detailMeta;
+
+        [SerializeField]
+        private TMP_Text detailDescription;
+
+        [SerializeField]
+        private TMP_Text amountText;
 
         [Header("Actions")]
-        [SerializeField] private Button minusButton;
-        [SerializeField] private Button plusButton;
-        [SerializeField] private Button sendToStorageButton;
-        [SerializeField] private Button takeToInventoryButton;
-        [SerializeField] private Button discardButton;
-        [SerializeField] private Button upgradeStorageButton;
-        [SerializeField] private TMP_Text upgradeStorageButtonLabel;
+        [SerializeField]
+        private Button minusButton;
+
+        [SerializeField]
+        private Button plusButton;
+
+        [SerializeField]
+        private Button sendToStorageButton;
+
+        [SerializeField]
+        private Button takeToInventoryButton;
+
+        [SerializeField]
+        private Button discardButton;
+
+        [SerializeField]
+        private Button upgradeStorageButton;
+
+        [SerializeField]
+        private TMP_Text upgradeStorageButtonLabel;
 
         [Header("Slots")]
-        [SerializeField] private TavernStorageSlotView[] inventorySlots;
-        [SerializeField] private TavernStorageSlotView[] storageSlots;
+        [SerializeField]
+        private TavernStorageSlotView[] inventorySlots;
+
+        [SerializeField]
+        private TavernStorageSlotView[] storageSlots;
 
         [Header("Colors")]
-        [SerializeField] private Color normalTextColor = Color.white;
-        [SerializeField] private Color maxTextColor = new Color(1f, 0.72f, 0.12f, 1f);
+        [SerializeField]
+        private Color normalTextColor = Color.white;
+
+        [SerializeField]
+        private Color maxTextColor = new Color(1f, 0.72f, 0.12f, 1f);
 
         private readonly List<Entry> inventoryEntries = new List<Entry>();
         private readonly List<Entry> storageEntries = new List<Entry>();
@@ -131,7 +168,10 @@ namespace Tempt
 
         public void SendToStorage()
         {
-            if (!TryGetData(out GameRunState run, out _) || selectionSource != SelectionSource.Inventory)
+            if (
+                !TryGetData(out GameRunState run, out _)
+                || selectionSource != SelectionSource.Inventory
+            )
             {
                 return;
             }
@@ -144,7 +184,10 @@ namespace Tempt
 
         public void TakeToInventory()
         {
-            if (!TryGetData(out GameRunState run, out _) || selectionSource != SelectionSource.Storage)
+            if (
+                !TryGetData(out GameRunState run, out _)
+                || selectionSource != SelectionSource.Storage
+            )
             {
                 return;
             }
@@ -210,7 +253,11 @@ namespace Tempt
             AddEntries(storageEntries, run.Player.Locker, data);
         }
 
-        private static void AddEntries(List<Entry> entries, StackableContainer container, DataManager data)
+        private static void AddEntries(
+            List<Entry> entries,
+            StackableContainer container,
+            DataManager data
+        )
         {
             foreach (KeyValuePair<int, int> stack in container.StackableItems)
             {
@@ -226,7 +273,14 @@ namespace Tempt
                 Item item = container.EquipItems[i];
                 if (item?.Data != null)
                 {
-                    entries.Add(new Entry { ItemId = item.Data.Id, Count = 1, Item = item });
+                    entries.Add(
+                        new Entry
+                        {
+                            ItemId = item.Data.Id,
+                            Count = 1,
+                            Item = item,
+                        }
+                    );
                 }
             }
         }
@@ -271,7 +325,10 @@ namespace Tempt
                 + (InventoryState.MaxStackableSlots + InventoryState.MaxEquipSlots);
 
             bool max = locker.IsMaxCapacity;
-            upgradeLabel.text = max ? "MAX" : locker.Unlocked ? "UPGRADE" : "UNLOCK";
+            upgradeLabel.text =
+                max ? "MAX"
+                : locker.Unlocked ? "UPGRADE"
+                : "UNLOCK";
             upgradeLabel.color = max ? maxTextColor : normalTextColor;
             upgradeValue.text = max ? "MAX" : nextCost + " G";
             upgradeValue.color = max ? maxTextColor : normalTextColor;
@@ -285,11 +342,21 @@ namespace Tempt
 
         private void RefreshSlots()
         {
-            RefreshSlotList(inventorySlots, inventoryEntries, inventorySlots.Length, SelectionSource.Inventory);
+            RefreshSlotList(
+                inventorySlots,
+                inventoryEntries,
+                inventorySlots.Length,
+                SelectionSource.Inventory
+            );
             int visibleStorageSlots = TryGetData(out GameRunState run, out _)
                 ? run.Player.Locker.Capacity
                 : 0;
-            RefreshSlotList(storageSlots, storageEntries, visibleStorageSlots, SelectionSource.Storage);
+            RefreshSlotList(
+                storageSlots,
+                storageEntries,
+                visibleStorageSlots,
+                SelectionSource.Storage
+            );
         }
 
         private void RefreshSlotList(
@@ -315,9 +382,11 @@ namespace Tempt
                     bool selected =
                         selectionSource == source
                         && selectedEntry != null
-                        && (entry.IsEquipment
-                            ? entry.Item == selectedEntry.Item
-                            : !selectedEntry.IsEquipment && entry.ItemId == selectedEntry.ItemId);
+                        && (
+                            entry.IsEquipment
+                                ? entry.Item == selectedEntry.Item
+                                : !selectedEntry.IsEquipment && entry.ItemId == selectedEntry.ItemId
+                        );
                     slots[i].SetItem(ResolveItemData(entry), entry.Item, entry.Count, selected);
                 }
             }
@@ -345,12 +414,15 @@ namespace Tempt
 
         private void RefreshDetail(GameRunState run, DataManager data)
         {
-            amountText.text = "AMOUNT " + amount;
-            if (selectedEntry == null || !data.Items.TryGetValue(selectedEntry.ItemId, out ItemData itemData))
+            amountText.text = Loc.Format("tavern_amount_fmt", amount);
+            if (
+                selectedEntry == null
+                || !data.Items.TryGetValue(selectedEntry.ItemId, out ItemData itemData)
+            )
             {
-                detailName.text = "NO ITEM SELECTED";
+                detailName.text = Loc.Get("tavern_no_item");
                 detailMeta.text = string.Empty;
-                detailDescription.text = "Select an item from Player Inventory or Tavern Storage.";
+                detailDescription.text = Loc.Get("tavern_select_help");
                 return;
             }
 
@@ -360,7 +432,11 @@ namespace Tempt
                 + " / "
                 + itemData.Category.ToString().ToUpperInvariant()
                 + " / "
-                + (selectedEntry.IsEquipment ? "+" + selectedEntry.Item.Enhancement : "x" + selectedEntry.Count);
+                + (
+                    selectedEntry.IsEquipment
+                        ? "+" + selectedEntry.Item.Enhancement
+                        : "x" + selectedEntry.Count
+                );
             detailDescription.text = BuildDescription(itemData, selectedEntry.Item);
         }
 
@@ -390,20 +466,26 @@ namespace Tempt
             sendToStorageButton.interactable =
                 inventorySelected
                 && run.Player.Locker.Unlocked
-                && (selectedEntry.IsEquipment
-                    ? run.Player.Locker.CanAddEquip()
-                    : run.Player.Locker.CanAddStack(selectedEntry.ItemId));
+                && (
+                    selectedEntry.IsEquipment
+                        ? run.Player.Locker.CanAddEquip()
+                        : run.Player.Locker.CanAddStack(selectedEntry.ItemId)
+                );
             takeToInventoryButton.interactable =
                 storageSelected
-                && (selectedEntry.IsEquipment
-                    ? !run.Player.Inventory.IsEquipFull()
-                    : run.Player.Inventory.CanAcceptStack(selectedEntry.ItemId, amount));
+                && (
+                    selectedEntry.IsEquipment
+                        ? !run.Player.Inventory.IsEquipFull()
+                        : run.Player.Inventory.CanAcceptStack(selectedEntry.ItemId, amount)
+                );
             discardButton.interactable = selected;
         }
 
         private int MaxAmount()
         {
-            return selectedEntry == null || selectedEntry.IsEquipment ? 1 : Mathf.Max(1, selectedEntry.Count);
+            return selectedEntry == null || selectedEntry.IsEquipment
+                ? 1
+                : Mathf.Max(1, selectedEntry.Count);
         }
 
         private bool ValidateReferences()
@@ -430,7 +512,9 @@ namespace Tempt
                 && ValidateSlots(storageSlots);
             if (!valid)
             {
-                Debug.LogError("[TavernStorageUI] 필수 UI 참조가 Inspector에 직접 할당되어 있지 않습니다.");
+                Debug.LogError(
+                    "[TavernStorageUI] 필수 UI 참조가 Inspector에 직접 할당되어 있지 않습니다."
+                );
             }
 
             return valid;

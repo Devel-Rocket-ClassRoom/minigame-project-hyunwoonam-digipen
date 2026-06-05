@@ -143,7 +143,7 @@ namespace Tempt
             }
 
             runeTreeView.Bind(runeState, RuneTreeView.Mode.ViewUnlock, true);
-            runeTreeNameLabel.text = "Name : " + memberName;
+            runeTreeNameLabel.text = Loc.Format("guild_name_fmt", memberName);
             runeTreePanel.SetActive(true);
         }
 
@@ -302,10 +302,14 @@ namespace Tempt
                 requiredExp = RunProgression.RequiredExpForLevel(gsm.Data, level);
             }
 
-            levelLabel.text = "Level: " + Mathf.Max(1, level);
-            expLabel.text = "EXP: " + Mathf.Max(0, exp) + " / " + Mathf.Max(0, requiredExp);
-            runeLabel.text = "Rune: " + runeClass;
-            descriptionLabel.text = "Description: " + (description ?? string.Empty);
+            levelLabel.text = Loc.Format("guild_level_fmt", Mathf.Max(1, level));
+            expLabel.text = Loc.Format(
+                "guild_exp_fmt",
+                Mathf.Max(0, exp),
+                Mathf.Max(0, requiredExp)
+            );
+            runeLabel.text = Loc.Format("guild_rune_fmt", runeClass);
+            descriptionLabel.text = Loc.Format("guild_desc_fmt", description ?? string.Empty);
             openRuneTreeButton.interactable = canOpenRuneTree;
         }
 
@@ -313,20 +317,28 @@ namespace Tempt
         {
             for (int i = 0; i < PartySlotCount; i++)
             {
-                if (partyRowButtons != null && i < partyRowButtons.Length && partyRowButtons[i] != null)
+                if (
+                    partyRowButtons != null
+                    && i < partyRowButtons.Length
+                    && partyRowButtons[i] != null
+                )
                 {
                     partyRowButtons[i].interactable = false;
                 }
 
-                if (partyRowLabels != null && i < partyRowLabels.Length && partyRowLabels[i] != null)
+                if (
+                    partyRowLabels != null
+                    && i < partyRowLabels.Length
+                    && partyRowLabels[i] != null
+                )
                 {
-                    partyRowLabels[i].text = "SLOT " + (i + 1) + " EMPTY";
+                    partyRowLabels[i].text = Loc.Format("guild_slot_empty_fmt", i + 1);
                 }
             }
 
             if (partyCountLabel != null)
             {
-                partyCountLabel.text = "0 / " + PartySlotCount;
+                partyCountLabel.text = Loc.Format("guild_party_count_fmt", PartySlotCount);
             }
 
             ClearStatus();
@@ -479,7 +491,10 @@ namespace Tempt
             return run.Roster.Active[activeIndex];
         }
 
-        private static CompanionData FindCompanionData(CompanionInstance companion, DataManager data)
+        private static CompanionData FindCompanionData(
+            CompanionInstance companion,
+            DataManager data
+        )
         {
             if (
                 companion == null

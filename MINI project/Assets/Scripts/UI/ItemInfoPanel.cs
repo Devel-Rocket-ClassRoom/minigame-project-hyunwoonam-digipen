@@ -17,19 +17,44 @@ namespace Tempt
     /// </summary>
     public sealed class ItemInfoPanel : MonoBehaviour
     {
-        [SerializeField] private GameObject root;
-        [SerializeField] private TMP_Text nameLabel;
-        [SerializeField] private TMP_Text descLabel;
-        [SerializeField] private TMP_Text categoryLabel;
-        [SerializeField] private TMP_Text statModLabel;
-        [SerializeField] private TMP_Text priceLabel;
-        [SerializeField] private TMP_Text ownedCountLabel;
-        [SerializeField] private Button primaryButton;
-        [SerializeField] private Button secondaryButton;
-        [SerializeField] private Button tertiaryButton;
-        [SerializeField] private TMP_Text primaryButtonLabel;
-        [SerializeField] private TMP_Text secondaryButtonLabel;
-        [SerializeField] private TMP_Text tertiaryButtonLabel;
+        [SerializeField]
+        private GameObject root;
+
+        [SerializeField]
+        private TMP_Text nameLabel;
+
+        [SerializeField]
+        private TMP_Text descLabel;
+
+        [SerializeField]
+        private TMP_Text categoryLabel;
+
+        [SerializeField]
+        private TMP_Text statModLabel;
+
+        [SerializeField]
+        private TMP_Text priceLabel;
+
+        [SerializeField]
+        private TMP_Text ownedCountLabel;
+
+        [SerializeField]
+        private Button primaryButton;
+
+        [SerializeField]
+        private Button secondaryButton;
+
+        [SerializeField]
+        private Button tertiaryButton;
+
+        [SerializeField]
+        private TMP_Text primaryButtonLabel;
+
+        [SerializeField]
+        private TMP_Text secondaryButtonLabel;
+
+        [SerializeField]
+        private TMP_Text tertiaryButtonLabel;
 
         private void Awake()
         {
@@ -44,7 +69,10 @@ namespace Tempt
 
         public void Show(int itemId, ItemDetailContext context)
         {
-            if (!TryGetRunData(out GameRunState run, out DataManager data) || !data.Items.TryGetValue(itemId, out ItemData itemData))
+            if (
+                !TryGetRunData(out GameRunState run, out DataManager data)
+                || !data.Items.TryGetValue(itemId, out ItemData itemData)
+            )
             {
                 Debug.LogError("[ItemInfoPanel.Show] 아이템 ID 없음: " + itemId);
                 Hide();
@@ -107,7 +135,8 @@ namespace Tempt
             bool showPrimary,
             string secondaryText,
             UnityAction secondaryAction,
-            bool showSecondary)
+            bool showSecondary
+        )
         {
             if (itemData == null)
             {
@@ -118,10 +147,24 @@ namespace Tempt
             root.SetActive(true);
             SetBaseText(itemData);
             ConfigureCommonVisibility(ItemDetailContext.Inventory);
-            ownedCountLabel.text = string.IsNullOrEmpty(ownedText) ? "Owned " + ownedCount : ownedText;
+            ownedCountLabel.text = string.IsNullOrEmpty(ownedText)
+                ? Loc.Format("item_owned_fmt", ownedCount)
+                : ownedText;
             statModLabel.text = FormatItemEffect(itemData);
-            ConfigureButton(primaryButton, primaryButtonLabel, primaryText, primaryAction, showPrimary);
-            ConfigureButton(secondaryButton, secondaryButtonLabel, secondaryText, secondaryAction, showSecondary);
+            ConfigureButton(
+                primaryButton,
+                primaryButtonLabel,
+                primaryText,
+                primaryAction,
+                showPrimary
+            );
+            ConfigureButton(
+                secondaryButton,
+                secondaryButtonLabel,
+                secondaryText,
+                secondaryAction,
+                showSecondary
+            );
         }
 
         public void ShowCustomEquip(
@@ -132,7 +175,8 @@ namespace Tempt
             bool showPrimary,
             string secondaryText,
             UnityAction secondaryAction,
-            bool showSecondary)
+            bool showSecondary
+        )
         {
             if (item?.Data == null)
             {
@@ -145,8 +189,20 @@ namespace Tempt
             ConfigureCommonVisibility(ItemDetailContext.Inventory);
             ownedCountLabel.text = ownedText ?? string.Empty;
             statModLabel.text = FormatEquipMod(item);
-            ConfigureButton(primaryButton, primaryButtonLabel, primaryText, primaryAction, showPrimary);
-            ConfigureButton(secondaryButton, secondaryButtonLabel, secondaryText, secondaryAction, showSecondary);
+            ConfigureButton(
+                primaryButton,
+                primaryButtonLabel,
+                primaryText,
+                primaryAction,
+                showPrimary
+            );
+            ConfigureButton(
+                secondaryButton,
+                secondaryButtonLabel,
+                secondaryText,
+                secondaryAction,
+                showSecondary
+            );
         }
 
         public void Hide()
@@ -189,7 +245,8 @@ namespace Tempt
 
         private bool ValidateReferences()
         {
-            bool valid = root != null
+            bool valid =
+                root != null
                 && nameLabel != null
                 && descLabel != null
                 && categoryLabel != null
@@ -202,7 +259,9 @@ namespace Tempt
                 && secondaryButtonLabel != null;
             if (!valid)
             {
-                Debug.LogError("[ItemInfoPanel] 필수 UI 참조가 Inspector 에 직접 할당되어 있지 않습니다.");
+                Debug.LogError(
+                    "[ItemInfoPanel] 필수 UI 참조가 Inspector 에 직접 할당되어 있지 않습니다."
+                );
             }
 
             return valid;
@@ -212,9 +271,15 @@ namespace Tempt
         {
             run = null;
             data = null;
-            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.CurrentRun == null || gsm.Data == null)
+            if (
+                !GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                || gsm.CurrentRun == null
+                || gsm.Data == null
+            )
             {
-                Debug.LogError("[ItemInfoPanel] GameSystemManager / CurrentRun / Data 참조가 없습니다.");
+                Debug.LogError(
+                    "[ItemInfoPanel] GameSystemManager / CurrentRun / Data 참조가 없습니다."
+                );
                 return false;
             }
 
@@ -225,9 +290,16 @@ namespace Tempt
 
         private void SetBaseText(ItemData itemData)
         {
-            nameLabel.text = itemData.NameKey;
-            descLabel.text = string.IsNullOrEmpty(itemData.DescKey) ? itemData.NameKey : itemData.DescKey;
+            nameLabel.text = LocalizeKey(itemData.NameKey);
+            descLabel.text = string.IsNullOrEmpty(itemData.DescKey)
+                ? LocalizeKey(itemData.NameKey)
+                : LocalizeKey(itemData.DescKey);
             categoryLabel.text = itemData.Category + " / " + itemData.SubCategory;
+        }
+
+        private static string LocalizeKey(string key)
+        {
+            return string.IsNullOrEmpty(key) ? string.Empty : Loc.Get(key);
         }
 
         private void ConfigureCommonVisibility(ItemDetailContext context)
@@ -244,18 +316,24 @@ namespace Tempt
             InventoryState inv = run.Player?.Inventory;
             ConsumableSlots slots = run.Player?.Consumables;
             int count = inv != null ? inv.CountOf(itemData.Id) : 0;
-            ownedCountLabel.text = "Owned " + count;
+            ownedCountLabel.text = Loc.Format("item_owned_fmt", count);
 
             if (itemData.Category == ItemCategory.Consumable)
             {
-                ConfigureButton(primaryButton, primaryButtonLabel, "USE", () =>
-                {
-                    int slot = FindAssignableConsumableSlot(slots, itemData.Id);
-                    if (slot >= 0 && slots.TrySetSlot(slot, itemData.Id, inv))
+                ConfigureButton(
+                    primaryButton,
+                    primaryButtonLabel,
+                    "USE",
+                    () =>
                     {
-                        Show(itemData.Id, ItemDetailContext.Inventory);
-                    }
-                }, true);
+                        int slot = FindAssignableConsumableSlot(slots, itemData.Id);
+                        if (slot >= 0 && slots.TrySetSlot(slot, itemData.Id, inv))
+                        {
+                            Show(itemData.Id, ItemDetailContext.Inventory);
+                        }
+                    },
+                    true
+                );
             }
         }
 
@@ -263,43 +341,64 @@ namespace Tempt
         {
             InventoryState inv = run.Player?.Inventory;
             LockerState locker = run.Player?.Locker;
-            ownedCountLabel.text = "Stored " + (locker != null ? locker.CountOf(itemData.Id) : 0);
-            ConfigureButton(primaryButton, primaryButtonLabel, "TAKE", () =>
-            {
-                if (inv.MoveFromLocker(locker, itemData.Id, 1))
+            ownedCountLabel.text = Loc.Format(
+                "item_stored_fmt",
+                locker != null ? locker.CountOf(itemData.Id) : 0
+            );
+            ConfigureButton(
+                primaryButton,
+                primaryButtonLabel,
+                "TAKE",
+                () =>
                 {
-                    Show(itemData.Id, ItemDetailContext.Locker);
-                }
-            }, true);
+                    if (inv.MoveFromLocker(locker, itemData.Id, 1))
+                    {
+                        Show(itemData.Id, ItemDetailContext.Locker);
+                    }
+                },
+                true
+            );
         }
 
         private void ConfigureShopStack(GameRunState run, DataManager data, ItemData itemData)
         {
             int buy = Shop.GetBuyPrice(itemData.Id, run, data);
             int sell = Shop.GetSellPrice(itemData.Id, run, data, data.Balance);
-            priceLabel.text = "Buy " + buy + " / Sell " + sell;
-            ConfigureButton(primaryButton, primaryButtonLabel, "BUY", () =>
-            {
-                if (itemData.Category == ItemCategory.Equipment || !itemData.Stackable)
+            priceLabel.text = Loc.Format("item_buy_sell_fmt", buy, sell);
+            ConfigureButton(
+                primaryButton,
+                primaryButtonLabel,
+                "BUY",
+                () =>
                 {
-                    Shop.TryBuyEquip(itemData.Id, run, data);
-                }
-                else
-                {
-                    Shop.TryBuy(itemData.Id, 1, run, data);
-                }
+                    if (itemData.Category == ItemCategory.Equipment || !itemData.Stackable)
+                    {
+                        Shop.TryBuyEquip(itemData.Id, run, data);
+                    }
+                    else
+                    {
+                        Shop.TryBuy(itemData.Id, 1, run, data);
+                    }
 
-                Show(itemData.Id, ItemDetailContext.Shop);
-            }, true);
+                    Show(itemData.Id, ItemDetailContext.Shop);
+                },
+                true
+            );
 
             bool canSell = itemData.Stackable && run.Player?.Inventory?.CountOf(itemData.Id) > 0;
-            ConfigureButton(secondaryButton, secondaryButtonLabel, "SELL", () =>
-            {
-                if (Shop.TrySell(itemData.Id, 1, run, data, data.Balance))
+            ConfigureButton(
+                secondaryButton,
+                secondaryButtonLabel,
+                "SELL",
+                () =>
                 {
-                    Show(itemData.Id, ItemDetailContext.Shop);
-                }
-            }, canSell);
+                    if (Shop.TrySell(itemData.Id, 1, run, data, data.Balance))
+                    {
+                        Show(itemData.Id, ItemDetailContext.Shop);
+                    }
+                },
+                canSell
+            );
         }
 
         private void ConfigureInventoryEquip(GameRunState run, Item item)
@@ -307,87 +406,131 @@ namespace Tempt
             EquipmentSlotId equippedSlot = FindEquippedSlot(run.Player?.Equipment, item);
             if (equippedSlot != EquipmentSlotId.None)
             {
-                ownedCountLabel.text = "Equipped";
-                ConfigureButton(primaryButton, primaryButtonLabel, "UNEQUIP", () =>
-                {
-                    if (EquipFlow.Unequip(run.Player, equippedSlot))
+                ownedCountLabel.text = Loc.Get("ui_equipped");
+                ConfigureButton(
+                    primaryButton,
+                    primaryButtonLabel,
+                    "UNEQUIP",
+                    () =>
                     {
-                        ShowEquip(item, ItemDetailContext.Inventory);
-                    }
-                }, true);
+                        if (EquipFlow.Unequip(run.Player, equippedSlot))
+                        {
+                            ShowEquip(item, ItemDetailContext.Inventory);
+                        }
+                    },
+                    true
+                );
                 return;
             }
 
-            ownedCountLabel.text = "Inventory";
-            ConfigureButton(primaryButton, primaryButtonLabel, "EQUIP", () =>
-            {
-                if (EquipFlow.Equip(run.Player, item))
+            ownedCountLabel.text = Loc.Get("ui_inventory");
+            ConfigureButton(
+                primaryButton,
+                primaryButtonLabel,
+                "EQUIP",
+                () =>
                 {
-                    ShowEquip(item, ItemDetailContext.Inventory);
-                }
-            }, true);
+                    if (EquipFlow.Equip(run.Player, item))
+                    {
+                        ShowEquip(item, ItemDetailContext.Inventory);
+                    }
+                },
+                true
+            );
 
-            ConfigureButton(secondaryButton, secondaryButtonLabel, "DISCARD", () =>
-            {
-                if (run.Player.Inventory.DiscardEquip(item))
+            ConfigureButton(
+                secondaryButton,
+                secondaryButtonLabel,
+                "DISCARD",
+                () =>
                 {
-                    Hide();
-                }
-            }, true);
+                    if (run.Player.Inventory.DiscardEquip(item))
+                    {
+                        Hide();
+                    }
+                },
+                true
+            );
         }
 
         private void ConfigureLockerEquip(GameRunState run, Item item)
         {
-            ownedCountLabel.text = "Stored";
-            ConfigureButton(primaryButton, primaryButtonLabel, "TAKE", () =>
-            {
-                if (run.Player.Inventory.MoveEquipFromLocker(run.Player.Locker, item))
+            ownedCountLabel.text = Loc.Get("ui_stored");
+            ConfigureButton(
+                primaryButton,
+                primaryButtonLabel,
+                "TAKE",
+                () =>
                 {
-                    Hide();
-                }
-            }, true);
+                    if (run.Player.Inventory.MoveEquipFromLocker(run.Player.Locker, item))
+                    {
+                        Hide();
+                    }
+                },
+                true
+            );
         }
 
         private void ConfigureShopEquip(GameRunState run, DataManager data, Item item)
         {
             int sell = Shop.GetSellPrice(item.Data.Id, run, data, data.Balance);
-            priceLabel.text = "Sell " + sell;
-            ConfigureButton(secondaryButton, secondaryButtonLabel, "SELL", () =>
-            {
-                if (Shop.TrySellEquip(item, run, data, data.Balance))
+            priceLabel.text = Loc.Format("item_sell_fmt", sell);
+            ConfigureButton(
+                secondaryButton,
+                secondaryButtonLabel,
+                "SELL",
+                () =>
                 {
-                    Hide();
-                }
-            }, true);
+                    if (Shop.TrySellEquip(item, run, data, data.Balance))
+                    {
+                        Hide();
+                    }
+                },
+                true
+            );
         }
 
         private static EquipmentSlotId FindEquippedSlot(EquipmentSlots equipment, Item item)
         {
-            if (equipment == null || item == null) return EquipmentSlotId.None;
-            if (equipment.Weapon == item) return EquipmentSlotId.Weapon;
-            if (equipment.ArmorBody == item) return EquipmentSlotId.ArmorBody;
-            if (equipment.ArmorArms == item) return EquipmentSlotId.ArmorArms;
-            if (equipment.ArmorLegs == item) return EquipmentSlotId.ArmorLegs;
+            if (equipment == null || item == null)
+                return EquipmentSlotId.None;
+            if (equipment.Weapon == item)
+                return EquipmentSlotId.Weapon;
+            if (equipment.ArmorBody == item)
+                return EquipmentSlotId.ArmorBody;
+            if (equipment.ArmorArms == item)
+                return EquipmentSlotId.ArmorArms;
+            if (equipment.ArmorLegs == item)
+                return EquipmentSlotId.ArmorLegs;
             return EquipmentSlotId.None;
         }
 
         private static int FindAssignableConsumableSlot(ConsumableSlots slots, int itemId)
         {
-            if (slots?.SlotItemIds == null) return -1;
+            if (slots?.SlotItemIds == null)
+                return -1;
             for (int i = 0; i < slots.SlotItemIds.Length; i++)
             {
-                if (slots.SlotItemIds[i] == itemId) return i;
+                if (slots.SlotItemIds[i] == itemId)
+                    return i;
             }
 
             for (int i = 0; i < slots.SlotItemIds.Length; i++)
             {
-                if (slots.SlotItemIds[i] == 0) return i;
+                if (slots.SlotItemIds[i] == 0)
+                    return i;
             }
 
             return slots.SlotItemIds.Length > 0 ? 0 : -1;
         }
 
-        private static void ConfigureButton(Button button, TMP_Text label, string text, UnityAction action, bool visible)
+        private static void ConfigureButton(
+            Button button,
+            TMP_Text label,
+            string text,
+            UnityAction action,
+            bool visible
+        )
         {
             if (button == null)
             {

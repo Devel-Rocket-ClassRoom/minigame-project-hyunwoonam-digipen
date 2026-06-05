@@ -399,21 +399,7 @@ namespace Tempt
                 125,
                 3
             );
-            AddMonster(
-                table,
-                1906,
-                "monster.boss.final",
-                true,
-                13,
-                1,
-                40,
-                55,
-                16,
-                18,
-                180,
-                180,
-                3
-            );
+            AddMonster(table, 1906, "monster.boss.final", true, 13, 1, 40, 55, 16, 18, 180, 180, 3);
             return table;
         }
 
@@ -637,78 +623,52 @@ namespace Tempt
                 [101] = new ItemData
                 {
                     Id = 101,
-                    NameKey = "item.training_sword",
+                    NameKey = "item.t1_sword",
                     Category = ItemCategory.Equipment,
                     SubCategory = "Weapon",
                     EquipSlot = EquipmentSlotId.Weapon,
-                    EquipMod = new EquipmentStatMod { ATK = 3 },
-                    ParamValue = 3f,
+                    EquipMod = new EquipmentStatMod { ATK = 4 },
+                    ParamValue = 4f,
                     BasePrice = 40,
                     Stackable = false,
                     MaxStack = 1,
                 },
-                [201] = new ItemData
+                [102] = new ItemData
                 {
-                    Id = 201,
-                    NameKey = "item.cloth_armor",
+                    Id = 102,
+                    NameKey = "item.t1_body",
                     Category = ItemCategory.Equipment,
                     SubCategory = "ArmorBody",
                     EquipSlot = EquipmentSlotId.ArmorBody,
-                    EquipMod = new EquipmentStatMod { HP = 10, DEF = 1 },
-                    ParamValue = 1f,
-                    BasePrice = 35,
-                    Stackable = false,
-                    MaxStack = 1,
-                },
-                [901] = new ItemData
-                {
-                    Id = 901,
-                    NameKey = "test.weapon",
-                    Category = ItemCategory.Equipment,
-                    SubCategory = "Weapon",
-                    EquipSlot = EquipmentSlotId.Weapon,
-                    EquipMod = new EquipmentStatMod { ATK = 5 },
-                    ParamValue = 5f,
-                    BasePrice = 1,
-                    Stackable = false,
-                    MaxStack = 1,
-                },
-                [902] = new ItemData
-                {
-                    Id = 902,
-                    NameKey = "test.body",
-                    Category = ItemCategory.Equipment,
-                    SubCategory = "ArmorBody",
-                    EquipSlot = EquipmentSlotId.ArmorBody,
-                    EquipMod = new EquipmentStatMod { HP = 15, DEF = 2 },
+                    EquipMod = new EquipmentStatMod { HP = 16, DEF = 2 },
                     ParamValue = 2f,
-                    BasePrice = 1,
+                    BasePrice = 38,
                     Stackable = false,
                     MaxStack = 1,
                 },
-                [903] = new ItemData
+                [103] = new ItemData
                 {
-                    Id = 903,
-                    NameKey = "test.arms",
+                    Id = 103,
+                    NameKey = "item.t1_arms",
                     Category = ItemCategory.Equipment,
                     SubCategory = "ArmorArms",
                     EquipSlot = EquipmentSlotId.ArmorArms,
-                    EquipMod = new EquipmentStatMod { ATK = 1, DEF = 1 },
-                    ParamValue = 1f,
-                    BasePrice = 1,
+                    EquipMod = new EquipmentStatMod { ATK = 1, DEF = 2 },
+                    ParamValue = 2f,
+                    BasePrice = 34,
                     Stackable = false,
                     MaxStack = 1,
                 },
-                [904] = new ItemData
+                [104] = new ItemData
                 {
-                    Id = 904,
-                    NameKey = "test.legs",
+                    Id = 104,
+                    NameKey = "item.t1_legs",
                     Category = ItemCategory.Equipment,
                     SubCategory = "ArmorLegs",
                     EquipSlot = EquipmentSlotId.ArmorLegs,
-                    EquipMod = new EquipmentStatMod { SPD = 2, DEF = 1 },
+                    EquipMod = new EquipmentStatMod { DEF = 1, SPD = 2 },
                     ParamValue = 2f,
-                    BasePrice = 1,
+                    BasePrice = 32,
                     Stackable = false,
                     MaxStack = 1,
                 },
@@ -850,7 +810,7 @@ namespace Tempt
                         BossFloor = 3,
                         UnlocksSafeZoneIndex = 1,
                         DifficultyMin = 1,
-                        DifficultyMax = 2,
+                        DifficultyMax = 3,
                     },
                     new StageDef
                     {
@@ -859,8 +819,8 @@ namespace Tempt
                         FloorEnd = 10,
                         BossFloor = 11,
                         UnlocksSafeZoneIndex = 2,
-                        DifficultyMin = 2,
-                        DifficultyMax = 4,
+                        DifficultyMin = 5,
+                        DifficultyMax = 7,
                     },
                     new StageDef
                     {
@@ -869,8 +829,8 @@ namespace Tempt
                         FloorEnd = 18,
                         BossFloor = 19,
                         UnlocksSafeZoneIndex = 3,
-                        DifficultyMin = 3,
-                        DifficultyMax = 6,
+                        DifficultyMin = 9,
+                        DifficultyMax = 11,
                     },
                     new StageDef
                     {
@@ -879,8 +839,8 @@ namespace Tempt
                         FloorEnd = 28,
                         BossFloor = 29,
                         UnlocksSafeZoneIndex = 4,
-                        DifficultyMin = 4,
-                        DifficultyMax = 8,
+                        DifficultyMin = 13,
+                        DifficultyMax = 15,
                     },
                     new StageDef
                     {
@@ -889,8 +849,8 @@ namespace Tempt
                         FloorEnd = 38,
                         BossFloor = 39,
                         UnlocksSafeZoneIndex = 5,
-                        DifficultyMin = 5,
-                        DifficultyMax = 10,
+                        DifficultyMin = 17,
+                        DifficultyMax = 19,
                     },
                     new StageDef
                     {
@@ -899,8 +859,8 @@ namespace Tempt
                         FloorEnd = 48,
                         BossFloor = 49,
                         UnlocksSafeZoneIndex = 5,
-                        DifficultyMin = 6,
-                        DifficultyMax = 12,
+                        DifficultyMin = 21,
+                        DifficultyMax = 23,
                     },
                 },
                 SafeZones = new List<SafeZoneDef>
@@ -959,8 +919,8 @@ namespace Tempt
                     InflectionDay = 10,
                 },
                 ErosionMonsterMultiplier = 1.5f,
-                InflationCoef = 0.5f,
-                SellRatio = 0.5f,
+                InflationCoef = 0.6f,
+                SellRatio = 0.45f,
                 EnhanceMultiplier = 0.1f,
                 EnhanceCostBase = 0.5f,
                 EnhanceCostPerLevel = 0.5f,
@@ -968,14 +928,18 @@ namespace Tempt
                 EnhanceSuccessRateDecayPerLevel = 0.07f,
                 EnhanceMinSuccessRate = 0.2f,
                 EnhancePityFailCount = 5,
-                MineDailyGain = new List<int> { 1, 2, 3 },
-                MineActivationCost = 1,
-                ErosionAltarReduction = 10f,
-                ErosionAltarCost = 1,
+                MineDailyGain = new List<int> { 12, 20, 30 },
+                MineActivationCost = 90,
+                ErosionAltarReduction = 12f,
+                ErosionAltarCost = 35,
                 MinActionTimeSec = 0.1f,
                 RuneResetRefundRate = 0.8f,
-                RuneResetCostGold = 1,
-                RuneClassChangeCostGold = 1,
+                RuneResetCostGold = 60,
+                RuneClassChangeCostGold = 100,
+                TavernLodgingCostPerPerson = 6,
+                TavernStorageActivationCost = 30,
+                TavernStorageUpgradeBaseCost = 45,
+                TavernStorageUpgradeCostStep = 25,
                 FirstNonPlayerActionDelaySec = 2f,
                 AttackActionTimeSec = 0.3f,
                 SkillActionFallbackSec = 0.5f,

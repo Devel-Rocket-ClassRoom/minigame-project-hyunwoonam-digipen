@@ -5,7 +5,7 @@
 이 프로젝트의 모든 설계 결정과 인수인계 정보는 `MINI project/Assets/Imported/Docs` 아래 문서에 있습니다. **새 세션을 시작하거나 새 AI가 작업을 이어받을 때는 현재 권위 문서만 먼저 읽고 시작합니다.**
 
 ```text
-MINI project/Assets/Imported/Docs/HANDOFF17.md                    현재 상태 단일 스냅샷
+MINI project/Assets/Imported/Docs/HANDOFF18.md                    현재 상태 단일 스냅샷 (옵션+다국어 검증 완료)
 MINI project/Assets/Imported/Docs/TechnicalCheck_Report.md        최신 코드 평가 / 개선 우선순위
 MINI project/Assets/Imported/Docs/SystemManagers_Architecture_Design.md  시스템 설계
 MINI project/Assets/Imported/Docs/GameDevelopSetting.md           개발 규칙
@@ -13,9 +13,9 @@ MINI project/Assets/Imported/Docs/Archive/README.md               과거 HANDOFF
 ```
 
 - 이 위치는 한 번 바뀐 적이 있습니다(`Assets/Docs` → `Assets/Imported/Docs`). 오래된 문서/대화에서 옛 경로가 나오면 무시하고 위 경로를 사용합니다.
-- 문서나 이전 대화 내용이 서로 충돌하면 **항상 최신 기준을 우선**합니다. 우선순위는 `사용자의 최신 직접 지시` → `현재 저장소 코드` → `HANDOFF17.md` → `TechnicalCheck_Report.md` → `SystemManagers_Architecture_Design.md` → `GameDevelopSetting.md` → `Docs/Archive/` 의 과거 HANDOFF/Guid → `최종기획안.md` 및 기타 참고 문서 순서입니다.
+- 문서나 이전 대화 내용이 서로 충돌하면 **항상 최신 기준을 우선**합니다. 우선순위는 `사용자의 최신 직접 지시` → `현재 저장소 코드` → `HANDOFF18.md` → `TechnicalCheck_Report.md` → `SystemManagers_Architecture_Design.md` → `GameDevelopSetting.md` → `Docs/Archive/` 의 과거 HANDOFF/Guid → `최종기획안.md` 및 기타 참고 문서 순서입니다.
 - `Docs/Archive/` 의 과거 `HANDOFF*.md` / `Guid*.md` 는 역사 기록입니다. 새 세션 시작 시 전체를 번호 순서대로 읽지 않습니다.
-- 세션 진행 중 사용자의 의도, 변경사항, 결정사항, 보류/폐기된 판단, 구현 내용, 검증 결과가 바뀌면 `HANDOFF17.md` 를 업데이트합니다. 새 HANDOFF 번호는 사용자가 명시적으로 요청하거나 문서 체계를 다시 분기해야 할 때만 생성합니다.
+- 세션 진행 중 사용자의 의도, 변경사항, 결정사항, 보류/폐기된 판단, 구현 내용, 검증 결과가 바뀌면 `HANDOFF18.md` 를 업데이트합니다. 새 HANDOFF 번호는 사용자가 명시적으로 요청하거나 문서 체계를 다시 분기해야 할 때만 생성합니다.
 
 ## 프로젝트 개요
 
@@ -38,7 +38,7 @@ MIniProject/
     │   ├── Imported/
     │   │   └── Docs/          ← 기획/설계/인수인계 문서
     │   │       ├── GameDevelopSetting.md
-    │   │       ├── HANDOFF17.md
+    │   │       ├── HANDOFF18.md
     │   │       ├── TechnicalCheck_Report.md
     │   │       ├── SystemManagers_Architecture_Design.md
     │   │       ├── 최종기획안.md
@@ -250,7 +250,7 @@ relay 바이너리: `C:/Users/ok623/.unity/relay/relay_win.exe` (v1.0.12)
 
 ### Codex Instructions
 - Codex의 워크스페이스 지침은 `.codex/AGENTS.md`에서 관리합니다.
-- Codex는 작업 전 `MINI project/Assets/Imported/Docs/GameDevelopSetting.md`와 `HANDOFF17.md`를 확인합니다. 과거 `HANDOFF*.md` / `Guid*.md` 는 `Docs/Archive/` 의 역사 기록으로, 필요한 경우에만 특정 문서를 열람합니다.
+- Codex는 작업 전 `MINI project/Assets/Imported/Docs/GameDevelopSetting.md`와 `HANDOFF18.md`를 확인합니다. 과거 `HANDOFF*.md` / `Guid*.md` 는 `Docs/Archive/` 의 역사 기록으로, 필요한 경우에만 특정 문서를 열람합니다.
 - Codex 관련 훅, MCP, 플러그인 설정이 추가되면 이 섹션에만 기록합니다.
 
 ## 개발 일정 체크포인트

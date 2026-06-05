@@ -1,5 +1,5 @@
-using UnityEngine;
 using TMPro;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace Tempt
@@ -15,20 +15,47 @@ namespace Tempt
         /// <summary>전투 종료 보상 화면. EndCombat에서 직접 호출.</summary>
         public CombatRewardPage RewardPage;
 
-        [SerializeField] private GameObject actionPanel;
-        [SerializeField] private Button attackButton;
-        [SerializeField] private Button skill1Button;
-        [SerializeField] private Button skill2Button;
-        [SerializeField] private Button defendButton;
-        [SerializeField] private Button[] consumableButtons = new Button[ConsumableSlots.SlotCount];
-        [SerializeField] private TMP_Text[] consumableLabels = new TMP_Text[ConsumableSlots.SlotCount];
-        [SerializeField] private Slider playerHpBar;
-        [SerializeField] private Slider playerMpBar;
-        [SerializeField] private TMP_Text playerNameLabel;
-        [SerializeField] private TMP_Text playerLevelLabel;
-        [SerializeField] private Slider playerExpBar;
-        [SerializeField] private Text roundLabel;
-        [SerializeField] private Text promptLabel;
+        [SerializeField]
+        private GameObject actionPanel;
+
+        [SerializeField]
+        private Button attackButton;
+
+        [SerializeField]
+        private Button skill1Button;
+
+        [SerializeField]
+        private Button skill2Button;
+
+        [SerializeField]
+        private Button defendButton;
+
+        [SerializeField]
+        private Button[] consumableButtons = new Button[ConsumableSlots.SlotCount];
+
+        [SerializeField]
+        private TMP_Text[] consumableLabels = new TMP_Text[ConsumableSlots.SlotCount];
+
+        [SerializeField]
+        private Slider playerHpBar;
+
+        [SerializeField]
+        private Slider playerMpBar;
+
+        [SerializeField]
+        private TMP_Text playerNameLabel;
+
+        [SerializeField]
+        private TMP_Text playerLevelLabel;
+
+        [SerializeField]
+        private Slider playerExpBar;
+
+        [SerializeField]
+        private Text roundLabel;
+
+        [SerializeField]
+        private Text promptLabel;
 
         private Player player;
         private bool isOpen;
@@ -64,6 +91,7 @@ namespace Tempt
             RefreshPlayerExp();
             RefreshConsumableSlots();
             HidePlayerActionPanel();
+            HideRoundLabel();
             isOpen = true;
         }
 
@@ -85,10 +113,7 @@ namespace Tempt
 
             RefreshPlayerBars();
             RefreshPlayerExp();
-            if (roundLabel != null && Controller?.Flow != null)
-            {
-                roundLabel.text = "Round " + Controller.Flow.RoundNumber;
-            }
+            HideRoundLabel();
         }
 
         /// <summary>플레이어 행동 패널 표시.</summary>
@@ -113,7 +138,7 @@ namespace Tempt
             skill2Button.interactable = CanUseSkill(runtimePlayer, 1);
             RefreshConsumableSlots();
             SetConsumableButtonsInteractable(true);
-            SetPrompt("Select action");
+            SetPrompt(Loc.Get("combat_select_action"));
         }
 
         /// <summary>플레이어 행동 패널 숨김.</summary>
@@ -129,8 +154,13 @@ namespace Tempt
 
         public void ShowTargetPrompt(SkillTargetType targetType)
         {
-            string targetName = targetType == SkillTargetType.AllySingle ? "ally" : "enemy";
-            SetPrompt("Select " + targetName);
+            SetPrompt(
+                Loc.Get(
+                    targetType == SkillTargetType.AllySingle
+                        ? "combat_select_ally"
+                        : "combat_select_enemy"
+                )
+            );
         }
 
         public void ClearTargetPrompt()
@@ -141,24 +171,26 @@ namespace Tempt
         private bool ValidateRequiredReferences()
         {
             bool valid =
-                actionPanel != null &&
-                attackButton != null &&
-                skill1Button != null &&
-                skill2Button != null &&
-                defendButton != null &&
-                consumableButtons != null &&
-                consumableButtons.Length == ConsumableSlots.SlotCount &&
-                consumableLabels != null &&
-                consumableLabels.Length == ConsumableSlots.SlotCount &&
-                playerHpBar != null &&
-                playerMpBar != null &&
-                playerNameLabel != null &&
-                playerLevelLabel != null &&
-                playerExpBar != null;
+                actionPanel != null
+                && attackButton != null
+                && skill1Button != null
+                && skill2Button != null
+                && defendButton != null
+                && consumableButtons != null
+                && consumableButtons.Length == ConsumableSlots.SlotCount
+                && consumableLabels != null
+                && consumableLabels.Length == ConsumableSlots.SlotCount
+                && playerHpBar != null
+                && playerMpBar != null
+                && playerNameLabel != null
+                && playerLevelLabel != null
+                && playerExpBar != null;
 
             if (!valid)
             {
-                Debug.LogError("[CombatHud] PlayerUI의 actionPanel/buttons/ItemUI/StatsPanel 직접 연결이 누락되었습니다.");
+                Debug.LogError(
+                    "[CombatHud] PlayerUI의 actionPanel/buttons/ItemUI/StatsPanel 직접 연결이 누락되었습니다."
+                );
                 return false;
             }
 
@@ -244,32 +276,44 @@ namespace Tempt
 
             if (playerHpBar != null)
             {
-                playerHpBar.value = stats.MaxHP > 0 ? Mathf.Clamp01((float)stats.CurrentHP / stats.MaxHP) : 0f;
+                playerHpBar.value =
+                    stats.MaxHP > 0 ? Mathf.Clamp01((float)stats.CurrentHP / stats.MaxHP) : 0f;
             }
 
             if (playerMpBar != null)
             {
-                playerMpBar.value = stats.MaxMP > 0 ? Mathf.Clamp01((float)stats.CurrentMP / stats.MaxMP) : 0f;
+                playerMpBar.value =
+                    stats.MaxMP > 0 ? Mathf.Clamp01((float)stats.CurrentMP / stats.MaxMP) : 0f;
             }
         }
 
         private void RefreshPlayerIdentity()
         {
             PlayerState state = TryGetPlayerState();
-            string displayName = state != null && !string.IsNullOrEmpty(state.Name)
-                ? state.Name
-                : player != null ? player.DisplayName : string.Empty;
-            int level = state != null ? state.Level : player != null ? player.Level : 1;
+            string displayName =
+                state != null && !string.IsNullOrEmpty(state.Name) ? state.Name
+                : player != null ? player.DisplayName
+                : string.Empty;
+            int level =
+                state != null ? state.Level
+                : player != null ? player.Level
+                : 1;
 
             playerNameLabel.text = displayName;
-            playerLevelLabel.text = "Lv. " + Mathf.Max(1, level);
+            playerLevelLabel.text = Loc.Format("combat_level_fmt", Mathf.Max(1, level));
         }
 
         private void RefreshPlayerExp()
         {
             PlayerState state = TryGetPlayerState();
-            int level = state != null ? state.Level : player != null ? player.Level : 1;
-            int current = state != null ? state.Exp : player != null ? player.CurrentExp : 0;
+            int level =
+                state != null ? state.Level
+                : player != null ? player.Level
+                : 1;
+            int current =
+                state != null ? state.Exp
+                : player != null ? player.CurrentExp
+                : 0;
             int required = GameSystemManager.TryGetInstance(out GameSystemManager gsm)
                 ? RunProgression.RequiredExpForLevel(gsm.Data, level)
                 : 0;
@@ -303,7 +347,12 @@ namespace Tempt
 
         public string GetConsumableSlotLabelText(int slotIndex)
         {
-            if (consumableLabels == null || slotIndex < 0 || slotIndex >= consumableLabels.Length || consumableLabels[slotIndex] == null)
+            if (
+                consumableLabels == null
+                || slotIndex < 0
+                || slotIndex >= consumableLabels.Length
+                || consumableLabels[slotIndex] == null
+            )
             {
                 return string.Empty;
             }
@@ -313,24 +362,32 @@ namespace Tempt
 
         private string FormatConsumableSlot(int slotIndex)
         {
-            if (player?.Consumables?.SlotItemIds == null || slotIndex < 0 || slotIndex >= player.Consumables.SlotItemIds.Length)
+            if (
+                player?.Consumables?.SlotItemIds == null
+                || slotIndex < 0
+                || slotIndex >= player.Consumables.SlotItemIds.Length
+            )
             {
-                return "EMPTY";
+                return Loc.Get("ui_empty");
             }
 
             int itemId = player.Consumables.SlotItemIds[slotIndex];
             if (itemId == 0)
             {
-                return "EMPTY";
+                return Loc.Get("ui_empty");
             }
 
             int count = player.Inventory != null ? player.Inventory.CountOf(itemId) : 0;
-            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.Data?.Items == null || !gsm.Data.Items.TryGetValue(itemId, out ItemData itemData))
+            if (
+                !GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                || gsm.Data?.Items == null
+                || !gsm.Data.Items.TryGetValue(itemId, out ItemData itemData)
+            )
             {
-                return "MISSING\n#" + itemId;
+                return Loc.Format("ui_missing_id_fmt", itemId);
             }
 
-            return itemData.NameKey + "\nx" + count;
+            return Loc.Get(itemData.NameKey) + "\n" + Loc.Format("ui_qty_fmt", count);
         }
 
         private void SetConsumableButtonsInteractable(bool playerTurn)
@@ -354,7 +411,11 @@ namespace Tempt
 
         private bool HasUsableConsumable(int slotIndex)
         {
-            if (player?.Consumables?.SlotItemIds == null || slotIndex < 0 || slotIndex >= player.Consumables.SlotItemIds.Length)
+            if (
+                player?.Consumables?.SlotItemIds == null
+                || slotIndex < 0
+                || slotIndex >= player.Consumables.SlotItemIds.Length
+            )
             {
                 return false;
             }
@@ -365,7 +426,9 @@ namespace Tempt
 
         private static PlayerState TryGetPlayerState()
         {
-            return GameSystemManager.TryGetInstance(out GameSystemManager gsm) ? gsm.CurrentRun?.Player : null;
+            return GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                ? gsm.CurrentRun?.Player
+                : null;
         }
 
         private void SetPrompt(string text)
@@ -377,6 +440,17 @@ namespace Tempt
 
             promptLabel.text = text ?? string.Empty;
             promptLabel.gameObject.SetActive(!string.IsNullOrEmpty(promptLabel.text));
+        }
+
+        private void HideRoundLabel()
+        {
+            if (roundLabel == null)
+            {
+                return;
+            }
+
+            roundLabel.text = string.Empty;
+            roundLabel.gameObject.SetActive(false);
         }
     }
 }

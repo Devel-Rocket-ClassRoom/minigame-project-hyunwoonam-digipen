@@ -11,6 +11,10 @@ namespace Tempt
             IPlayerInputProvider,
             IDeadEnemyRemover
     {
+        private const string PlayerVisualPrefabPath = "Player/Player";
+        private const string CombatBackgroundRootName = "CombatBackgroundRoot";
+        private const string CombatBackgroundResourceRoot = "CombatBackgrounds/BG_Combat_Stage";
+
         [SerializeField]
         private CombatMonsterSpawner spawnerRef;
 
@@ -22,6 +26,9 @@ namespace Tempt
 
         [SerializeField]
         private Transform runtimeRootRef;
+
+        [SerializeField]
+        private Transform backgroundRootRef;
 
         /// <summary>전투 FSM.</summary>
         public CombatFlow Flow;
@@ -54,6 +61,7 @@ namespace Tempt
         private bool combatEnded;
 
         private Transform runtimeRoot;
+        private Transform backgroundRoot;
         private EntityBase hoveredTarget;
 
         /// <summary>라운드 전환 배너 1회 트리거용 직전 FSM 상태.</summary>
@@ -77,6 +85,7 @@ namespace Tempt
             }
 
             PrepareRuntimeRoot();
+            PrepareCombatBackground(ctx.Node);
             DisableSceneAuthoredCombatUnits();
 
             int allyCount = 1 + CountActiveCompanions(gsm.CurrentRun.Roster);
@@ -195,12 +204,6 @@ namespace Tempt
             Flow?.Tick();
             if (Flow != null)
             {
-                // 라운드 전환 진입 엣지에서 "Round N" 배너를 1회 표시(bookend 경계 인지).
-                if (Flow.State == CombatState.RoundTransition && lastFlowState != CombatState.RoundTransition)
-                {
-                    CombatRoundBanner.Show(Flow.RoundNumber);
-                }
-
                 lastFlowState = Flow.State;
 
                 if (Flow.State == CombatState.Ended && !combatEnded)
@@ -348,6 +351,57 @@ namespace Tempt
             runtimeRoot = null;
         }
 
+        private void PrepareCombatBackground(FloorNode node)
+        {
+            backgroundRoot = ResolveBackgroundRoot();
+            if (backgroundRoot == null)
+            {
+                return;
+            }
+
+            int stageIndex = node != null ? Mathf.Max(1, node.StageIndex) : 1;
+            string resourcePath = CombatBackgroundResourceRoot + stageIndex.ToString("00");
+            Sprite sprite = Resources.Load<Sprite>(resourcePath);
+            if (sprite == null)
+            {
+                Debug.LogError(
+                    "[CombatController] Combat background sprite missing: Resources/"
+                        + resourcePath
+                );
+                return;
+            }
+
+            SpriteRenderer renderer = backgroundRoot.GetComponent<SpriteRenderer>();
+            if (renderer == null)
+            {
+                Debug.LogError(
+                    "[CombatController] CombatBackgroundRoot SpriteRenderer is missing."
+                );
+                return;
+            }
+
+            renderer.sprite = sprite;
+        }
+
+        private Transform ResolveBackgroundRoot()
+        {
+            if (backgroundRootRef != null)
+            {
+                return backgroundRootRef;
+            }
+
+            Transform found = transform.Find(CombatBackgroundRootName);
+            if (found != null)
+            {
+                return found;
+            }
+
+            Debug.LogError(
+                "[CombatController] CombatBackgroundRoot is missing under CombatController."
+            );
+            return null;
+        }
+
         private void ClearRuntimeRootChildren()
         {
             if (runtimeRoot == null)
@@ -387,8 +441,31 @@ namespace Tempt
 
             Player runtimePlayer = go.AddComponent<Player>();
             runtimePlayer.BindState(state);
+            AttachPlayerVisual(go.transform);
             ConfigureCombatUnit(runtimePlayer, "player", new Color(0.35f, 0.66f, 1f, 1f), true, 10);
             return runtimePlayer;
+        }
+
+        private static void AttachPlayerVisual(Transform host)
+        {
+            if (host == null)
+            {
+                return;
+            }
+
+            GameObject visualPrefab = Resources.Load<GameObject>(PlayerVisualPrefabPath);
+            if (visualPrefab == null)
+            {
+                Debug.LogError("[CombatController] Player prefab missing: Resources/" + PlayerVisualPrefabPath);
+                return;
+            }
+
+            GameObject visual = Instantiate(visualPrefab, host);
+            visual.name = "Player_Visual";
+            visual.transform.localPosition = Vector3.zero;
+            visual.transform.localRotation = Quaternion.identity;
+            visual.transform.localScale = visualPrefab.transform.localScale;
+            DisableVisualArtifacts(visual);
         }
 
         private List<TeamBase> CreateRuntimeCompanions(CompanionRosterState roster, int allyCount)
@@ -399,6 +476,9 @@ namespace Tempt
                 return result;
             }
 
+            DataManager data = GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                ? gsm.Data
+                : null;
             int count = Mathf.Min(3, roster.Active.Count);
             for (int i = 0; i < count; i++)
             {
@@ -408,11 +488,19 @@ namespace Tempt
                     continue;
                 }
 
-                GameObject go = new GameObject("Companion.Runtime." + state.CompanionDataId);
-                go.transform.SetParent(runtimeRoot, false);
-                go.transform.position = AllyPosition(result.Count + 1, allyCount);
+                GameObject go = CompanionPrefabResolver.CreateRuntimeObject(
+                    state,
+                    data,
+                    runtimeRoot,
+                    AllyPosition(result.Count + 1, allyCount)
+                );
 
-                CombatCompanion companion = go.AddComponent<CombatCompanion>();
+                CombatCompanion companion = go.GetComponent<CombatCompanion>();
+                if (companion == null)
+                {
+                    companion = go.AddComponent<CombatCompanion>();
+                }
+
                 companion.BindState(state);
                 ConfigureCombatUnit(
                     companion,
@@ -447,6 +535,23 @@ namespace Tempt
             return count;
         }
 
+        private static void DisableVisualArtifacts(GameObject visualRoot)
+        {
+            if (visualRoot == null)
+            {
+                return;
+            }
+
+            Renderer[] renderers = visualRoot.GetComponentsInChildren<Renderer>(true);
+            foreach (Renderer renderer in renderers)
+            {
+                if (renderer != null && renderer.gameObject.name.Contains("Circle"))
+                {
+                    renderer.enabled = false;
+                }
+            }
+        }
+
         private void ConfigureCombatUnit(
             EntityBase entity,
             string spriteKey,
@@ -460,19 +565,35 @@ namespace Tempt
                 return;
             }
 
-            SpriteRenderer renderer = entity.GetComponentInChildren<SpriteRenderer>();
-            if (renderer == null)
+            SpriteRenderer[] renderers = entity.GetComponentsInChildren<SpriteRenderer>(true);
+            bool hasAuthoredVisual = false;
+            for (int i = 0; i < renderers.Length; i++)
             {
-                renderer = entity.gameObject.AddComponent<SpriteRenderer>();
+                SpriteRenderer childRenderer = renderers[i];
+                if (childRenderer == null)
+                {
+                    continue;
+                }
+
+                if (childRenderer.sprite != null)
+                {
+                    hasAuthoredVisual = true;
+                    childRenderer.sortingOrder = sortingOrder;
+                }
             }
 
-            if (renderer.sprite == null)
+            if (!hasAuthoredVisual)
             {
+                SpriteRenderer renderer = entity.GetComponent<SpriteRenderer>();
+                if (renderer == null)
+                {
+                    renderer = entity.gameObject.AddComponent<SpriteRenderer>();
+                }
+
                 renderer.sprite = GetGeneratedSprite(spriteKey, fallbackColor);
                 renderer.color = Color.white;
+                renderer.sortingOrder = sortingOrder;
             }
-
-            renderer.sortingOrder = sortingOrder;
 
             BoxCollider collider = entity.GetComponent<BoxCollider>();
             if (collider == null)
@@ -572,7 +693,7 @@ namespace Tempt
             int safeIndex = Mathf.Clamp(index, 0, count - 1);
             float spacing = 1.1f;
             float startX = -3.35f - (count - 1) * spacing * 0.5f;
-            return new Vector3(startX + safeIndex * spacing, 1.35f, 0f);
+            return new Vector3(startX + safeIndex * spacing, 0f, 0f);
         }
 
         private static IReadOnlyList<Vector3> BuildEnemyPositions(FloorNode node)
@@ -589,7 +710,7 @@ namespace Tempt
             float startX = 3.35f - (count - 1) * spacing * 0.5f;
             for (int i = 0; i < count; i++)
             {
-                positions.Add(new Vector3(startX + i * spacing, 2.35f, 0f));
+                positions.Add(new Vector3(startX + i * spacing, 0.7f, 0f));
             }
 
             return positions;

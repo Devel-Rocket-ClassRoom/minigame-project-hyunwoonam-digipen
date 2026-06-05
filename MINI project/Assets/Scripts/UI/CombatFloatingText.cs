@@ -27,7 +27,7 @@ namespace Tempt
             }
 
             Color color = guarded ? new Color(0.55f, 0.78f, 1f, 1f) : new Color(1f, 0.85f, 0.25f, 1f);
-            string text = guarded ? ("방어 -" + amount) : ("-" + amount);
+            string text = guarded ? Loc.Format("combat_guarded_damage_fmt", amount) : ("-" + amount);
             Spawn(worldPos, text, color, guarded ? 0.85f : 1f);
         }
 

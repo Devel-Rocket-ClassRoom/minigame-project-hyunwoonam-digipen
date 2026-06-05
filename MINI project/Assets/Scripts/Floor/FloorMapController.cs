@@ -206,9 +206,13 @@ namespace Tempt
 
                 foreach (int nextId in node.NextNodeIds)
                 {
-                    if (nodePositions.TryGetValue(nextId, out Vector2 to))
+                    if (
+                        Map.NodesById.TryGetValue(nextId, out FloorNode nextNode)
+                        && IsVisibleConnection(node, nextNode)
+                        && nodePositions.TryGetValue(nextId, out Vector2 to)
+                    )
                     {
-                        SpawnConnection(from, to);
+                        //SpawnConnection(from, to);
                     }
                 }
             }
@@ -276,6 +280,16 @@ namespace Tempt
             }
 
             return true;
+        }
+
+        private static bool IsVisibleConnection(FloorNode from, FloorNode to)
+        {
+            if (from == null || to == null)
+            {
+                return false;
+            }
+
+            return from.IsSafeZone || to.IsSafeZone;
         }
 
         private bool IsSafeZoneSelectable(FloorNode node)

@@ -5,7 +5,6 @@ namespace Tempt
     /// <summary>
     /// 런 상태에서 참조되는 보조 모델 묶음. GameRunStatet에서 인용.
     /// </summary>
-
     /// <summary>
     /// 플레이어 런타임 상태 데이터(직렬화 가능). Player MonoBehaviour는 이 객체를 참조한다.
     /// 전투 진입 시 MonoBehaviour로 매핑.
@@ -48,7 +47,8 @@ namespace Tempt
         // - ActiveSlotSkillIds: 두 슬롯의 SkillId. 0 은 빈 슬롯.
         // 직렬화는 SaveSnapshot 의 PlayerSnapshot 에서 List<int> 로 변환한다(HashSet 은 JsonUtility 미지원).
         /// <summary>보유한 Active 스킬 풀(길드 구매 누적).</summary>
-        public System.Collections.Generic.HashSet<int> OwnedSkillIds = new System.Collections.Generic.HashSet<int>();
+        public System.Collections.Generic.HashSet<int> OwnedSkillIds =
+            new System.Collections.Generic.HashSet<int>();
 
         /// <summary>활성 슬롯 2칸의 SkillId 매핑. 0 = 빈 슬롯.</summary>
         public int[] ActiveSlotSkillIds = new int[2];
@@ -153,9 +153,7 @@ namespace Tempt
         /// <summary>안전지대 인덱스별 해금 여부.</summary>
         public bool[] Unlocked = new bool[6];
 
-        public SafeZoneUnlockState()
-        {
-        }
+        public SafeZoneUnlockState() { }
 
         public SafeZoneUnlockState(int safeZoneCount)
         {
@@ -261,7 +259,7 @@ namespace Tempt
             return state;
         }
 
-        /// <summary>현재 테스트용 Safe1 기본 재고를 누락분만 보강한다. 기존 구매/비활성 상태는 덮어쓰지 않는다.</summary>
+        /// <summary>Safe1 기본 재고를 누락분만 보강한다. 기존 구매/비활성 상태는 덮어쓰지 않는다.</summary>
         public void EnsureDefaultSafe1Stock()
         {
             if (Entries == null)
@@ -269,12 +267,34 @@ namespace Tempt
                 Entries = new List<ShopStockEntry>();
             }
 
-            EnsureEntry(1, UnlimitedCount, 1, Safe1DefaultUnlockKey, true);
-            EnsureEntry(2, UnlimitedCount, 1, Safe1DefaultUnlockKey, true);
-            EnsureEntry(901, 1, 1, Safe1DefaultUnlockKey, true);
-            EnsureEntry(902, 1, 1, Safe1DefaultUnlockKey, true);
-            EnsureEntry(903, 1, 1, Safe1DefaultUnlockKey, true);
-            EnsureEntry(904, 1, 1, Safe1DefaultUnlockKey, true);
+            EnsureEntry(1, UnlimitedCount, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(2, UnlimitedCount, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(3, 2, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(4, UnlimitedCount, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(5, UnlimitedCount, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(6, UnlimitedCount, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(7, UnlimitedCount, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(8, UnlimitedCount, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(101, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(102, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(103, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(104, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(201, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(202, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(203, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(204, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(301, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(302, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(303, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(304, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(401, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(402, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(403, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(404, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(501, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(502, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(503, 1, 0, Safe1DefaultUnlockKey, true);
+            EnsureEntry(504, 1, 0, Safe1DefaultUnlockKey, true);
         }
 
         public ShopStockEntry Find(int itemId)
@@ -322,22 +342,30 @@ namespace Tempt
             }
         }
 
-        private void EnsureEntry(int itemId, int remainingCount, int unitPrice, string unlockKey, bool available)
+        private void EnsureEntry(
+            int itemId,
+            int remainingCount,
+            int unitPrice,
+            string unlockKey,
+            bool available
+        )
         {
             if (Find(itemId) != null)
             {
                 return;
             }
 
-            Entries.Add(new ShopStockEntry
-            {
-                ItemId = itemId,
-                Available = available,
-                RemainingCount = remainingCount,
-                InitialCount = remainingCount,
-                UnitPrice = unitPrice,
-                UnlockKey = unlockKey,
-            });
+            Entries.Add(
+                new ShopStockEntry
+                {
+                    ItemId = itemId,
+                    Available = available,
+                    RemainingCount = remainingCount,
+                    InitialCount = remainingCount,
+                    UnitPrice = unitPrice,
+                    UnlockKey = unlockKey,
+                }
+            );
         }
     }
 
@@ -371,4 +399,3 @@ namespace Tempt
         }
     }
 }
-

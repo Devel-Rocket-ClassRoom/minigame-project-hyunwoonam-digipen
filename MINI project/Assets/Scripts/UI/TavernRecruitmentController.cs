@@ -17,6 +17,7 @@ namespace Tempt
             public Button Button;
             public Graphic Background;
             public Color BaseColor;
+            public Outline Border;
             public Image Portrait;
             public TextMeshProUGUI Name;
             public TextMeshProUGUI Rune;
@@ -39,7 +40,13 @@ namespace Tempt
         private TextMeshProUGUI recruitButtonLabel;
         private int selectedCompanionId;
 
-        private readonly Color selectedRowColor = new Color(0.42f, 0.30f, 0.08f, 0.92f);
+        private static readonly Color RowBaseColor = new Color(0.09f, 0.09f, 0.09f, 0.96f);
+        private static readonly Color RowSelectedColor = new Color(0.42f, 0.30f, 0.08f, 0.96f);
+        private static readonly Color RowInactiveColor = new Color(0.06f, 0.06f, 0.065f, 0.84f);
+        private static readonly Color RowBorderColor = new Color(0.70f, 0.62f, 0.42f, 1f);
+        private static readonly Color RowSelectedBorderColor = new Color(1f, 0.76f, 0.18f, 1f);
+        private static readonly Color RowInactiveBorderColor = new Color(0.30f, 0.30f, 0.32f, 1f);
+        private static readonly Color RowTextColor = new Color(0.88f, 0.88f, 0.86f, 1f);
         private readonly Color lockedTextColor = new Color(0.46f, 0.46f, 0.52f, 1f);
 
         private void Awake()
@@ -160,21 +167,18 @@ namespace Tempt
                 int price = Tavern.GetRecruitPrice(companion.Id, run, data);
                 string runeLabel = GetStartingRuneName(companion.ClassId, data);
                 string costLabel =
-                    recruited ? "RECRUITED"
-                    : locked ? "LOCKED"
+                    recruited ? Loc.Get("tavern_recruited")
+                    : locked ? Loc.Get("tavern_locked")
                     : price + " G";
 
                 row.Root.SetActive(true);
-                SetText(row.Name, companion.NameKey);
+                SetText(row.Name, LocalizeKey(companion.NameKey));
                 SetText(row.Rune, runeLabel);
-                SetText(row.Description, companion.DescKey);
+                SetText(row.Description, LocalizeKey(companion.DescKey));
                 SetText(row.Cost, costLabel);
 
                 bool selected = companion.Id == selectedCompanionId;
-                if (row.Background != null)
-                {
-                    row.Background.color = selected ? selectedRowColor : row.BaseColor;
-                }
+                ApplyRowVisual(row, selected, !locked && !recruited);
 
                 row.Button.onClick.RemoveAllListeners();
                 int capturedId = companion.Id;
@@ -209,13 +213,13 @@ namespace Tempt
             int price = Tavern.GetRecruitPrice(companionId, run, data);
             string runeLabel = GetStartingRuneName(companion.ClassId, data);
             string costValue =
-                recruited ? "RECRUITED"
-                : locked ? "LOCKED"
+                recruited ? Loc.Get("tavern_recruited")
+                : locked ? Loc.Get("tavern_locked")
                 : price + " G";
 
-            SetDetailLine(0, companion.NameKey);
+            SetDetailLine(0, LocalizeKey(companion.NameKey));
             SetDetailLine(1, runeLabel);
-            SetDetailLine(2, companion.DescKey);
+            SetDetailLine(2, LocalizeKey(companion.DescKey));
             // lines[3] = "Cost:" label — static, skip
             SetDetailLine(4, costValue);
 
@@ -304,7 +308,9 @@ namespace Tempt
 
             if (recruitButtonLabel != null)
             {
-                recruitButtonLabel.text = interactable ? "RECRUIT" : "LOCKED";
+                recruitButtonLabel.text = interactable
+                    ? Loc.Get("tavern_recruit")
+                    : Loc.Get("tavern_locked");
             }
         }
 
@@ -349,6 +355,8 @@ namespace Tempt
 
         private static CompanionRowView CreateRowView(Transform row)
         {
+            EnsureRowLayout(row);
+
             Graphic background = row.GetComponent<Graphic>();
             if (background == null)
             {
@@ -359,6 +367,17 @@ namespace Tempt
             }
 
             background.raycastTarget = true;
+            background.color = RowBaseColor;
+
+            Outline border = row.GetComponent<Outline>();
+            if (border == null)
+            {
+                border = row.gameObject.AddComponent<Outline>();
+            }
+
+            border.effectColor = RowBorderColor;
+            border.effectDistance = new Vector2(1f, -1f);
+            border.useGraphicAlpha = false;
 
             Button button = row.GetComponent<Button>();
             if (button == null)
@@ -373,7 +392,8 @@ namespace Tempt
                 Root = row.gameObject,
                 Button = button,
                 Background = background,
-                BaseColor = background.color,
+                BaseColor = RowBaseColor,
+                Border = border,
                 Portrait = FindChildImage(row, "Portrait"),
                 Name = FindChildText(row, "Name"),
                 Rune = FindChildText(row, "Rune"),
@@ -433,10 +453,78 @@ namespace Tempt
 
             if (data?.Runes != null && data.Runes.TryGetValue(startId, out RuneData rune))
             {
-                return rune.NameKey;
+                return LocalizeKey(rune.NameKey);
             }
 
             return cls.ToString();
+        }
+
+        private static void ApplyRowVisual(CompanionRowView row, bool selected, bool active)
+        {
+            if (row == null)
+            {
+                return;
+            }
+
+            Color background =
+                selected ? RowSelectedColor
+                : active ? RowBaseColor
+                : RowInactiveColor;
+            Color border =
+                selected ? RowSelectedBorderColor
+                : active ? RowBorderColor
+                : RowInactiveBorderColor;
+            Color text = active || selected ? RowTextColor : new Color(0.46f, 0.46f, 0.52f, 1f);
+
+            if (row.Background != null)
+            {
+                row.Background.color = background;
+            }
+
+            if (row.Border != null)
+            {
+                row.Border.effectColor = border;
+            }
+
+            SetTextColor(row.Name, text);
+            SetTextColor(row.Rune, text);
+            SetTextColor(row.Description, text);
+            SetTextColor(row.Cost, text);
+        }
+
+        private static void EnsureRowLayout(Transform row)
+        {
+            if (row == null)
+            {
+                return;
+            }
+
+            LayoutElement layout = row.GetComponent<LayoutElement>();
+            if (layout == null)
+            {
+                layout = row.gameObject.AddComponent<LayoutElement>();
+            }
+
+            if (row is RectTransform rect && rect.sizeDelta.y > 0f)
+            {
+                layout.minHeight = rect.sizeDelta.y;
+                layout.preferredHeight = rect.sizeDelta.y;
+            }
+
+            layout.flexibleHeight = 0f;
+        }
+
+        private static void SetTextColor(TextMeshProUGUI label, Color color)
+        {
+            if (label != null)
+            {
+                label.color = color;
+            }
+        }
+
+        private static string LocalizeKey(string key)
+        {
+            return string.IsNullOrEmpty(key) ? string.Empty : Loc.Get(key);
         }
 
         private static bool TryGetRunData(out GameRunState run, out DataManager data)

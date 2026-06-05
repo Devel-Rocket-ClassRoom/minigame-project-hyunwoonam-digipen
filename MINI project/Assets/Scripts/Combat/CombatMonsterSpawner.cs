@@ -8,6 +8,9 @@ namespace Tempt
     /// </summary>
     public sealed class CombatMonsterSpawner : MonoBehaviour
     {
+        private const string MonsterResourceRoot = "Monsters/";
+        private const string RuntimeHostPrefabPath = "Monsters/MonsterDefault";
+
         /// <summary>생성된 몬스터들.</summary>
         public List<MonsterBase> SpawnedT = new List<MonsterBase>();
 
@@ -52,14 +55,16 @@ namespace Tempt
                 Vector3 pos = spawnPositions != null && i < spawnPositions.Count
                     ? spawnPositions[i]
                     : transform.position + new Vector3(i * spacing, 0f, 0f);
-                GameObject prefab = !string.IsNullOrEmpty(data.PrefabKey) ? Resources.Load<GameObject>("Monsters/" + data.PrefabKey) : null;
+                GameObject prefab = !string.IsNullOrEmpty(data.PrefabKey)
+                    ? Resources.Load<GameObject>(MonsterResourceRoot + data.PrefabKey)
+                    : null;
                 if (prefab == null)
                 {
                     Debug.LogError("[CombatMonsterSpawner] Monster prefab missing: Resources/Monsters/" + data.PrefabKey);
                     continue;
                 }
 
-                GameObject go = Instantiate(prefab, pos, Quaternion.identity, parent);
+                GameObject go = InstantiateMonster(prefab, pos, parent);
                 go.transform.position = pos;
                 MonsterBase monster = go.GetComponent<MonsterBase>();
                 if (monster == null)
@@ -111,6 +116,55 @@ namespace Tempt
             }
 
             return fallback;
+        }
+
+        private static GameObject InstantiateMonster(GameObject prefab, Vector3 pos, Transform parent)
+        {
+            if (prefab.GetComponent<MonsterBase>() != null)
+            {
+                return Instantiate(prefab, pos, Quaternion.identity, parent);
+            }
+
+            GameObject hostPrefab = Resources.Load<GameObject>(RuntimeHostPrefabPath);
+            GameObject host = hostPrefab != null
+                ? Instantiate(hostPrefab, pos, Quaternion.identity, parent)
+                : CreateFallbackHost(pos, parent);
+            host.name = prefab.name;
+
+            GameObject visual = Instantiate(prefab, host.transform);
+            visual.name = prefab.name + "_Visual";
+            visual.transform.localPosition = Vector3.zero;
+            visual.transform.localRotation = Quaternion.identity;
+            visual.transform.localScale = prefab.transform.localScale;
+            DisableCircleArtifacts(visual);
+
+            return host;
+        }
+
+        private static GameObject CreateFallbackHost(Vector3 pos, Transform parent)
+        {
+            GameObject host = new GameObject("Monster");
+            host.transform.SetParent(parent, false);
+            host.transform.position = pos;
+            host.AddComponent<Monster>();
+            return host;
+        }
+
+        private static void DisableCircleArtifacts(GameObject visualRoot)
+        {
+            if (visualRoot == null)
+            {
+                return;
+            }
+
+            Renderer[] renderers = visualRoot.GetComponentsInChildren<Renderer>(true);
+            foreach (Renderer renderer in renderers)
+            {
+                if (renderer != null && renderer.gameObject.name.Contains("Circle"))
+                {
+                    renderer.enabled = false;
+                }
+            }
         }
     }
 }

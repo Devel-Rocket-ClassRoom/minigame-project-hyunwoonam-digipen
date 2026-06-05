@@ -11,13 +11,21 @@ namespace Tempt
         /// <summary>New Game 확인 팝업.</summary>
         public NewGameConfirmPopup NewGameConfirm;
 
-        /// <summary>옵션 페이지(UIManagert와 협업).</summary>
-        public OptionPageHost OptionHost;
+        /// <summary>옵션 패널 컨트롤러.</summary>
+        [SerializeField]
+        private OptionsPage optionsPage;
 
-        [SerializeField] private Button newGameButton;
-        [SerializeField] private Button continueButton;
-        [SerializeField] private Button optionButton;
-        [SerializeField] private Button exitButton;
+        [SerializeField]
+        private Button newGameButton;
+
+        [SerializeField]
+        private Button continueButton;
+
+        [SerializeField]
+        private Button optionButton;
+
+        [SerializeField]
+        private Button exitButton;
 
         /// <inheritdoc/>
         public override void OnEnter()
@@ -38,10 +46,14 @@ namespace Tempt
         /// <inheritdoc/>
         public override void OnExit()
         {
-            if (newGameButton != null) newGameButton.onClick.RemoveListener(OnClickNewGame);
-            if (continueButton != null) continueButton.onClick.RemoveListener(OnClickContinue);
-            if (optionButton != null) optionButton.onClick.RemoveListener(OnClickOption);
-            if (exitButton != null) exitButton.onClick.RemoveListener(OnClickExit);
+            if (newGameButton != null)
+                newGameButton.onClick.RemoveListener(OnClickNewGame);
+            if (continueButton != null)
+                continueButton.onClick.RemoveListener(OnClickContinue);
+            if (optionButton != null)
+                optionButton.onClick.RemoveListener(OnClickOption);
+            if (exitButton != null)
+                exitButton.onClick.RemoveListener(OnClickExit);
         }
 
         /// <summary>New Game 클릭.</summary>
@@ -50,7 +62,9 @@ namespace Tempt
             GameSystemManager gsm = GameSystemManager.Instance;
             if (gsm == null)
             {
-                Debug.LogError("[MainMenuController] GameSystemManager 인스턴스를 찾을 수 없습니다.");
+                Debug.LogError(
+                    "[MainMenuController] GameSystemManager 인스턴스를 찾을 수 없습니다."
+                );
                 return;
             }
 
@@ -68,7 +82,9 @@ namespace Tempt
             GameSystemManager gsm = GameSystemManager.Instance;
             if (gsm == null)
             {
-                Debug.LogError("[MainMenuController] GameSystemManager 인스턴스를 찾을 수 없습니다.");
+                Debug.LogError(
+                    "[MainMenuController] GameSystemManager 인스턴스를 찾을 수 없습니다."
+                );
                 return;
             }
 
@@ -78,7 +94,7 @@ namespace Tempt
         /// <summary>Option 클릭.</summary>
         public void OnClickOption()
         {
-            OptionHost?.Open();
+            optionsPage?.Open();
         }
 
         /// <summary>Exit 클릭.</summary>
@@ -93,7 +109,12 @@ namespace Tempt
 
         private bool ValidateButtonRefs()
         {
-            if (newGameButton != null && continueButton != null && optionButton != null && exitButton != null)
+            if (
+                newGameButton != null
+                && continueButton != null
+                && optionButton != null
+                && exitButton != null
+            )
             {
                 return true;
             }
@@ -102,14 +123,4 @@ namespace Tempt
             return false;
         }
     }
-
-    /// <summary>옵션 페이지를 메인 메뉴에서 띄울 때 사용하는 어댑터.</summary>
-    public sealed class OptionPageHost
-    {
-        /// <summary>옵션 열기.</summary>
-        public void Open()
-        {
-        }
-    }
 }
-

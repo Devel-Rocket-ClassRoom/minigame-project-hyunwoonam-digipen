@@ -71,6 +71,18 @@ namespace Tempt
         /// <summary>룬 직업 변경 골드 비용.</summary>
         public int RuneClassChangeCostGold;
 
+        /// <summary>주점 숙박 1인당 골드 비용.</summary>
+        public int TavernLodgingCostPerPerson;
+
+        /// <summary>주점 보관함 활성화 골드 비용.</summary>
+        public int TavernStorageActivationCost;
+
+        /// <summary>주점 보관함 첫 업그레이드 골드 비용.</summary>
+        public int TavernStorageUpgradeBaseCost;
+
+        /// <summary>주점 보관함 업그레이드 단계별 추가 골드 비용.</summary>
+        public int TavernStorageUpgradeCostStep;
+
         /// <summary>첫 AI 행동 시작 전 대기 시간(초).</summary>
         public float FirstNonPlayerActionDelaySec;
 

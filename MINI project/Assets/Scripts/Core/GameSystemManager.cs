@@ -26,6 +26,9 @@ namespace Tempt
         /// <summary>이벤트 버스 (레벨업/침식/EXP 등 도메인 이벤트 발행).</summary>
         public EventBus Events { get; private set; }
 
+        /// <summary>화면/볼륨/언어 옵션 서비스.</summary>
+        public OptionsService Options { get; private set; }
+
         /// <summary>현재 진행 중인 런 상태 (없으면 null).</summary>
         public GameRunState CurrentRun { get; private set; }
 
@@ -37,6 +40,8 @@ namespace Tempt
         // 전투 외에서 Player MonoBehaviour 가 없으면 null 일 수 있다(Guid3 §10 W-G3-1 보류).
         /// <summary>현재 활성 Player MonoBehaviour. 전투 외에서는 null 일 수 있다.</summary>
         public Player ActivePlayer { get; set; }
+
+        private RuntimeTextLocalizer runtimeTextLocalizer;
 
         private bool floorMapRechallengeRequested;
         private int floorMapRechallengeMaxFloor;
@@ -77,6 +82,16 @@ namespace Tempt
 
             Save = new SaveLoader();
             Save.LoadAll();
+
+            Options = new OptionsService();
+            Options.Load();
+            Options.Apply(Options.Current);
+
+            runtimeTextLocalizer = GetComponent<RuntimeTextLocalizer>();
+            if (runtimeTextLocalizer == null)
+            {
+                runtimeTextLocalizer = gameObject.AddComponent<RuntimeTextLocalizer>();
+            }
 
             Scenes = GetComponent<GameSceneManager>();
             if (Scenes == null)
@@ -174,7 +189,7 @@ namespace Tempt
             CurrentRun.SafeUnlocks.Unlock(0);
             CurrentRun.ShopStock = ShopStockState.CreateDefaultSafe1Stock();
 
-            CurrentRun.Gold = 0;
+            CurrentRun.Gold = 1000;
             CurrentRun.ManaStone = 0;
             CurrentRun.InitializeMineState();
             CurrentRun.Tutorial = new TutorialProgressState();
@@ -223,10 +238,10 @@ namespace Tempt
             player.Inventory.Add(1, 2);
             player.Inventory.Add(3, 1);
 
-            AddStartingEquipment(player.Inventory, 901);
-            AddStartingEquipment(player.Inventory, 902);
-            AddStartingEquipment(player.Inventory, 903);
-            AddStartingEquipment(player.Inventory, 904);
+            AddStartingEquipment(player.Inventory, 101);
+            AddStartingEquipment(player.Inventory, 102);
+            AddStartingEquipment(player.Inventory, 103);
+            AddStartingEquipment(player.Inventory, 104);
 
             player.Consumables.SlotItemIds[0] = 1;
             player.Consumables.SlotItemIds[1] = 3;
@@ -242,14 +257,14 @@ namespace Tempt
                 || !Data.Items.TryGetValue(itemId, out ItemData itemData)
             )
             {
-                Debug.LogError("[GameSystemManager] 시작 테스트 장비 ID 없음: " + itemId);
+                Debug.LogError("[GameSystemManager] 시작 장비 ID 없음: " + itemId);
                 return;
             }
 
             if (itemData.Category != ItemCategory.Equipment || itemData.Stackable)
             {
                 Debug.LogError(
-                    "[GameSystemManager] 시작 테스트 장비가 Equipment가 아닙니다: " + itemId
+                    "[GameSystemManager] 시작 장비가 Equipment가 아닙니다: " + itemId
                 );
                 return;
             }

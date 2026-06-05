@@ -1,6 +1,6 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections.Generic;
 
 namespace Tempt
 {
@@ -13,12 +13,25 @@ namespace Tempt
     /// </summary>
     public sealed class ShopPage : MonoBehaviour
     {
-        [SerializeField] private GameObject root;
-        [SerializeField] private Transform buyListRoot;
-        [SerializeField] private Transform sellListRoot;
-        [SerializeField] private Button itemEntryPrefab;
-        [SerializeField] private Text goldLabel;
-        [SerializeField] private ItemInfoPanel infoPanel;
+        private const float ListEntryPreferredHeight = 78f;
+
+        [SerializeField]
+        private GameObject root;
+
+        [SerializeField]
+        private Transform buyListRoot;
+
+        [SerializeField]
+        private Transform sellListRoot;
+
+        [SerializeField]
+        private Button itemEntryPrefab;
+
+        [SerializeField]
+        private Text goldLabel;
+
+        [SerializeField]
+        private ItemInfoPanel infoPanel;
 
         private void Awake()
         {
@@ -74,7 +87,7 @@ namespace Tempt
                 return;
             }
 
-            goldLabel.text = "Gold " + run.Gold;
+            goldLabel.text = Loc.Format("shop_gold_fmt", run.Gold);
             ClearList(buyListRoot);
             ClearList(sellListRoot);
 
@@ -83,7 +96,14 @@ namespace Tempt
             foreach (ItemData itemData in buyItems)
             {
                 int price = Shop.GetBuyPrice(itemData.Id, run, data);
-                UIListEntryFactory.SpawnListEntry(itemEntryPrefab, buyListRoot, itemData.NameKey + "  " + price + "G", () => infoPanel.Show(itemData.Id, ItemDetailContext.Shop), "[ShopPage] itemEntryPrefab 하위 텍스트 참조가 없습니다.");
+                Button entry = UIListEntryFactory.SpawnListEntry(
+                    itemEntryPrefab,
+                    buyListRoot,
+                    LocalizeKey(itemData.NameKey) + "  " + price + "G",
+                    () => infoPanel.Show(itemData.Id, ItemDetailContext.Shop),
+                    "[ShopPage] itemEntryPrefab 하위 텍스트 참조가 없습니다."
+                );
+                EnsureListEntryLayout(entry.transform);
             }
 
             InventoryState inv = run.Player.Inventory;
@@ -94,7 +114,19 @@ namespace Tempt
                 if (data.Items.TryGetValue(entry.Key, out ItemData itemData))
                 {
                     int price = Shop.GetSellPrice(entry.Key, run, data, data.Balance);
-                    UIListEntryFactory.SpawnListEntry(itemEntryPrefab, sellListRoot, itemData.NameKey + " x" + entry.Value + "  " + price + "G", () => infoPanel.Show(entry.Key, ItemDetailContext.Shop), "[ShopPage] itemEntryPrefab 하위 텍스트 참조가 없습니다.");
+                    Button listEntry = UIListEntryFactory.SpawnListEntry(
+                        itemEntryPrefab,
+                        sellListRoot,
+                        LocalizeKey(itemData.NameKey)
+                            + " x"
+                            + entry.Value
+                            + "  "
+                            + price
+                            + "G",
+                        () => infoPanel.Show(entry.Key, ItemDetailContext.Shop),
+                        "[ShopPage] itemEntryPrefab 하위 텍스트 참조가 없습니다."
+                    );
+                    EnsureListEntryLayout(listEntry.transform);
                 }
             }
 
@@ -103,14 +135,29 @@ namespace Tempt
                 if (item?.Data != null)
                 {
                     int price = Shop.GetSellPrice(item.Data.Id, run, data, data.Balance);
-                    UIListEntryFactory.SpawnListEntry(itemEntryPrefab, sellListRoot, item.Data.NameKey + " +" + item.Enhancement + "  " + price + "G", () => infoPanel.ShowEquip(item, ItemDetailContext.Shop), "[ShopPage] itemEntryPrefab 하위 텍스트 참조가 없습니다.");
+                    Button entry = UIListEntryFactory.SpawnListEntry(
+                        itemEntryPrefab,
+                        sellListRoot,
+                        LocalizeKey(item.Data.NameKey)
+                            + " +"
+                            + item.Enhancement
+                            + "  "
+                            + price
+                            + "G",
+                        () => infoPanel.ShowEquip(item, ItemDetailContext.Shop),
+                        "[ShopPage] itemEntryPrefab 하위 텍스트 참조가 없습니다."
+                    );
+                    EnsureListEntryLayout(entry.transform);
                 }
             }
         }
 
         private bool ValidateReferences()
         {
-            bool valid = root != null
+            ResolveRowsRoots();
+
+            bool valid =
+                root != null
                 && buyListRoot != null
                 && sellListRoot != null
                 && itemEntryPrefab != null
@@ -118,19 +165,200 @@ namespace Tempt
                 && infoPanel != null;
             if (!valid)
             {
-                Debug.LogError("[ShopPage] 필수 UI 참조가 Inspector 에 직접 할당되어 있지 않습니다.");
+                Debug.LogError(
+                    "[ShopPage] 필수 UI 참조가 Inspector 에 직접 할당되어 있지 않습니다."
+                );
             }
 
             return valid;
+        }
+
+        private void ResolveRowsRoots()
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            Transform rootTransform = root.transform;
+            buyListRoot = ResolveRowsRoot(
+                rootTransform,
+                buyListRoot,
+                "Content_BUY",
+                "MERCHANT_STOCK_Section"
+            );
+            sellListRoot = ResolveRowsRoot(
+                rootTransform,
+                sellListRoot,
+                "Content_SELL",
+                "SELLABLE_ITEMS_Section"
+            );
+        }
+
+        private static Transform ResolveRowsRoot(
+            Transform root,
+            Transform current,
+            string contentName,
+            string sectionName
+        )
+        {
+            Transform resolved = FindRowsUnderSection(root, contentName, sectionName);
+            if (resolved != null)
+            {
+                EnsureRowsScrollContent(resolved);
+                return resolved;
+            }
+
+            EnsureRowsScrollContent(current);
+            return current;
+        }
+
+        private static Transform FindRowsUnderSection(
+            Transform root,
+            string contentName,
+            string sectionName
+        )
+        {
+            Transform section = FindDescendant(root, sectionName);
+            if (section == null || !HasAncestor(section, contentName))
+            {
+                return null;
+            }
+
+            Transform rows = section.Find("Rows_ScrollView/Rows");
+            if (rows != null)
+            {
+                return rows;
+            }
+
+            return section.Find("Rows");
+        }
+
+        private static bool HasAncestor(Transform transform, string ancestorName)
+        {
+            for (Transform current = transform; current != null; current = current.parent)
+            {
+                if (current.name == ancestorName)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static Transform FindDescendant(Transform root, string targetName)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            if (root.name == targetName)
+            {
+                return root;
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform found = FindDescendant(root.GetChild(i), targetName);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            return null;
+        }
+
+        private static void EnsureRowsScrollContent(Transform rowsRoot)
+        {
+            if (rowsRoot == null || !(rowsRoot is RectTransform rowsRect))
+            {
+                return;
+            }
+
+            EnsureRowsContainerLayout(rowsRoot);
+            ScrollRect scrollRect = rowsRoot.GetComponentInParent<ScrollRect>(true);
+            if (scrollRect != null && scrollRect.content != rowsRect)
+            {
+                scrollRect.content = rowsRect;
+            }
+        }
+
+        private static void EnsureRowsContainerLayout(Transform rowsRoot)
+        {
+            if (rowsRoot == null)
+            {
+                return;
+            }
+
+            VerticalLayoutGroup layout = rowsRoot.GetComponent<VerticalLayoutGroup>();
+            if (layout == null)
+            {
+                layout = rowsRoot.gameObject.AddComponent<VerticalLayoutGroup>();
+            }
+
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            layout.childScaleWidth = false;
+            layout.childScaleHeight = false;
+
+            ContentSizeFitter fitter = rowsRoot.GetComponent<ContentSizeFitter>();
+            if (fitter == null)
+            {
+                fitter = rowsRoot.gameObject.AddComponent<ContentSizeFitter>();
+            }
+
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        }
+
+        private static void EnsureListEntryLayout(Transform entry)
+        {
+            if (entry == null)
+            {
+                return;
+            }
+
+            LayoutElement layout = entry.GetComponent<LayoutElement>();
+            if (layout == null)
+            {
+                layout = entry.gameObject.AddComponent<LayoutElement>();
+            }
+
+            float height = ListEntryPreferredHeight;
+            if (entry is RectTransform rect && rect.sizeDelta.y > 0f)
+            {
+                height = Mathf.Max(ListEntryPreferredHeight, rect.sizeDelta.y);
+            }
+
+            layout.ignoreLayout = false;
+            layout.minHeight = height;
+            layout.preferredHeight = height;
+            layout.flexibleHeight = 0f;
+        }
+
+        private static string LocalizeKey(string key)
+        {
+            return string.IsNullOrEmpty(key) ? string.Empty : Loc.Get(key);
         }
 
         private static bool TryGetRunData(out GameRunState run, out DataManager data)
         {
             run = null;
             data = null;
-            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.CurrentRun?.Player?.Inventory == null || gsm.Data?.Items == null)
+            if (
+                !GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                || gsm.CurrentRun?.Player?.Inventory == null
+                || gsm.Data?.Items == null
+            )
             {
-                Debug.LogError("[ShopPage] GameSystemManager / CurrentRun.Player.Inventory / Data.Items 참조가 없습니다.");
+                Debug.LogError(
+                    "[ShopPage] GameSystemManager / CurrentRun.Player.Inventory / Data.Items 참조가 없습니다."
+                );
                 return false;
             }
 
@@ -141,7 +369,7 @@ namespace Tempt
 
         private void OnGoldChanged(int value)
         {
-            goldLabel.text = "Gold " + value;
+            goldLabel.text = Loc.Format("shop_gold_fmt", value);
         }
 
         private static void ClearList(Transform parent)
