@@ -3,6 +3,8 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
 
+namespace Tempt
+{
 public class InventoryDiscardModalController : MonoBehaviour
 {
     [Header("Common References")]
@@ -95,11 +97,11 @@ public class InventoryDiscardModalController : MonoBehaviour
     {
         if (_isStackable)
         {
-            Debug.Log($"Discarded {_selectedCount} items.");
+            GameLog.Log($"Discarded {_selectedCount} items.");
         }
         else
         {
-            Debug.Log($"Discarded item.");
+            GameLog.Log($"Discarded item.");
         }
         CloseModal();
     }
@@ -141,4 +143,5 @@ public class InventoryDiscardModalController : MonoBehaviour
         quantityMinusButton.interactable = _selectedCount > 1;
         quantityPlusButton.interactable = _selectedCount < _maxCount;
     }
+}
 }

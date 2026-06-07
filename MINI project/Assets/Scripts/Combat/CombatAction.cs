@@ -16,6 +16,12 @@ namespace Tempt
         /// <summary>사용 스킬(Type=Skill일 때).</summary>
         public Skill Skill;
 
+        /// <summary>룬 보정이 적용된 스킬 데이터. null이면 Skill.Data 사용.</summary>
+        public SkillData EffectiveSkillData;
+
+        /// <summary>현재 행동에 사용할 스킬 데이터.</summary>
+        public SkillData ResolvedSkillData => EffectiveSkillData ?? Skill?.Data;
+
         /// <summary>전투 UI 소모품 슬롯 인덱스. 플레이어 아이템 사용 경로에서만 사용한다.</summary>
         public int ConsumableSlotIndex;
 

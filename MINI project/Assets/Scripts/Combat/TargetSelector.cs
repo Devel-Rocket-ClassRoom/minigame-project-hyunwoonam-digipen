@@ -50,7 +50,7 @@ namespace Tempt
             // 동작 요약:
             // - IsActive == false 또는 cachedCamera == null 이면 즉시 반환.
             // - 마우스 위치에서 레이캐스트 → 콜라이더의 EntityBase 후보 탐지.
-            // - 진영 필터(EnemySingle ↔ MonsterBase, AllySingle ↔ Player/TeamBase).
+            // - 진영 필터(EnemySingle ↔ Monster, AllySingle ↔ Player/TeamBase).
             // - 후보 변경 시 OnHoverChanged 발생.
             // - 좌클릭 + 유효 후보면 OnTargetConfirmed 발생 후 EndHover.
             // - 우클릭/ESC 면 취소.
@@ -79,7 +79,7 @@ namespace Tempt
             bool validTarget = hovered != null &&
                 !hovered.IsDead &&
                 hovered.gameObject.activeInHierarchy &&
-                ((Mode == SkillTargetType.EnemySingle && hovered is MonsterBase) ||
+                ((Mode == SkillTargetType.EnemySingle && hovered is Monster) ||
                  (Mode == SkillTargetType.AllySingle && (hovered is Player || hovered is TeamBase)));
             if (!validTarget)
             {

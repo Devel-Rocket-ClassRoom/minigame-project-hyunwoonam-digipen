@@ -210,7 +210,7 @@ namespace Tempt
 
             if (!valid)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[CombatRewardPage] RewardPanel 필수 UI 참조가 Inspector 에 연결되지 않았습니다."
                 );
                 return false;
@@ -222,7 +222,7 @@ namespace Tempt
                 ItemRowView row = CreateRowView(itemRowButtons[i]);
                 if (row == null)
                 {
-                    Debug.LogError(
+                    GameLog.LogError(
                         "[CombatRewardPage] ItemRow 버튼 또는 ItemName/Quantity 참조가 누락되었습니다: "
                             + i
                     );
@@ -238,25 +238,13 @@ namespace Tempt
 
         private void EnsureRowCount(int count)
         {
-            if (rows.Count == 0 || itemRowsRoot == null)
-            {
-                return;
-            }
-
-            GameObject template = rows[0].Root;
-            while (rows.Count < count)
-            {
-                GameObject clone = Instantiate(template, itemRowsRoot);
-                clone.name = template.name + "_Generated_" + rows.Count;
-                ItemRowView row = CreateRowView(clone.GetComponent<Button>());
-                if (row == null)
-                {
-                    Destroy(clone);
-                    break;
-                }
-
-                rows.Add(row);
-            }
+            UIRowPool.EnsureCount(
+                rows,
+                itemRowsRoot,
+                count,
+                v => v.Root,
+                clone => CreateRowView(clone.GetComponent<Button>())
+            );
         }
 
         private ItemRowView CreateRowView(Button button)

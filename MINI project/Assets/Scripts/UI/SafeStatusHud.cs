@@ -6,7 +6,7 @@ namespace Tempt
     /// <summary>
     /// Safe 씬 상단 상태 표시. 씬에 직접 배치된 Gold/HP/MP TMP_Text 참조만 사용한다.
     /// </summary>
-    public sealed class SafeStatusHud : MonoBehaviour
+    public sealed class SafeStatusHud : UIEventPageBase
     {
         [SerializeField] private TMP_Text goldText;
         [SerializeField] private TMP_Text hpText;
@@ -26,27 +26,16 @@ namespace Tempt
             }
         }
 
-        private void OnEnable()
-        {
-            SubscribeEvents();
-            Refresh();
-        }
-
-        private void OnDisable()
-        {
-            UnsubscribeEvents();
-        }
-
         private void Update()
         {
             RefreshIfChanged();
         }
 
-        public void Refresh()
+        public override void Refresh()
         {
             if (!TryGetRunState(out GameRunState run) || run.Player?.Stats == null)
             {
-                Debug.LogError("[SafeStatusHud] GameSystemManager.CurrentRun.Player.Stats 참조가 없습니다.");
+                GameLog.LogError("[SafeStatusHud] GameSystemManager.CurrentRun.Player.Stats 참조가 없습니다.");
                 return;
             }
 
@@ -110,7 +99,7 @@ namespace Tempt
             lastMaxMp = maxMp;
         }
 
-        private void SubscribeEvents()
+        protected override void SubscribeEvents()
         {
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Events != null)
             {
@@ -125,7 +114,7 @@ namespace Tempt
             }
         }
 
-        private void UnsubscribeEvents()
+        protected override void UnsubscribeEvents()
         {
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Events != null)
             {
@@ -158,7 +147,7 @@ namespace Tempt
             bool valid = goldText != null && hpText != null && mpText != null;
             if (!valid)
             {
-                Debug.LogError("[SafeStatusHud] Gold/HP/MP 텍스트 참조가 씬에서 직접 할당되어 있지 않습니다.");
+                GameLog.LogError("[SafeStatusHud] Gold/HP/MP 텍스트 참조가 씬에서 직접 할당되어 있지 않습니다.");
             }
 
             return valid;

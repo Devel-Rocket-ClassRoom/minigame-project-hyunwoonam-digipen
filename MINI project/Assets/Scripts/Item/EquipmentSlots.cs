@@ -70,6 +70,25 @@ namespace Tempt
             return result;
         }
 
+        /// <summary>해당 아이템이 어느 슬롯에든 장착돼 있는지. (하드코딩 슬롯 비교 중복 제거용)</summary>
+        public bool Contains(Item item)
+        {
+            if (item == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < SlotBindings.Length; i++)
+            {
+                if (SlotBindings[i].Get(this) == item)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private Item GetSlot(EquipmentSlotId slot)
         {
             SlotBinding binding = FindBinding(slot);

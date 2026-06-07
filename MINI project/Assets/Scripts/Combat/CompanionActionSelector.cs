@@ -49,14 +49,15 @@ namespace Tempt
             }
 
             // 직업 규칙에 맞는 사용 가능 스킬 선택
-            Skill skill = PickUsableSkill(companion, rule, aliveAlliesBuffer, aliveEnemiesBuffer);
-            if (skill != null)
+            SkillPick skillPick = PickUsableSkill(companion, rule, aliveAlliesBuffer, aliveEnemiesBuffer);
+            if (skillPick.Skill != null)
             {
                 action.Type = CombatActionType.Skill;
-                action.Skill = skill;
+                action.Skill = skillPick.Skill;
+                action.EffectiveSkillData = skillPick.EffectiveData;
                 CombatTargeting.FillByTargetType(
                     action.Targets,
-                    skill.Data.TargetType,
+                    skillPick.EffectiveData.TargetType,
                     companion,
                     aliveAlliesBuffer,
                     aliveEnemiesBuffer,
@@ -71,7 +72,7 @@ namespace Tempt
             return action;
         }
 
-        private static Skill PickUsableSkill(
+        private static SkillPick PickUsableSkill(
             TeamBase companion,
             string rule,
             List<EntityBase> allies,
@@ -85,39 +86,49 @@ namespace Tempt
             //   * Supporter:   아군 HpRatio 가 0.5 미만이고 HealScale > 0 인 스킬이면 우선.
             if (companion.ActiveSkills == null)
             {
-                return null;
+                return SkillPick.Empty;
             }
 
-            Skill fallback = null;
+            SkillPick fallback = SkillPick.Empty;
             for (int i = 0; i < companion.ActiveSkills.Length; i++)
             {
                 Skill s = companion.ActiveSkills[i];
-                if (s == null || !s.CanUse(companion))
+                SkillData effectiveData = SkillRuntimeResolver.Resolve(s, companion);
+                if (s == null || !s.CanUse(companion, effectiveData))
                 {
                     continue;
                 }
 
-                if (fallback == null)
+                var current = new SkillPick { Skill = s, EffectiveData = effectiveData };
+                if (fallback.Skill == null)
                 {
-                    fallback = s;
+                    fallback = current;
                 }
 
                 if (rule == "MagicDealer"
                     && enemies.Count >= 2
-                    && s.Data.TargetType == SkillTargetType.EnemyAll)
+                    && effectiveData.TargetType == SkillTargetType.EnemyAll)
                 {
-                    return s;
+                    return current;
                 }
 
                 if (rule == "Supporter"
-                    && s.Data.HealScale > 0f
+                    && effectiveData.HealScale > 0f
                     && CombatTargeting.LowestHpRatio(allies) < 0.5f)
                 {
-                    return s;
+                    return current;
                 }
             }
 
             return fallback;
+        }
+
+        private struct SkillPick
+        {
+            public static readonly SkillPick Empty = new SkillPick();
+
+            public Skill Skill;
+            public SkillData EffectiveData;
         }
     }
 }

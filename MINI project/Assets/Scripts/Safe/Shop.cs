@@ -24,7 +24,7 @@ namespace Tempt
         {
             if (balance == null)
             {
-                UnityEngine.Debug.LogError("[Shop.GetSellPrice] BalanceData 참조가 없습니다.");
+                GameLog.LogError("[Shop.GetSellPrice] BalanceData 참조가 없습니다.");
                 return 0;
             }
 
@@ -42,7 +42,7 @@ namespace Tempt
         {
             if (stock == null)
             {
-                UnityEngine.Debug.LogError("[Shop.GetStockBuyPrice] stock 참조가 없습니다.");
+                GameLog.LogError("[Shop.GetStockBuyPrice] stock 참조가 없습니다.");
                 return 0;
             }
 
@@ -54,7 +54,7 @@ namespace Tempt
         {
             if (stock == null)
             {
-                UnityEngine.Debug.LogError("[Shop.TryBuyStock] stock 참조가 없습니다.");
+                GameLog.LogError("[Shop.TryBuyStock] stock 참조가 없습니다.");
                 return false;
             }
 
@@ -98,7 +98,7 @@ namespace Tempt
 
             if (count <= 0)
             {
-                UnityEngine.Debug.LogError("[Shop.TryBuy] count <= 0.");
+                GameLog.LogError("[Shop.TryBuy] count <= 0.");
                 return false;
             }
 
@@ -106,7 +106,7 @@ namespace Tempt
             {
                 if (count != 1)
                 {
-                    UnityEngine.Debug.LogError("[Shop.TryBuy] 장비 구매는 count == 1 이어야 합니다.");
+                    GameLog.LogError("[Shop.TryBuy] 장비 구매는 count == 1 이어야 합니다.");
                     return false;
                 }
 
@@ -140,7 +140,7 @@ namespace Tempt
 
             if (item.Category != ItemCategory.Equipment || item.Stackable)
             {
-                UnityEngine.Debug.LogError("[Shop.TryBuyEquip] 장비 아이템이 아닙니다: " + itemId);
+                GameLog.LogError("[Shop.TryBuyEquip] 장비 아이템이 아닙니다: " + itemId);
                 return false;
             }
 
@@ -171,13 +171,13 @@ namespace Tempt
 
             if (count <= 0)
             {
-                UnityEngine.Debug.LogError("[Shop.TrySell] count <= 0.");
+                GameLog.LogError("[Shop.TrySell] count <= 0.");
                 return false;
             }
 
             if (item.Category == ItemCategory.Equipment || !item.Stackable)
             {
-                UnityEngine.Debug.LogError("[Shop.TrySell] 장비는 TrySellEquip 을 사용해야 합니다.");
+                GameLog.LogError("[Shop.TrySell] 장비는 TrySellEquip 을 사용해야 합니다.");
                 return false;
             }
 
@@ -202,7 +202,7 @@ namespace Tempt
         {
             if (item?.Data == null)
             {
-                UnityEngine.Debug.LogError("[Shop.TrySellEquip] item/Data 참조가 없습니다.");
+                GameLog.LogError("[Shop.TrySellEquip] item/Data 참조가 없습니다.");
                 return false;
             }
 
@@ -213,7 +213,7 @@ namespace Tempt
 
             if (itemData.Category != ItemCategory.Equipment || itemData.Stackable)
             {
-                UnityEngine.Debug.LogError("[Shop.TrySellEquip] 장비 아이템이 아닙니다: " + itemData.Id);
+                GameLog.LogError("[Shop.TrySellEquip] 장비 아이템이 아닙니다: " + itemData.Id);
                 return false;
             }
 
@@ -238,19 +238,19 @@ namespace Tempt
 
             if (count <= 0)
             {
-                UnityEngine.Debug.LogError("[Shop.TrySellForPrice] count <= 0.");
+                GameLog.LogError("[Shop.TrySellForPrice] count <= 0.");
                 return false;
             }
 
             if (unitPrice <= 0)
             {
-                UnityEngine.Debug.LogError("[Shop.TrySellForPrice] unitPrice <= 0.");
+                GameLog.LogError("[Shop.TrySellForPrice] unitPrice <= 0.");
                 return false;
             }
 
             if (item.Category == ItemCategory.Equipment || !item.Stackable)
             {
-                UnityEngine.Debug.LogError("[Shop.TrySellForPrice] 장비는 TrySellEquipForPrice 를 사용해야 합니다.");
+                GameLog.LogError("[Shop.TrySellForPrice] 장비는 TrySellEquipForPrice 를 사용해야 합니다.");
                 return false;
             }
 
@@ -269,13 +269,13 @@ namespace Tempt
         {
             if (item?.Data == null)
             {
-                UnityEngine.Debug.LogError("[Shop.TrySellEquipForPrice] item/Data 참조가 없습니다.");
+                GameLog.LogError("[Shop.TrySellEquipForPrice] item/Data 참조가 없습니다.");
                 return false;
             }
 
             if (price <= 0)
             {
-                UnityEngine.Debug.LogError("[Shop.TrySellEquipForPrice] price <= 0.");
+                GameLog.LogError("[Shop.TrySellEquipForPrice] price <= 0.");
                 return false;
             }
 
@@ -286,7 +286,7 @@ namespace Tempt
 
             if (itemData.Category != ItemCategory.Equipment || itemData.Stackable)
             {
-                UnityEngine.Debug.LogError("[Shop.TrySellEquipForPrice] 장비 아이템이 아닙니다: " + itemData.Id);
+                GameLog.LogError("[Shop.TrySellEquipForPrice] 장비 아이템이 아닙니다: " + itemData.Id);
                 return false;
             }
 
@@ -306,19 +306,19 @@ namespace Tempt
             inventory = null;
             if (run?.Player?.Inventory == null)
             {
-                UnityEngine.Debug.LogError("[Shop] run / Player / Inventory 참조가 없습니다.");
+                GameLog.LogError("[Shop] run / Player / Inventory 참조가 없습니다.");
                 return false;
             }
 
             if (data?.Items == null)
             {
-                UnityEngine.Debug.LogError("[Shop] DataManager.Items 참조가 없습니다.");
+                GameLog.LogError("[Shop] DataManager.Items 참조가 없습니다.");
                 return false;
             }
 
             if (!data.Items.TryGetValue(itemId, out item) || item == null)
             {
-                UnityEngine.Debug.LogError("[Shop] 아이템 ID 없음: " + itemId);
+                GameLog.LogError("[Shop] 아이템 ID 없음: " + itemId);
                 return false;
             }
 
@@ -332,19 +332,17 @@ namespace Tempt
             inflation = 1f;
             if (run == null || data?.Items == null)
             {
-                UnityEngine.Debug.LogError("[Shop] run 또는 DataManager.Items 참조가 없습니다.");
+                GameLog.LogError("[Shop] run 또는 DataManager.Items 참조가 없습니다.");
                 return false;
             }
 
             if (!data.Items.TryGetValue(itemId, out item) || item == null)
             {
-                UnityEngine.Debug.LogError("[Shop] 아이템 ID 없음: " + itemId);
+                GameLog.LogError("[Shop] 아이템 ID 없음: " + itemId);
                 return false;
             }
 
-            int stageIndex = StageIndexResolver.FromFloor(run.CurrentFloor, data.World);
-            float erosionRate = run.Erosion != null ? run.Erosion.GetRate(stageIndex) : 0f;
-            inflation = data.ComputeInflation(stageIndex, erosionRate);
+            inflation = data.ComputeInflationForFloor(run, run.CurrentFloor);
             return true;
         }
 

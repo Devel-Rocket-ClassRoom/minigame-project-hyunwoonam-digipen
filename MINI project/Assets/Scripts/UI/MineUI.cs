@@ -8,7 +8,7 @@ namespace Tempt
     /// <summary>
     /// Safe3~5 광산 UI. 활성화, 누적 골드 표시, 수령 버튼을 담당한다.
     /// </summary>
-    public sealed class MineUI : MonoBehaviour
+    public sealed class MineUI : UIEventPageBase
     {
         private sealed class ValueBinding
         {
@@ -55,18 +55,7 @@ namespace Tempt
             WireButtons();
         }
 
-        private void OnEnable()
-        {
-            SubscribeEvents();
-            Refresh();
-        }
-
-        private void OnDisable()
-        {
-            UnsubscribeEvents();
-        }
-
-        public void Refresh()
+        public override void Refresh()
         {
             if (!initialized)
             {
@@ -128,7 +117,7 @@ namespace Tempt
         {
             if (controller == null)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[MineUI] MineController 참조가 Inspector 에 연결되어 있지 않습니다."
                 );
                 return false;
@@ -146,7 +135,7 @@ namespace Tempt
 
             if (mineInfoPanel == null || activation == null || collection == null)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[MineUI] MineInfoPanel / ActivationInfoPanel / CollectionPanel 경로를 찾지 못했습니다."
                 );
                 return false;
@@ -186,7 +175,7 @@ namespace Tempt
 
             if (activateButton == null || collectButton == null)
             {
-                Debug.LogError("[MineUI] ActivateButton 또는 Btn_CollectGold 를 찾지 못했습니다.");
+                GameLog.LogError("[MineUI] ActivateButton 또는 Btn_CollectGold 를 찾지 못했습니다.");
                 return false;
             }
 
@@ -237,7 +226,7 @@ namespace Tempt
             gameObject.SetActive(false);
         }
 
-        private void SubscribeEvents()
+        protected override void SubscribeEvents()
         {
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Events != null)
             {
@@ -248,7 +237,7 @@ namespace Tempt
             }
         }
 
-        private void UnsubscribeEvents()
+        protected override void UnsubscribeEvents()
         {
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Events != null)
             {

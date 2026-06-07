@@ -40,7 +40,7 @@ namespace Tempt
         {
             gameObject.SetActive(true);
             button.interactable = true;
-            itemName.text = data != null ? data.NameKey : string.Empty;
+            itemName.text = data != null ? Loc.Get(data.NameKey) : string.Empty;
             iconMark.text = BuildIcon(data);
             quantity.text = item != null ? "+" + item.Enhancement : "x" + count;
             selectionBorder.color = selected ? SelectedColor : Color.white;

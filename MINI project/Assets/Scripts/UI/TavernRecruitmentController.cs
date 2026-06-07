@@ -9,7 +9,7 @@ namespace Tempt
     /// Safe1 주점 RECRUITMENT 탭. 동료 목록 표시 및 모집 처리.
     /// Facility_TAVERN GameObject 에 직접 부착되고 Inspector 참조로 바인딩된다.
     /// </summary>
-    public sealed class TavernRecruitmentController : MonoBehaviour
+    public sealed class TavernRecruitmentController : UIEventPageBase
     {
         private sealed class CompanionRowView
         {
@@ -34,7 +34,6 @@ namespace Tempt
 
         [SerializeField]
         private Transform detailBody;
-        private Image detailPortrait;
         private Transform detailStatGrid;
         private Button recruitButton;
         private TextMeshProUGUI recruitButtonLabel;
@@ -47,7 +46,6 @@ namespace Tempt
         private static readonly Color RowSelectedBorderColor = new Color(1f, 0.76f, 0.18f, 1f);
         private static readonly Color RowInactiveBorderColor = new Color(0.30f, 0.30f, 0.32f, 1f);
         private static readonly Color RowTextColor = new Color(0.88f, 0.88f, 0.86f, 1f);
-        private readonly Color lockedTextColor = new Color(0.46f, 0.46f, 0.52f, 1f);
 
         private void Awake()
         {
@@ -61,18 +59,7 @@ namespace Tempt
             CacheDetailPanel();
         }
 
-        private void OnEnable()
-        {
-            SubscribeEvents();
-            Refresh();
-        }
-
-        private void OnDisable()
-        {
-            UnsubscribeEvents();
-        }
-
-        public void Refresh()
+        public override void Refresh()
         {
             if (!enabled)
             {
@@ -100,7 +87,7 @@ namespace Tempt
             }
         }
 
-        private void SubscribeEvents()
+        protected override void SubscribeEvents()
         {
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Events != null)
             {
@@ -111,7 +98,7 @@ namespace Tempt
             }
         }
 
-        private void UnsubscribeEvents()
+        protected override void UnsubscribeEvents()
         {
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Events != null)
             {
@@ -281,7 +268,11 @@ namespace Tempt
                     TextMeshProUGUI label = chip.GetComponentInChildren<TextMeshProUGUI>(true);
                     if (label != null)
                     {
-                        label.text = statName + "\n" + value;
+                        // 칩의 기존(로컬라이즈된) 라벨 첫 줄을 보존하고 값만 갱신한다.
+                        // 예: "체력\n160" → "체력\n70". 라벨이 없으면 statName 사용.
+                        string[] parts = label.text.Split('\n');
+                        string head = parts.Length > 0 && !string.IsNullOrEmpty(parts[0]) ? parts[0] : statName;
+                        label.text = head + "\n" + value;
                     }
 
                     return;
@@ -319,7 +310,7 @@ namespace Tempt
             bool valid = rowsRoot != null && detailBody != null;
             if (!valid)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[TavernRecruitmentController] 필수 UI 참조가 Inspector 에 직접 할당되어 있지 않습니다."
                 );
             }
@@ -339,18 +330,13 @@ namespace Tempt
 
         private void EnsureRowCount(int count)
         {
-            if (rowsRoot == null || rows.Count == 0)
-            {
-                return;
-            }
-
-            GameObject template = rows[0].Root;
-            while (rows.Count < count)
-            {
-                GameObject clone = Instantiate(template, rowsRoot);
-                clone.name = template.name + "_Generated_" + rows.Count;
-                rows.Add(CreateRowView(clone.transform));
-            }
+            UIRowPool.EnsureCount(
+                rows,
+                rowsRoot,
+                count,
+                v => v.Root,
+                clone => CreateRowView(clone.transform)
+            );
         }
 
         private static CompanionRowView CreateRowView(Transform row)
@@ -405,7 +391,6 @@ namespace Tempt
         private void CacheDetailPanel()
         {
             detailLines.Clear();
-            detailPortrait = null;
             detailStatGrid = null;
             recruitButton = null;
             recruitButtonLabel = null;
@@ -419,21 +404,8 @@ namespace Tempt
                 }
             }
 
-            Image[] images = detailBody.GetComponentsInChildren<Image>(true);
-            foreach (Image image in images)
-            {
-                if (image != null && image.name == "LargePortrait")
-                {
-                    detailPortrait = image;
-                    break;
-                }
-            }
-
-            GridLayoutGroup[] grids = detailBody.GetComponentsInChildren<GridLayoutGroup>(true);
-            if (grids.Length > 0)
-            {
-                detailStatGrid = grids[0].transform;
-            }
+            // StatGrid 는 레이아웃 컴포넌트가 없을 수 있으므로 GridLayoutGroup 이 아닌 이름으로 탐색한다.
+            detailStatGrid = FindDescendant(detailBody, "StatGrid");
 
             Button[] buttons = detailBody.GetComponentsInChildren<Button>(true);
             if (buttons.Length > 0)
@@ -525,6 +497,24 @@ namespace Tempt
         private static string LocalizeKey(string key)
         {
             return string.IsNullOrEmpty(key) ? string.Empty : Loc.Get(key);
+        }
+
+        private static Transform FindDescendant(Transform root, string name)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+            {
+                if (t.name == name)
+                {
+                    return t;
+                }
+            }
+
+            return null;
         }
 
         private static bool TryGetRunData(out GameRunState run, out DataManager data)

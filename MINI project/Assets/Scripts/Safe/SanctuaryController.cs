@@ -33,7 +33,7 @@ namespace Tempt
             BalanceData balance = gsm.Data?.Balance;
             if (balance == null)
             {
-                Debug.LogError("[SanctuaryController] BalanceData 참조가 없습니다.");
+                GameLog.LogError("[SanctuaryController] BalanceData 참조가 없습니다.");
                 return 0;
             }
 

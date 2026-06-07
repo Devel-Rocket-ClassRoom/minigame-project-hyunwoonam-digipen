@@ -51,9 +51,7 @@ namespace Tempt
                 return 0;
             }
 
-            int stageIndex = StageIndexResolver.FromFloor(run.CurrentFloor, data.World);
-            float erosionRate = run.Erosion != null ? run.Erosion.GetRate(stageIndex) : 0f;
-            float inflation = data.ComputeInflation(stageIndex, erosionRate);
+            float inflation = data.ComputeInflationForFloor(run, run.CurrentFloor);
             return UnityEngine.Mathf.Max(
                 1,
                 UnityEngine.Mathf.RoundToInt(companion.RecruitPrice * inflation)
@@ -139,19 +137,19 @@ namespace Tempt
             companion = null;
             if (run?.Player == null)
             {
-                UnityEngine.Debug.LogError("[Tavern] run / Player 참조가 없습니다.");
+                GameLog.LogError("[Tavern] run / Player 참조가 없습니다.");
                 return false;
             }
 
             if (data?.Companions == null)
             {
-                UnityEngine.Debug.LogError("[Tavern] DataManager.Companions 참조가 없습니다.");
+                GameLog.LogError("[Tavern] DataManager.Companions 참조가 없습니다.");
                 return false;
             }
 
             if (!data.Companions.TryGetValue(companionId, out companion) || companion == null)
             {
-                UnityEngine.Debug.LogError("[Tavern] 동료 ID 없음: " + companionId);
+                GameLog.LogError("[Tavern] 동료 ID 없음: " + companionId);
                 return false;
             }
 

@@ -18,7 +18,7 @@ namespace Tempt
         {
             if (player == null)
             {
-                UnityEngine.Debug.LogError("[EquipFlow.Equip] Player 참조가 없습니다.");
+                GameLog.LogError("[EquipFlow.Equip] Player 참조가 없습니다.");
                 return false;
             }
 
@@ -33,7 +33,7 @@ namespace Tempt
         {
             if (player == null)
             {
-                UnityEngine.Debug.LogError("[EquipFlow.Unequip] Player 참조가 없습니다.");
+                GameLog.LogError("[EquipFlow.Unequip] Player 참조가 없습니다.");
                 return false;
             }
 
@@ -45,7 +45,7 @@ namespace Tempt
         {
             if (player == null)
             {
-                UnityEngine.Debug.LogError("[EquipFlow.Equip] PlayerState 참조가 없습니다.");
+                GameLog.LogError("[EquipFlow.Equip] PlayerState 참조가 없습니다.");
                 return false;
             }
 
@@ -57,7 +57,7 @@ namespace Tempt
         {
             if (player == null)
             {
-                UnityEngine.Debug.LogError("[EquipFlow.Unequip] PlayerState 참조가 없습니다.");
+                GameLog.LogError("[EquipFlow.Unequip] PlayerState 참조가 없습니다.");
                 return false;
             }
 
@@ -69,7 +69,7 @@ namespace Tempt
         {
             if (player == null)
             {
-                UnityEngine.Debug.LogError("[EquipFlow.RecalculateStats] PlayerState 참조가 없습니다.");
+                GameLog.LogError("[EquipFlow.RecalculateStats] PlayerState 참조가 없습니다.");
                 return;
             }
 
@@ -85,20 +85,20 @@ namespace Tempt
 
             if (inventory == null || equipment == null || item?.Data == null)
             {
-                UnityEngine.Debug.LogError("[EquipFlow.Equip] Inventory / Equipment / Item.Data 누락.");
+                GameLog.LogError("[EquipFlow.Equip] Inventory / Equipment / Item.Data 누락.");
                 return false;
             }
 
             EquipmentSlotId slot = item.Data.EquipSlot;
             if (item.Data.Category != ItemCategory.Equipment || item.Data.Stackable || slot == EquipmentSlotId.None)
             {
-                UnityEngine.Debug.LogError("[EquipFlow.Equip] 장착 가능한 장비가 아닙니다: " + item.Data.NameKey);
+                GameLog.LogError("[EquipFlow.Equip] 장착 가능한 장비가 아닙니다: " + item.Data.NameKey);
                 return false;
             }
 
             if (!inventory.RemoveEquip(item))
             {
-                UnityEngine.Debug.LogError("[EquipFlow.Equip] 인벤토리에 해당 장비가 없습니다: " + item.Data.NameKey);
+                GameLog.LogError("[EquipFlow.Equip] 인벤토리에 해당 장비가 없습니다: " + item.Data.NameKey);
                 return false;
             }
 
@@ -108,7 +108,7 @@ namespace Tempt
                 equipment.Unequip(slot);
                 equipment.Equip(slot, previous);
                 inventory.AddEquip(item);
-                UnityEngine.Debug.LogError("[EquipFlow.Equip] 이전 장비를 인벤토리에 되돌릴 수 없어 롤백했습니다.");
+                GameLog.LogError("[EquipFlow.Equip] 이전 장비를 인벤토리에 되돌릴 수 없어 롤백했습니다.");
                 return false;
             }
 
@@ -126,13 +126,13 @@ namespace Tempt
 
             if (inventory == null || equipment == null)
             {
-                UnityEngine.Debug.LogError("[EquipFlow.Unequip] Inventory / Equipment 누락.");
+                GameLog.LogError("[EquipFlow.Unequip] Inventory / Equipment 누락.");
                 return false;
             }
 
             if (slot == EquipmentSlotId.None)
             {
-                UnityEngine.Debug.LogError("[EquipFlow.Unequip] slot 이 None 입니다.");
+                GameLog.LogError("[EquipFlow.Unequip] slot 이 None 입니다.");
                 return false;
             }
 
@@ -145,7 +145,7 @@ namespace Tempt
             if (!inventory.TryAddEquip(old))
             {
                 equipment.Equip(slot, old);
-                UnityEngine.Debug.LogError("[EquipFlow.Unequip] 인벤토리 장비 공간 부족으로 해제를 롤백했습니다.");
+                GameLog.LogError("[EquipFlow.Unequip] 인벤토리 장비 공간 부족으로 해제를 롤백했습니다.");
                 return false;
             }
 

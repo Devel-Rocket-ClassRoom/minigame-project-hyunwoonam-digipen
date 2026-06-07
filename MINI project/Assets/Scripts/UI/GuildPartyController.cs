@@ -9,7 +9,7 @@ namespace Tempt
     /// Safe1 길드 PARTY 탭. 대기(Bench) 동료를 파티(Active)에 배치하거나 제외한다.
     /// Facility_GUILD GameObject 에 직접 부착되고 Inspector 참조로 바인딩된다.
     /// </summary>
-    public sealed class GuildPartyController : MonoBehaviour
+    public sealed class GuildPartyController : UIEventPageBase
     {
         private sealed class SlotRowView
         {
@@ -23,6 +23,7 @@ namespace Tempt
         private readonly List<SlotRowView> rosterRows = new List<SlotRowView>();
         private readonly List<SlotRowView> partySlotRows = new List<SlotRowView>();
         private readonly List<TextMeshProUGUI> detailLines = new List<TextMeshProUGUI>();
+        private Transform detailStatGrid;
 
         [SerializeField]
         private Transform rosterRowsRoot;
@@ -59,18 +60,7 @@ namespace Tempt
             CacheDetailPanel();
         }
 
-        private void OnEnable()
-        {
-            SubscribeEvents();
-            Refresh();
-        }
-
-        private void OnDisable()
-        {
-            UnsubscribeEvents();
-        }
-
-        public void Refresh()
+        public override void Refresh()
         {
             if (!enabled)
             {
@@ -109,7 +99,7 @@ namespace Tempt
                 && partyCountLabel != null;
             if (!valid)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[GuildPartyController] 필수 UI 참조가 Inspector 에 직접 할당되어 있지 않습니다."
                 );
             }
@@ -117,7 +107,7 @@ namespace Tempt
             return valid;
         }
 
-        private void SubscribeEvents()
+        protected override void SubscribeEvents()
         {
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Events != null)
             {
@@ -126,7 +116,7 @@ namespace Tempt
             }
         }
 
-        private void UnsubscribeEvents()
+        protected override void UnsubscribeEvents()
         {
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Events != null)
             {
@@ -256,9 +246,10 @@ namespace Tempt
             bool inBench = IsInBench(companionId, roster);
             bool inActive = IsInActive(companionId, roster);
 
-            SetDetailLine(0, companion.NameKey);
+            SetDetailLine(0, LocalizeKey(companion.NameKey));
             SetDetailLine(1, companion.ClassId.ToString());
-            SetDetailLine(2, companion.DescKey);
+            SetDetailLine(2, LocalizeKey(companion.DescKey));
+            UpdateStatGrid(companion.BaseStats);
 
             if (inBench)
             {
@@ -304,6 +295,7 @@ namespace Tempt
                 detailLines[i].text = string.Empty;
             }
 
+            UpdateStatGrid(null);
             ConfigureAssignButton(string.Empty, false, null);
         }
 
@@ -373,18 +365,13 @@ namespace Tempt
 
         private void EnsureRosterRowCount(int count)
         {
-            if (rosterRowsRoot == null || rosterRows.Count == 0)
-            {
-                return;
-            }
-
-            GameObject template = rosterRows[0].Root;
-            while (rosterRows.Count < count)
-            {
-                GameObject clone = Instantiate(template, rosterRowsRoot);
-                clone.name = template.name + "_Generated_" + rosterRows.Count;
-                rosterRows.Add(CreateSlotRowView(clone.transform));
-            }
+            UIRowPool.EnsureCount(
+                rosterRows,
+                rosterRowsRoot,
+                count,
+                v => v.Root,
+                clone => CreateSlotRowView(clone.transform)
+            );
         }
 
         private static SlotRowView CreateSlotRowView(Transform row)
@@ -422,6 +409,7 @@ namespace Tempt
         private void CacheDetailPanel()
         {
             detailLines.Clear();
+            detailStatGrid = null;
             assignButton = null;
             assignButtonLabel = null;
 
@@ -434,12 +422,73 @@ namespace Tempt
                 }
             }
 
+            // StatGrid 는 레이아웃 컴포넌트가 없을 수 있으므로 이름으로 탐색한다.
+            detailStatGrid = FindDescendant(detailBody, "StatGrid");
+
             Button[] buttons = detailBody.GetComponentsInChildren<Button>(true);
             if (buttons.Length > 0)
             {
                 assignButton = buttons[0];
                 assignButtonLabel = assignButton.GetComponentInChildren<TextMeshProUGUI>(true);
             }
+        }
+
+        private void UpdateStatGrid(EquipmentStatMod stats)
+        {
+            if (detailStatGrid == null)
+            {
+                return;
+            }
+
+            UpdateStatChip(detailStatGrid, "HP", stats != null ? stats.HP : 0);
+            UpdateStatChip(detailStatGrid, "MP", stats != null ? stats.MP : 0);
+            UpdateStatChip(detailStatGrid, "ATK", stats != null ? stats.ATK : 0);
+            UpdateStatChip(detailStatGrid, "DEF", stats != null ? stats.DEF : 0);
+            UpdateStatChip(detailStatGrid, "SPD", stats != null ? stats.SPD : 0);
+        }
+
+        private static void UpdateStatChip(Transform grid, string statName, int value)
+        {
+            for (int i = 0; i < grid.childCount; i++)
+            {
+                Transform chip = grid.GetChild(i);
+                if (chip.name.StartsWith("StatChip_" + statName, System.StringComparison.Ordinal))
+                {
+                    TextMeshProUGUI label = chip.GetComponentInChildren<TextMeshProUGUI>(true);
+                    if (label != null)
+                    {
+                        // 칩의 기존(로컬라이즈된) 라벨 첫 줄 보존, 값만 갱신.
+                        string[] parts = label.text.Split('\n');
+                        string head = parts.Length > 0 && !string.IsNullOrEmpty(parts[0]) ? parts[0] : statName;
+                        label.text = head + "\n" + value;
+                    }
+
+                    return;
+                }
+            }
+        }
+
+        private static string LocalizeKey(string key)
+        {
+            return string.IsNullOrEmpty(key) ? string.Empty : Loc.Get(key);
+        }
+
+        private static Transform FindDescendant(Transform root, string name)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+            {
+                if (t.name == name)
+                {
+                    return t;
+                }
+            }
+
+            return null;
         }
 
         private static string BuildCompanionLabel(CompanionInstance inst, DataManager data)
@@ -455,7 +504,7 @@ namespace Tempt
                 && data.Companions.TryGetValue(inst.CompanionDataId, out CompanionData cd)
             )
             {
-                name = cd.NameKey;
+                name = LocalizeKey(cd.NameKey);
             }
 
             return name + "  Lv." + inst.Level;

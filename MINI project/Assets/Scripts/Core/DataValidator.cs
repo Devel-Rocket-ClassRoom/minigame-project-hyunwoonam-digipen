@@ -35,6 +35,10 @@ namespace Tempt
             { 
                 errors.Add("Skills table is empty.");
             }
+            if (data.SkillRuneModifiers == null)
+            {
+                errors.Add("SkillRuneModifiers table is null.");
+            }
             if (data.Items == null || data.Items.Count == 0) 
             { 
                 errors.Add("Items table is empty."); 
@@ -77,6 +81,9 @@ namespace Tempt
                     {
                         errors.Add("Monster " + monster.Id + " references missing DropTableId " + monster.DropTableId + ".");
                     }
+
+                    ValidateEffectKey(errors, "Monster " + monster.Id + " AttackEffectKey", monster.AttackEffectKey);
+                    ValidateSfxKey(errors, "Monster " + monster.Id + " AttackSfxKey", monster.AttackSfxKey);
 
                     if (monster.SkillIds == null)
                     {
@@ -137,6 +144,69 @@ namespace Tempt
                     {
                         errors.Add("Rune " + rune.Id + " references missing RequiredRuneId " + rune.RequiredRuneId + ".");
                     }
+
+                    if (rune.EffectType == RuneEffectType.UnlockSkill)
+                    {
+                        int skillId = (int)rune.EffectValue;
+                        if (data.Skills == null || !data.Skills.TryGetValue(skillId, out SkillData skill))
+                        {
+                            errors.Add("Rune " + rune.Id + " references missing unlock SkillId " + skillId + ".");
+                        }
+                        else if (skill.SkillType != SkillType.Passive)
+                        {
+                            errors.Add("Rune " + rune.Id + " UnlockSkill must reference Passive skill " + skillId + ".");
+                        }
+                    }
+                }
+            }
+
+            if (data.Skills != null)
+            {
+                foreach (SkillData skill in data.Skills.Values)
+                {
+                    if (skill == null)
+                    {
+                        continue;
+                    }
+
+                    ValidateEffectKey(errors, "Skill " + skill.Id + " EffectKey", skill.EffectKey);
+                    ValidateSfxKey(errors, "Skill " + skill.Id + " SfxKey", skill.SfxKey);
+                }
+            }
+
+            if (data.SkillRuneModifiers != null)
+            {
+                var seenPairs = new HashSet<string>();
+                foreach (SkillRuneModifierData modifier in data.SkillRuneModifiers.Values)
+                {
+                    if (modifier == null)
+                    {
+                        errors.Add("SkillRuneModifier row is null.");
+                        continue;
+                    }
+
+                    if (modifier.RuneClass == RuneClass.None)
+                    {
+                        errors.Add("SkillRuneModifier " + modifier.Id + " has invalid RuneClass None.");
+                    }
+
+                    if (data.Skills == null || !data.Skills.TryGetValue(modifier.SkillId, out SkillData skill))
+                    {
+                        errors.Add("SkillRuneModifier " + modifier.Id + " references missing SkillId " + modifier.SkillId + ".");
+                    }
+                    else if (skill.SkillType != SkillType.Active)
+                    {
+                        errors.Add("SkillRuneModifier " + modifier.Id + " must reference Active skill " + modifier.SkillId + ".");
+                    }
+
+                    string pairKey = modifier.SkillId + ":" + modifier.RuneClass;
+                    if (!seenPairs.Add(pairKey))
+                    {
+                        errors.Add("Duplicate SkillRuneModifier pair " + pairKey + ".");
+                    }
+
+                    ValidateEffectKey(errors, "SkillRuneModifier " + modifier.Id + " EffectKeyOverride", modifier.EffectKeyOverride);
+                    ValidateSfxKey(errors, "SkillRuneModifier " + modifier.Id + " SfxKeyOverride", modifier.SfxKeyOverride);
                 }
             }
         }
@@ -228,6 +298,41 @@ namespace Tempt
                     { 
                         errors.Add("Skill " + skill.Id + " has negative CooldownRounds.");
                     }
+                    if (skill.SkillType == SkillType.Passive && skill.PassiveStatType != PassiveStatType.None)
+                    {
+                        if (skill.PassiveFlatValue == 0 && skill.PassivePercentValue == 0f)
+                        {
+                            errors.Add("Passive skill " + skill.Id + " has PassiveStatType but no passive value.");
+                        }
+                    }
+                    if (skill.SkillType == SkillType.Active && skill.PassiveStatType != PassiveStatType.None)
+                    {
+                        errors.Add("Active skill " + skill.Id + " must not define PassiveStatType.");
+                    }
+                }
+            }
+
+            if (data.SkillRuneModifiers != null)
+            {
+                foreach (SkillRuneModifierData modifier in data.SkillRuneModifiers.Values)
+                {
+                    if (modifier == null)
+                    {
+                        continue;
+                    }
+
+                    if (modifier.DamageScaleMul < 0f)
+                    {
+                        errors.Add("SkillRuneModifier " + modifier.Id + " has negative DamageScaleMul.");
+                    }
+                    if (modifier.HealScaleMul < 0f)
+                    {
+                        errors.Add("SkillRuneModifier " + modifier.Id + " has negative HealScaleMul.");
+                    }
+                    if (modifier.ShieldScaleMul < 0f)
+                    {
+                        errors.Add("SkillRuneModifier " + modifier.Id + " has negative ShieldScaleMul.");
+                    }
                 }
             }
         }
@@ -270,6 +375,32 @@ namespace Tempt
             }
         }
 
+        private static void ValidateEffectKey(List<string> errors, string owner, string key)
+        {
+            if (string.IsNullOrEmpty(key))
+            {
+                return;
+            }
+
+            if (Resources.Load<GameObject>("Effects/" + key) == null)
+            {
+                errors.Add(owner + " references missing effect prefab Resources/Effects/" + key + ".");
+            }
+        }
+
+        private static void ValidateSfxKey(List<string> errors, string owner, string key)
+        {
+            if (string.IsNullOrEmpty(key))
+            {
+                return;
+            }
+
+            if (Resources.Load<AudioClip>("Sfx/" + key) == null)
+            {
+                errors.Add(owner + " references missing SFX clip Resources/Sfx/" + key + ".");
+            }
+        }
+
         private static void FailIfNeeded(List<string> errors)
         {
             if (errors.Count == 0)
@@ -277,7 +408,7 @@ namespace Tempt
                 return;
             }
 
-            Debug.LogError("[DataValidator] 데이터 검증 실패 " + errors.Count + "건:\n" + string.Join("\n", errors.ToArray()));
+            GameLog.LogError("[DataValidator] 데이터 검증 실패 " + errors.Count + "건:\n" + string.Join("\n", errors.ToArray()));
             throw new InvalidDataException("[DataManager] 데이터 검증 실패. 위 로그 참조.");
         }
     }

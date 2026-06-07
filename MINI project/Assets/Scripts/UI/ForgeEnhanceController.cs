@@ -7,7 +7,7 @@ using UnityEngine.UI;
 namespace Tempt
 {
     /// <summary>Safe1 FORGE 강화 탭을 런 상태와 연결한다.</summary>
-    public sealed class ForgeEnhanceController : MonoBehaviour
+    public sealed class ForgeEnhanceController : UIEventPageBase
     {
         private sealed class ForgeRowView
         {
@@ -67,18 +67,7 @@ namespace Tempt
             CacheCardLines(nextCard, nextCardLines);
         }
 
-        private void OnEnable()
-        {
-            SubscribeEvents();
-            Refresh();
-        }
-
-        private void OnDisable()
-        {
-            UnsubscribeEvents();
-        }
-
-        public void Refresh()
+        public override void Refresh()
         {
             if (!enabled)
             {
@@ -102,7 +91,7 @@ namespace Tempt
             RefreshDetail(run, data);
         }
 
-        private void SubscribeEvents()
+        protected override void SubscribeEvents()
         {
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Events != null)
             {
@@ -118,7 +107,7 @@ namespace Tempt
             }
         }
 
-        private void UnsubscribeEvents()
+        protected override void UnsubscribeEvents()
         {
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Events != null)
             {
@@ -253,7 +242,7 @@ namespace Tempt
             SetCardLines(
                 currentCardLines,
                 "CURRENT +" + selectedItem.Enhancement,
-                selectedItem.Data.NameKey,
+                Loc.Get(selectedItem.Data.NameKey),
                 BuildStatText(selectedItem.GetFinalMod()),
                 "Fail Streak " + selectedItem.EnhanceFailStreak,
                 BuildSourceLabel(selectedItem)
@@ -263,7 +252,7 @@ namespace Tempt
             SetCardLines(
                 nextCardLines,
                 "NEXT +" + (selectedItem.Enhancement + 1),
-                selectedItem.Data.NameKey,
+                Loc.Get(selectedItem.Data.NameKey),
                 BuildStatText(nextMod),
                 "Success " + Mathf.RoundToInt(rate * 100f) + "%",
                 BuildPityLine(pityRemaining, lastResultMessage)
@@ -345,7 +334,7 @@ namespace Tempt
                 && priceText != null;
             if (!valid)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[ForgeEnhanceController] 필수 UI 참조가 Inspector 에 직접 할당되어 있지 않습니다."
                 );
             }
@@ -365,18 +354,13 @@ namespace Tempt
 
         private void EnsureRowCount(int count)
         {
-            if (rowsRoot == null || rows.Count == 0)
-            {
-                return;
-            }
-
-            GameObject template = rows[0].Root;
-            while (rows.Count < count)
-            {
-                GameObject clone = Instantiate(template, rowsRoot);
-                clone.name = template.name + "_Generated_" + rows.Count;
-                rows.Add(CreateRowView(clone.transform));
-            }
+            UIRowPool.EnsureCount(
+                rows,
+                rowsRoot,
+                count,
+                v => v.Root,
+                clone => CreateRowView(clone.transform)
+            );
         }
 
         private static ForgeRowView CreateRowView(Transform row)
@@ -453,7 +437,7 @@ namespace Tempt
                 || gsm.Data?.Items == null
             )
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[ForgeEnhanceController] GameSystemManager / CurrentRun.Player.Inventory / Data.Items 참조가 없습니다."
                 );
                 return false;
@@ -466,7 +450,7 @@ namespace Tempt
 
         private static string BuildRowLabel(ForgeItemEntry entry)
         {
-            return entry.Item.Data.NameKey
+            return Loc.Get(entry.Item.Data.NameKey)
                 + " +"
                 + entry.Item.Enhancement
                 + "  "

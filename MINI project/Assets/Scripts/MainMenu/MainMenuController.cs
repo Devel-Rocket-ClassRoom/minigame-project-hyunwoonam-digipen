@@ -62,7 +62,7 @@ namespace Tempt
             GameSystemManager gsm = GameSystemManager.Instance;
             if (gsm == null)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[MainMenuController] GameSystemManager 인스턴스를 찾을 수 없습니다."
                 );
                 return;
@@ -82,7 +82,7 @@ namespace Tempt
             GameSystemManager gsm = GameSystemManager.Instance;
             if (gsm == null)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[MainMenuController] GameSystemManager 인스턴스를 찾을 수 없습니다."
                 );
                 return;
@@ -119,7 +119,7 @@ namespace Tempt
                 return true;
             }
 
-            Debug.LogError("[MainMenuController] 버튼 참조가 씬에 직접 할당되어 있지 않습니다.");
+            GameLog.LogError("[MainMenuController] 버튼 참조가 씬에 직접 할당되어 있지 않습니다.");
             return false;
         }
     }

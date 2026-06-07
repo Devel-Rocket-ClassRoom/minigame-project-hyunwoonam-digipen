@@ -72,8 +72,6 @@ namespace Tempt
         [SerializeField]
         private SkillInfoPanel infoPanel;
 
-        private GuildTab activeTab = GuildTab.Buy;
-
         /// <summary>현재 화면이 열려 있는가.</summary>
         public bool IsOpen => root != null && root.activeSelf;
 
@@ -148,7 +146,7 @@ namespace Tempt
                 && infoPanel != null;
             if (!valid)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[GuildPage] 필수 UI 참조가 Inspector 에 직접 할당되어 있지 않습니다."
                 );
             }
@@ -166,7 +164,7 @@ namespace Tempt
                 || gsm.Data?.Skills == null
             )
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[GuildPage] GameSystemManager / CurrentRun.Player / Data.Skills 참조가 없습니다."
                 );
                 return false;
@@ -280,7 +278,6 @@ namespace Tempt
 
         private void SetTab(GuildTab tab)
         {
-            activeTab = tab;
             buyPanel.SetActive(tab == GuildTab.Buy);
             slotPanel.SetActive(tab == GuildTab.Slot);
         }

@@ -1,0 +1,29 @@
+fileFormatVersion: 2
+guid: 8b28c8aa629f54e45a97a7e29952ecca
+labels:
+- usfx
+- imphenzia
+- user interface
+- ui
+- gui
+- medieval
+- shield
+- select
+- stereo
+AudioImporter:
+  serializedVersion: 6
+  defaultSettings:
+    loadType: 1
+    sampleRateSetting: 0
+    sampleRateOverride: 0
+    compressionFormat: 0
+    quality: 0
+    conversionMode: 0
+  platformSettingOverrides: {}
+  forceToMono: 0
+  preloadAudioData: 1
+  loadInBackground: 0
+  3D: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

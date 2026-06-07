@@ -194,7 +194,7 @@ namespace Tempt
             }
             else
             {
-                UnityEngine.Debug.LogError(
+                GameLog.LogError(
                     "[Player.BindState] GameSystemManager 참조가 없어 ActiveSkills 를 바인딩할 수 없습니다."
                 );
             }
@@ -206,7 +206,7 @@ namespace Tempt
         {
             if (state?.ActiveSlotSkillIds == null || state.ActiveSlotSkillIds.Length != 2)
             {
-                UnityEngine.Debug.LogError(
+                GameLog.LogError(
                     "[Player.BindState] PlayerState.ActiveSlotSkillIds 가 없거나 길이가 2가 아닙니다."
                 );
                 ActiveSkills[0] = null;
@@ -216,7 +216,7 @@ namespace Tempt
 
             if (data?.Skills == null)
             {
-                UnityEngine.Debug.LogError(
+                GameLog.LogError(
                     "[Player.BindState] DataManager.Skills 참조가 없습니다."
                 );
                 return;
@@ -237,7 +237,7 @@ namespace Tempt
                 }
                 else
                 {
-                    UnityEngine.Debug.LogError(
+                    GameLog.LogError(
                         "[Player.BindState] ActiveSlotSkillIds["
                             + slot
                             + "] 데이터 없음: "

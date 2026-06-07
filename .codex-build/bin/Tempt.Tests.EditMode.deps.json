@@ -1,0 +1,40 @@
+{
+  "runtimeTarget": {
+    "name": ".NETStandard,Version=v2.1/",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETStandard,Version=v2.1": {},
+    ".NETStandard,Version=v2.1/": {
+      "Tempt.Tests.EditMode/1.0.0": {
+        "dependencies": {
+          "Tempt": "0.0.0.0"
+        },
+        "runtime": {
+          "Tempt.Tests.EditMode.dll": {}
+        }
+      },
+      "Tempt/0.0.0.0": {
+        "runtime": {
+          "Tempt.dll": {
+            "assemblyVersion": "0.0.0.0",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Tempt.Tests.EditMode/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Tempt/0.0.0.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

@@ -165,7 +165,7 @@ namespace Tempt
                 && infoPanel != null;
             if (!valid)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[ShopPage] 필수 UI 참조가 Inspector 에 직접 할당되어 있지 않습니다."
                 );
             }
@@ -356,7 +356,7 @@ namespace Tempt
                 || gsm.Data?.Items == null
             )
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[ShopPage] GameSystemManager / CurrentRun.Player.Inventory / Data.Items 참조가 없습니다."
                 );
                 return false;

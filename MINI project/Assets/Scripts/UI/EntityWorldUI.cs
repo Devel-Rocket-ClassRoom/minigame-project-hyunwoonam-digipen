@@ -381,15 +381,21 @@ namespace Tempt
             }
         }
 
+        private Camera cachedCamera;
+
         private void FaceCamera()
         {
-            Camera camera = Camera.main;
-            if (worldCanvas == null || camera == null)
+            if (cachedCamera == null)
+            {
+                cachedCamera = Camera.main;
+            }
+
+            if (worldCanvas == null || cachedCamera == null)
             {
                 return;
             }
 
-            worldCanvas.transform.rotation = camera.transform.rotation;
+            worldCanvas.transform.rotation = cachedCamera.transform.rotation;
         }
 
         private void StartFlash(Color flashColor)

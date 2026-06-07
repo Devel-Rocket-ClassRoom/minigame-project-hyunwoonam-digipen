@@ -329,13 +329,13 @@ namespace Tempt
             itemData = null;
             if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.Data?.Items == null)
             {
-                UnityEngine.Debug.LogError("[InventoryState] DataManager.Items 참조가 없습니다.");
+                GameLog.LogError("[InventoryState] DataManager.Items 참조가 없습니다.");
                 return false;
             }
 
             if (!gsm.Data.Items.TryGetValue(itemId, out itemData) || itemData == null)
             {
-                UnityEngine.Debug.LogError("[InventoryState] 아이템 ID 없음: " + itemId);
+                GameLog.LogError("[InventoryState] 아이템 ID 없음: " + itemId);
                 return false;
             }
 

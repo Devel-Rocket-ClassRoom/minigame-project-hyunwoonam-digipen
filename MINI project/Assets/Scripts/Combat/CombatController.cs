@@ -49,7 +49,7 @@ namespace Tempt
         public List<TeamBase> Companions;
 
         /// <summary>참여 몬스터.</summary>
-        public List<MonsterBase> Monsters;
+        public List<Monster> Monsters;
 
         private static readonly Dictionary<string, Sprite> generatedSprites =
             new Dictionary<string, Sprite>();
@@ -63,9 +63,6 @@ namespace Tempt
         private Transform runtimeRoot;
         private Transform backgroundRoot;
         private EntityBase hoveredTarget;
-
-        /// <summary>라운드 전환 배너 1회 트리거용 직전 FSM 상태.</summary>
-        private CombatState lastFlowState;
 
         private sealed class DeadEnemyRemovalMarker : MonoBehaviour { }
 
@@ -93,7 +90,7 @@ namespace Tempt
             Companions = CreateRuntimeCompanions(gsm.CurrentRun.Roster, allyCount);
 
             Spawner.SpawnFromNode(ctx.Node, runtimeRoot, BuildEnemyPositions(ctx.Node));
-            Monsters = Spawner.SpawnedT ?? new List<MonsterBase>();
+            Monsters = Spawner.SpawnedT ?? new List<Monster>();
             for (int i = 0; i < Monsters.Count; i++)
             {
                 ConfigureCombatUnit(
@@ -121,7 +118,7 @@ namespace Tempt
             }
 
             var enemies = new List<EntityBase>();
-            foreach (MonsterBase monster in Monsters)
+            foreach (Monster monster in Monsters)
             {
                 enemies.Add(monster);
             }
@@ -129,7 +126,6 @@ namespace Tempt
             combatEnded = false;
             playerActionSelector = new PlayerActionSelector();
             hoveredTarget = null;
-            lastFlowState = CombatState.Starting;
 
             Hud.Bind(this, Player);
             Hud.OnOpen();
@@ -146,7 +142,7 @@ namespace Tempt
                 Spawner = GetComponent<CombatMonsterSpawner>();
             if (Spawner == null)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[CombatController] CombatMonsterSpawner 가 씬에 직접 배치/할당되어 있지 않습니다."
                 );
                 return false;
@@ -156,7 +152,7 @@ namespace Tempt
                 Hud = hudRef;
             if (Hud == null)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[CombatController] CombatHud 가 씬에 직접 배치/할당되어 있지 않습니다."
                 );
                 return false;
@@ -204,8 +200,6 @@ namespace Tempt
             Flow?.Tick();
             if (Flow != null)
             {
-                lastFlowState = Flow.State;
-
                 if (Flow.State == CombatState.Ended && !combatEnded)
                 {
                     combatEnded = true;
@@ -364,7 +358,7 @@ namespace Tempt
             Sprite sprite = Resources.Load<Sprite>(resourcePath);
             if (sprite == null)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[CombatController] Combat background sprite missing: Resources/"
                         + resourcePath
                 );
@@ -374,7 +368,7 @@ namespace Tempt
             SpriteRenderer renderer = backgroundRoot.GetComponent<SpriteRenderer>();
             if (renderer == null)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[CombatController] CombatBackgroundRoot SpriteRenderer is missing."
                 );
                 return;
@@ -396,7 +390,7 @@ namespace Tempt
                 return found;
             }
 
-            Debug.LogError(
+            GameLog.LogError(
                 "[CombatController] CombatBackgroundRoot is missing under CombatController."
             );
             return null;
@@ -456,7 +450,7 @@ namespace Tempt
             GameObject visualPrefab = Resources.Load<GameObject>(PlayerVisualPrefabPath);
             if (visualPrefab == null)
             {
-                Debug.LogError("[CombatController] Player prefab missing: Resources/" + PlayerVisualPrefabPath);
+                GameLog.LogError("[CombatController] Player prefab missing: Resources/" + PlayerVisualPrefabPath);
                 return;
             }
 
@@ -725,7 +719,7 @@ namespace Tempt
             var contributions = new List<NodeRewardContribution>();
             if (Spawner?.SpawnedT != null)
             {
-                foreach (MonsterBase monster in Spawner.SpawnedT)
+                foreach (Monster monster in Spawner.SpawnedT)
                 {
                     if (monster != null)
                     {

@@ -24,7 +24,7 @@ namespace Tempt
 
             if (skill.PurchasePrice <= 0)
             {
-                UnityEngine.Debug.LogError("[Guild.GetSkillBuyPrice] PurchasePrice 가 0 이하입니다: " + skillId);
+                GameLog.LogError("[Guild.GetSkillBuyPrice] PurchasePrice 가 0 이하입니다: " + skillId);
                 return 0;
             }
 
@@ -98,19 +98,19 @@ namespace Tempt
             skill = null;
             if (run?.Player == null)
             {
-                UnityEngine.Debug.LogError("[Guild] run / Player 참조가 없습니다.");
+                GameLog.LogError("[Guild] run / Player 참조가 없습니다.");
                 return false;
             }
 
             if (data?.Skills == null)
             {
-                UnityEngine.Debug.LogError("[Guild] DataManager.Skills 참조가 없습니다.");
+                GameLog.LogError("[Guild] DataManager.Skills 참조가 없습니다.");
                 return false;
             }
 
             if (!data.Skills.TryGetValue(skillId, out skill) || skill == null)
             {
-                UnityEngine.Debug.LogError("[Guild] 스킬 ID 없음: " + skillId);
+                GameLog.LogError("[Guild] 스킬 ID 없음: " + skillId);
                 return false;
             }
 
@@ -125,9 +125,7 @@ namespace Tempt
                 return false;
             }
 
-            int stageIndex = StageIndexResolver.FromFloor(run.CurrentFloor, data.World);
-            float erosionRate = run.Erosion != null ? run.Erosion.GetRate(stageIndex) : 0f;
-            inflation = data.ComputeInflation(stageIndex, erosionRate);
+            inflation = data.ComputeInflationForFloor(run, run.CurrentFloor);
             return true;
         }
 

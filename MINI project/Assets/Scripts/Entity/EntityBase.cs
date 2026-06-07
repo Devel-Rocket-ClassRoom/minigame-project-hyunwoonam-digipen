@@ -51,6 +51,9 @@ namespace Tempt
         /// <summary>머리 위 UI 핸들.</summary>
         public EntityWorldUI WorldUI;
 
+        /// <summary>SPUM 애니메이션 어댑터(전투 진입 시 자식 SPUM_Prefabs에서 1회 해석, 없으면 null).</summary>
+        private CombatUnitAnimator animator;
+
         /// <summary>
         /// 전투 진입 시 슬롯/상태를 정리한다.
         /// HP/MP의 완전 회복 여부는 파생 클래스 결정.
@@ -80,6 +83,16 @@ namespace Tempt
 
             WorldUI?.HideActionIcon();
             ApplyAllPassiveEffects();
+
+            // SPUM 애니메이션 어댑터 해석 + 초기화(IDLE). 자식에 SPUM_Prefabs 없으면 null → no-op.
+            animator = CombatUnitAnimator.TryCreate(gameObject);
+            animator?.Initialize();
+        }
+
+        /// <summary>공격/스킬 실행 시점에 ATTACK 애니메이션 재생. CombatFlow가 호출.</summary>
+        public void PlayAttackAnimation(int clipIndex)
+        {
+            animator?.PlayAttack(clipIndex);
         }
 
         /// <summary>
@@ -90,6 +103,7 @@ namespace Tempt
             IsDefending = false;
             TickShieldDuration();
             WorldUI?.HideActionIcon();
+            animator?.PlayIdle();
         }
 
         /// <summary>
@@ -132,6 +146,17 @@ namespace Tempt
             }
 
             SpawnFloatingDamage(actualDamage, guarded);
+
+            // 피격/사망 애니메이션. 사망 시 DEATH(1회), 아니면 DAMAGED.
+            if (IsDead)
+            {
+                animator?.PlayDeath();
+            }
+            else
+            {
+                animator?.PlayDamaged();
+            }
+
             return actualDamage;
         }
 
@@ -315,9 +340,74 @@ namespace Tempt
 
         private void ApplyPassiveEffect(SkillData data)
         {
+            if (data.PassiveStatType != PassiveStatType.None)
+            {
+                ApplyExplicitPassiveEffect(data);
+                return;
+            }
+
             for (int i = 0; i < PassiveEffectBindings.Length; i++)
             {
                 PassiveEffectBindings[i].Apply(Stats, data);
+            }
+        }
+
+        private void ApplyExplicitPassiveEffect(SkillData data)
+        {
+            if (!TryMapPassiveStat(data.PassiveStatType, out StatType statType))
+            {
+                return;
+            }
+
+            int baseValue = BaseValueForPassive(data.PassiveStatType);
+            int amount = data.PassiveFlatValue + Mathf.RoundToInt(baseValue * data.PassivePercentValue);
+            if (amount != 0)
+            {
+                Stats.ApplyPassiveBonus(statType, amount);
+            }
+        }
+
+        private int BaseValueForPassive(PassiveStatType statType)
+        {
+            switch (statType)
+            {
+                case PassiveStatType.HP:
+                    return Stats.BaseMaxHP;
+                case PassiveStatType.MP:
+                    return Stats.BaseMaxMP;
+                case PassiveStatType.ATK:
+                    return Stats.BaseATK;
+                case PassiveStatType.DEF:
+                    return Stats.BaseDEF;
+                case PassiveStatType.SPD:
+                    return Stats.BaseSPD;
+                default:
+                    return 0;
+            }
+        }
+
+        private static bool TryMapPassiveStat(PassiveStatType passiveStatType, out StatType statType)
+        {
+            switch (passiveStatType)
+            {
+                case PassiveStatType.HP:
+                    statType = StatType.HP;
+                    return true;
+                case PassiveStatType.MP:
+                    statType = StatType.MP;
+                    return true;
+                case PassiveStatType.ATK:
+                    statType = StatType.ATK;
+                    return true;
+                case PassiveStatType.DEF:
+                    statType = StatType.DEF;
+                    return true;
+                case PassiveStatType.SPD:
+                    statType = StatType.SPD;
+                    return true;
+                default:
+                    statType = StatType.HP;
+                    return false;
             }
         }
 

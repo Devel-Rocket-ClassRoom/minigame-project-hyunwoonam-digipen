@@ -6,7 +6,7 @@ namespace Tempt
     /// 게임 전체 최상위 싱글톤. 하위 시스템 초기화, 런 데이터 보관, 씬 흐름의 게이트웨이 역할.
     /// 직접 로직은 하지 않고 하위 시스템 호출만 한다.
     /// </summary>
-    public sealed class GameSystemManager : Singleton<GameSystemManager>
+    public sealed partial class GameSystemManager : Singleton<GameSystemManager>
     {
         /// <summary>정적 데이터 로더.</summary>
         public DataManager Data { get; private set; }
@@ -28,6 +28,12 @@ namespace Tempt
 
         /// <summary>화면/볼륨/언어 옵션 서비스.</summary>
         public OptionsService Options { get; private set; }
+
+        /// <summary>씬/전투 상태에 맞는 배경음악 재생기.</summary>
+        public BackgroundMusicPlayer BackgroundMusic { get; private set; }
+
+        /// <summary>씬/층 최초 진입 튜토리얼 매니저(열람 기록은 CurrentRun.Tutorial, 새 게임마다 초기화).</summary>
+        public TutorialManager Tutorial { get; private set; }
 
         /// <summary>현재 진행 중인 런 상태 (없으면 null).</summary>
         public GameRunState CurrentRun { get; private set; }
@@ -96,17 +102,27 @@ namespace Tempt
             Scenes = GetComponent<GameSceneManager>();
             if (Scenes == null)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[GameSystemManager] GameSceneManager 컴포넌트가 같은 GameObject에 필요합니다."
                 );
                 enabled = false;
                 return;
             }
 
+            BackgroundMusic = GetComponent<BackgroundMusicPlayer>();
+            if (BackgroundMusic == null)
+            {
+                BackgroundMusic = gameObject.AddComponent<BackgroundMusicPlayer>();
+            }
+            Scenes.OnSceneChanged += HandleSceneChangedBackgroundMusic;
+
             Hotkey = new HotkeyManager();
             Hotkey.BindGlobalKeys();
             Hotkey.OnTogglePage += RequestTogglePage;
             Hotkey.OnRequestQuit += RequestQuitConfirm;
+
+            Tutorial = new TutorialManager();
+            Tutorial.Bind(Scenes);
         }
 
         /// <summary>
@@ -128,10 +144,18 @@ namespace Tempt
                     Hotkey.OnRequestQuit -= RequestQuitConfirm;
                 }
 
+                Tutorial?.Unbind();
+                Tutorial = null;
+
                 UnsubscribeErosionEvents();
                 CombatContext = null;
                 CurrentRun = null;
                 Erosion = null;
+                if (Scenes != null)
+                {
+                    Scenes.OnSceneChanged -= HandleSceneChangedBackgroundMusic;
+                }
+                BackgroundMusic = null;
                 Hotkey = null;
                 Scenes = null;
                 Save = null;
@@ -150,6 +174,11 @@ namespace Tempt
             }
 
             Hotkey?.PollInput();
+        }
+
+        private void HandleSceneChangedBackgroundMusic(SceneId from, SceneId to)
+        {
+            BackgroundMusic?.PlayForScene(to, CombatContext, CurrentRun?.Erosion);
         }
 
         /// <summary>
@@ -189,7 +218,7 @@ namespace Tempt
             CurrentRun.SafeUnlocks.Unlock(0);
             CurrentRun.ShopStock = ShopStockState.CreateDefaultSafe1Stock();
 
-            CurrentRun.Gold = 1000;
+            CurrentRun.Gold = ResolveStartingLoadout().Gold;
             CurrentRun.ManaStone = 0;
             CurrentRun.InitializeMineState();
             CurrentRun.Tutorial = new TutorialProgressState();
@@ -212,8 +241,16 @@ namespace Tempt
             // - PlayerRuneState, InventoryState, EquipmentSlots, ConsumableSlots, LockerState 초기화.
             // - 시작 직업 룬은 Safe0 선택 결과를 반영할 수 있도록 미정 상태로 둔다.
             // - 완성 후 CurrentRun.Player에 저장할 PlayerState 반환.
+            var loadout = ResolveStartingLoadout();
+
             var stats = new StatBlock();
-            stats.SetBaseStats(90, 20, 10, 2, 10);
+            stats.SetBaseStats(
+                loadout.BaseMaxHP,
+                loadout.BaseMaxMP,
+                loadout.BaseATK,
+                loadout.BaseDEF,
+                loadout.BaseSPD
+            );
             stats.RestoreToFull();
 
             var player = new PlayerState
@@ -235,19 +272,62 @@ namespace Tempt
                 Locker = new LockerState(),
             };
 
-            player.Inventory.Add(1, 2);
-            player.Inventory.Add(3, 1);
+            if (loadout.InventoryStacks != null)
+            {
+                foreach (StartingItemStack stack in loadout.InventoryStacks)
+                {
+                    if (stack != null && stack.Count > 0)
+                    {
+                        player.Inventory.Add(stack.ItemId, stack.Count);
+                    }
+                }
+            }
 
-            AddStartingEquipment(player.Inventory, 101);
-            AddStartingEquipment(player.Inventory, 102);
-            AddStartingEquipment(player.Inventory, 103);
-            AddStartingEquipment(player.Inventory, 104);
+            if (loadout.EquipmentItemIds != null)
+            {
+                foreach (int equipId in loadout.EquipmentItemIds)
+                {
+                    AddStartingEquipment(player.Inventory, equipId);
+                }
+            }
 
-            player.Consumables.SlotItemIds[0] = 1;
-            player.Consumables.SlotItemIds[1] = 3;
+            if (loadout.ConsumableSlotItemIds != null)
+            {
+                int slotCount = player.Consumables.SlotItemIds.Length;
+                for (int i = 0; i < loadout.ConsumableSlotItemIds.Count && i < slotCount; i++)
+                {
+                    player.Consumables.SlotItemIds[i] = loadout.ConsumableSlotItemIds[i];
+                }
+            }
 
             return player;
         }
+
+        /// <summary>
+        /// 시작 로드아웃을 데이터(Balance.StartingLoadout)에서 해석한다.
+        /// 데이터가 없으면 하드코딩 기본값으로 폴백해 동작을 보존한다.
+        /// </summary>
+        private StartingLoadout ResolveStartingLoadout()
+        {
+            return Data?.Balance?.StartingLoadout ?? DefaultStartingLoadout;
+        }
+
+        private static readonly StartingLoadout DefaultStartingLoadout = new StartingLoadout
+        {
+            Gold = 1000,
+            BaseMaxHP = 90,
+            BaseMaxMP = 20,
+            BaseATK = 10,
+            BaseDEF = 2,
+            BaseSPD = 10,
+            EquipmentItemIds = new System.Collections.Generic.List<int> { 101, 102, 103, 104 },
+            InventoryStacks = new System.Collections.Generic.List<StartingItemStack>
+            {
+                new StartingItemStack { ItemId = 1, Count = 2 },
+                new StartingItemStack { ItemId = 3, Count = 1 },
+            },
+            ConsumableSlotItemIds = new System.Collections.Generic.List<int> { 1, 3 },
+        };
 
         private void AddStartingEquipment(InventoryState inventory, int itemId)
         {
@@ -257,13 +337,13 @@ namespace Tempt
                 || !Data.Items.TryGetValue(itemId, out ItemData itemData)
             )
             {
-                Debug.LogError("[GameSystemManager] 시작 장비 ID 없음: " + itemId);
+                GameLog.LogError("[GameSystemManager] 시작 장비 ID 없음: " + itemId);
                 return;
             }
 
             if (itemData.Category != ItemCategory.Equipment || itemData.Stackable)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[GameSystemManager] 시작 장비가 Equipment가 아닙니다: " + itemId
                 );
                 return;
@@ -760,128 +840,12 @@ namespace Tempt
             }
             else
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[GameSystemManager] GlobalOverlayController 를 찾을 수 없어 GameOver 패널을 표시할 수 없습니다."
                 );
             }
         }
 
-        private void AttachErosionToCurrentRun()
-        {
-            if (CurrentRun?.Erosion == null)
-            {
-                Erosion = null;
-                return;
-            }
-
-            CurrentRun.Erosion.EnsureStageCount(ErosionSystem.GetMaxStage(Data?.World));
-            CurrentRun.SafeUnlocks?.EnsureCapacity(GetSafeZoneCount());
-            Erosion = new ErosionSystem(CurrentRun.Erosion, Events, Data?.Balance, Data?.World);
-
-            SubscribeErosionEvents();
-        }
-
-        public void RequestQuitConfirm()
-        {
-            if (GlobalOverlayController.TryGetInstance(out GlobalOverlayController overlay))
-            {
-                overlay.ShowQuitConfirm(QuitGame);
-                return;
-            }
-
-            Debug.LogError(
-                "[GameSystemManager] GlobalOverlayController 를 찾을 수 없어 종료 확인 팝업을 표시할 수 없습니다."
-            );
-        }
-
-        public void RequestTogglePage(HotkeyPageId pageId)
-        {
-            if (GlobalOverlayController.TryGetInstance(out GlobalOverlayController overlay))
-            {
-                overlay.HandleTogglePage(pageId);
-                return;
-            }
-
-            Debug.LogError(
-                "[GameSystemManager] GlobalOverlayController 를 찾을 수 없어 단축키 페이지를 열 수 없습니다."
-            );
-        }
-
-        private void SubscribeErosionEvents()
-        {
-            if (Events == null)
-            {
-                return;
-            }
-
-            Events.OnStageFullyEroded -= HandleStageFullyEroded;
-            Events.OnAllStagesEroded -= HandleAllStagesEroded;
-            Events.OnStageFullyEroded += HandleStageFullyEroded;
-            Events.OnAllStagesEroded += HandleAllStagesEroded;
-        }
-
-        private void UnsubscribeErosionEvents()
-        {
-            if (Events == null)
-            {
-                return;
-            }
-
-            Events.OnStageFullyEroded -= HandleStageFullyEroded;
-            Events.OnAllStagesEroded -= HandleAllStagesEroded;
-        }
-
-        private void HandleStageFullyEroded(int stage)
-        {
-            if (CurrentRun?.SafeUnlocks == null)
-            {
-                return;
-            }
-
-            int safeIndex = StageIndexResolver.SafeIndexForStage(stage, Data?.World);
-            CurrentRun.FloorMap?.ResetStageProgression(stage);
-            CurrentRun.SafeUnlocks.Lock(safeIndex);
-            Events?.RaiseSafeZoneLockChanged(safeIndex, true);
-            Save?.SaveSnapshot();
-        }
-
-        private int GetSafeZoneCount()
-        {
-            return Data?.World?.SafeZones != null && Data.World.SafeZones.Count > 0
-                ? Data.World.SafeZones.Count
-                : 6;
-        }
-
-        private void HandleAllStagesEroded()
-        {
-            if (CurrentRun != null)
-            {
-                Save?.AppendGrave(
-                    CurrentRun.Player != null ? CurrentRun.Player.Name : "Player",
-                    System.DateTime.Now
-                );
-            }
-
-            Save?.ClearContinue();
-            CurrentRun = null;
-            CombatContext = null;
-            ShowAllStagesErodedOverlay();
-            Scenes.LoadMainMenu();
-        }
-
-        private static void ShowAllStagesErodedOverlay()
-        {
-            if (GlobalOverlayController.TryGetInstance(out GlobalOverlayController overlay))
-            {
-                overlay.ShowAllStagesEroded();
-            }
-            else
-            {
-                Debug.LogError(
-                    "[GameSystemManager] GlobalOverlayController 를 찾을 수 없어 전체 침식 게임오버 패널을 표시할 수 없습니다."
-                );
-            }
-        }
     }
 
     /// <summary>

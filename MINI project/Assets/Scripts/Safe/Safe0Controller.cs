@@ -19,7 +19,7 @@ namespace Tempt
                 return;
             }
 
-            UnityEngine.Debug.LogError(
+            GameLog.LogError(
                 "[Safe0Controller] SafeZone0SanctuaryMockupUI 참조가 씬에 직접 할당되어 있지 않습니다."
             );
         }

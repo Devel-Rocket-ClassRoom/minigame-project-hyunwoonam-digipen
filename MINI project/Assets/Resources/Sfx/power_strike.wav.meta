@@ -1,0 +1,26 @@
+fileFormatVersion: 2
+guid: 615d24a9c0f9d3e4684d67671d778cef
+labels:
+- usfx
+- imphenzia
+- mono
+- impact
+- energy
+- blaster
+AudioImporter:
+  serializedVersion: 6
+  defaultSettings:
+    loadType: 1
+    sampleRateSetting: 0
+    sampleRateOverride: 0
+    compressionFormat: 0
+    quality: 0
+    conversionMode: 0
+  platformSettingOverrides: {}
+  forceToMono: 0
+  preloadAudioData: 1
+  loadInBackground: 0
+  3D: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

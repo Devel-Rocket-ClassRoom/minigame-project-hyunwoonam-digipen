@@ -34,7 +34,15 @@ namespace Tempt
         public bool CanUse(EntityBase user)
         {
             // 동작 요약: IsReady && user.Stats.CurrentMP >= Data.MpCost.
-            return Data != null && user?.Stats != null && IsReady && user.Stats.CurrentMP >= Data.MpCost;
+            return CanUse(user, Data);
+        }
+
+        public bool CanUse(EntityBase user, SkillData effectiveData)
+        {
+            return effectiveData != null
+                && user?.Stats != null
+                && IsReady
+                && user.Stats.CurrentMP >= effectiveData.MpCost;
         }
 
         /// <summary>
@@ -43,13 +51,18 @@ namespace Tempt
         public void ConsumeForUse(EntityBase user)
         {
             // 동작 요약: user.Stats.TrySpendMP(Data.MpCost); CooldownRemaining = Data.CooldownRounds.
-            if (Data == null || user?.Stats == null)
+            ConsumeForUse(user, Data);
+        }
+
+        public void ConsumeForUse(EntityBase user, SkillData effectiveData)
+        {
+            if (effectiveData == null || user?.Stats == null)
             {
                 return;
             }
 
-            user.Stats.TrySpendMP(Data.MpCost);
-            CooldownRemaining = Data.CooldownRounds;
+            user.Stats.TrySpendMP(effectiveData.MpCost);
+            CooldownRemaining = effectiveData.CooldownRounds;
         }
 
         /// <summary>

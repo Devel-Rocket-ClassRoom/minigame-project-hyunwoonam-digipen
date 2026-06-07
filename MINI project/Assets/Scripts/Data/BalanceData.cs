@@ -106,6 +106,49 @@ namespace Tempt
 
         /// <summary>침식률 배수 곡선 지수. 1이면 선형.</summary>
         public float ErosionMonsterMultiplierCurvePower;
+
+        /// <summary>새 런 시작 시 플레이어 초기 자원·스탯·지급 아이템.</summary>
+        public StartingLoadout StartingLoadout;
+    }
+
+    /// <summary>새 런 시작 시 플레이어 초기 상태(자원·기본 스탯·지급 아이템).</summary>
+    [System.Serializable]
+    public sealed class StartingLoadout
+    {
+        /// <summary>시작 골드.</summary>
+        public int Gold;
+
+        /// <summary>기본 최대 HP.</summary>
+        public int BaseMaxHP;
+
+        /// <summary>기본 최대 MP.</summary>
+        public int BaseMaxMP;
+
+        /// <summary>기본 ATK.</summary>
+        public int BaseATK;
+
+        /// <summary>기본 DEF.</summary>
+        public int BaseDEF;
+
+        /// <summary>기본 SPD.</summary>
+        public int BaseSPD;
+
+        /// <summary>시작 장비로 인벤토리에 지급할 아이템 ID 목록.</summary>
+        public List<int> EquipmentItemIds;
+
+        /// <summary>시작 인벤토리 비장비 스택(소모품 등).</summary>
+        public List<StartingItemStack> InventoryStacks;
+
+        /// <summary>소모품 슬롯 초기 아이템 ID(인덱스 = 슬롯 번호).</summary>
+        public List<int> ConsumableSlotItemIds;
+    }
+
+    /// <summary>시작 인벤토리 스택 1건(아이템 ID + 수량).</summary>
+    [System.Serializable]
+    public sealed class StartingItemStack
+    {
+        public int ItemId;
+        public int Count;
     }
 
     /// <summary>침식 지수함수 파라미터.</summary>

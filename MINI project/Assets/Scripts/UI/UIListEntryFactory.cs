@@ -19,7 +19,7 @@ namespace Tempt
                 return entry;
             }
 
-            Debug.LogError(missingTextLog);
+            GameLog.LogError(missingTextLog);
             entry.interactable = false;
             return entry;
         }

@@ -12,7 +12,7 @@ namespace Tempt
         private const string RuntimeHostPrefabPath = "Monsters/MonsterDefault";
 
         /// <summary>생성된 몬스터들.</summary>
-        public List<MonsterBase> SpawnedT = new List<MonsterBase>();
+        public List<Monster> SpawnedT = new List<Monster>();
 
         /// <summary>
         /// 노드에서 몬스터를 무작위 선택 후 생성.
@@ -31,7 +31,7 @@ namespace Tempt
             // - DataManager.PickMonsterGroup(node.Difficulty, node.MonsterCount) 호출.
             // - 기존 씬 몬스터 비활성/제거.
             // - 각 ID에 대해 Resources/Addressables에서 프리팹 로드.
-            // - Instantiate, MonsterBase.InitializeFromData(data, ErosionSystem 조회 배수).
+            // - Instantiate, Monster.InitializeFromData(data, ErosionSystem 조회 배수).
             // - 배치 간격 일정하게 정렬.
             // - SpawnedT에 누적.
             Cleanup();
@@ -60,16 +60,16 @@ namespace Tempt
                     : null;
                 if (prefab == null)
                 {
-                    Debug.LogError("[CombatMonsterSpawner] Monster prefab missing: Resources/Monsters/" + data.PrefabKey);
+                    GameLog.LogError("[CombatMonsterSpawner] Monster prefab missing: Resources/Monsters/" + data.PrefabKey);
                     continue;
                 }
 
                 GameObject go = InstantiateMonster(prefab, pos, parent);
                 go.transform.position = pos;
-                MonsterBase monster = go.GetComponent<MonsterBase>();
+                Monster monster = go.GetComponent<Monster>();
                 if (monster == null)
                 {
-                    Debug.LogError("[CombatMonsterSpawner] MonsterBase missing on prefab: " + data.PrefabKey);
+                    GameLog.LogError("[CombatMonsterSpawner] Monster missing on prefab: " + data.PrefabKey);
                     Destroy(go);
                     continue;
                 }
@@ -83,7 +83,7 @@ namespace Tempt
         public void Cleanup()
         {
             // 동작 요약: SpawnedT 순회 Destroy + 리스트 비움.
-            foreach (MonsterBase monster in SpawnedT)
+            foreach (Monster monster in SpawnedT)
             {
                 if (monster != null)
                 {
@@ -120,7 +120,7 @@ namespace Tempt
 
         private static GameObject InstantiateMonster(GameObject prefab, Vector3 pos, Transform parent)
         {
-            if (prefab.GetComponent<MonsterBase>() != null)
+            if (prefab.GetComponent<Monster>() != null)
             {
                 return Instantiate(prefab, pos, Quaternion.identity, parent);
             }

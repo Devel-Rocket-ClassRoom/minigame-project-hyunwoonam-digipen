@@ -26,7 +26,7 @@ namespace Tempt
                     return null;
                 }
 
-                Debug.LogError($"[Singleton<{typeof(T).Name}>] 활성 인스턴스를 찾지 못함");
+                GameLog.LogError($"[Singleton<{typeof(T).Name}>] 활성 인스턴스를 찾지 못함");
                 return null;
             }
         }
