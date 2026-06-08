@@ -50,7 +50,7 @@
   "TavernStorageActivationCost": 30,
   "TavernStorageUpgradeBaseCost": 45,
   "TavernStorageUpgradeCostStep": 25,
-  "FirstNonPlayerActionDelaySec": 2.0,
+  "FirstNonPlayerActionDelaySec": 0.9,
   "AttackActionTimeSec": 0.3,
   "SkillActionFallbackSec": 0.5,
   "DefendActionTimeSec": 0.1,

@@ -109,16 +109,23 @@ namespace Tempt
         }
 
         /// <summary>
-        /// 비석(클리어) 기록 추가.
+        /// 비석(클리어) 기록 추가. 최종 승리 시점의 플레이 가능한 스냅샷을 함께 보관한다.
         /// </summary>
-        public void AppendClearRecord(string playerName, System.DateTime when)
+        public void AppendClearRecord(string playerName, System.DateTime when, SaveSnapshot snapshot)
         {
             // 동작 요약:
-            // - Records.Clears에 새 항목 추가.
-            // - records.json 저장.
-            // SaveRecords 헬퍼:
+            // - Records.Clears에 이름 + 일시 + 승리 직후 스냅샷을 추가.
+            // - snapshot이 있으면 Record 화면에서 언제든 다시 플레이 가능.
+            // - records.json 저장(save.json/Continue 와 무관, 영구 보존).
             EnsureRecords();
-            Records.Clears.Add(new RecordEntry { Name = playerName, TimestampIso = when.ToString("o") });
+            Records.Clears.Add(
+                new ClearRecord
+                {
+                    Name = playerName,
+                    TimestampIso = when.ToString("o"),
+                    Snapshot = snapshot,
+                }
+            );
             SaveRecords();
         }
 
@@ -131,7 +138,7 @@ namespace Tempt
 
             if (Records.Clears == null)
             {
-                Records.Clears = new List<RecordEntry>();
+                Records.Clears = new List<ClearRecord>();
             }
 
             if (Records.Graves == null)
@@ -149,16 +156,18 @@ namespace Tempt
     }
 
     /// <summary>비석/묘비 영구 기록.</summary>
+    [System.Serializable]
     public sealed class RecordBook
     {
-        /// <summary>클리어 기록(비석).</summary>
-        public List<RecordEntry> Clears = new List<RecordEntry>();
+        /// <summary>클리어 기록(비석). 각 항목은 승리 직후 스냅샷을 포함해 다시 플레이 가능.</summary>
+        public List<ClearRecord> Clears = new List<ClearRecord>();
 
         /// <summary>사망 기록(묘비).</summary>
         public List<RecordEntry> Graves = new List<RecordEntry>();
     }
 
-    /// <summary>한 줄의 기록.</summary>
+    /// <summary>묘비 한 줄의 기록(사망).</summary>
+    [System.Serializable]
     public sealed class RecordEntry
     {
         /// <summary>이름.</summary>
@@ -166,6 +175,24 @@ namespace Tempt
 
         /// <summary>일시.</summary>
         public string TimestampIso;
+    }
+
+    /// <summary>비석 한 줄의 기록(클리어). 승리 직후 플레이 가능한 스냅샷 포함.</summary>
+    [System.Serializable]
+    public sealed class ClearRecord
+    {
+        /// <summary>이름.</summary>
+        public string Name;
+
+        /// <summary>일시.</summary>
+        public string TimestampIso;
+
+        /// <summary>승리 직후 스냅샷(safe0, 전 시스템 해금, 침식 정지). 구버전 기록은 null/빈 값.</summary>
+        public SaveSnapshot Snapshot;
+
+        /// <summary>스냅샷이 있어 다시 플레이 가능한 기록인지 여부.</summary>
+        public bool IsPlayable =>
+            Snapshot != null && !string.IsNullOrEmpty(Snapshot.SavedAtIso);
     }
 }
 

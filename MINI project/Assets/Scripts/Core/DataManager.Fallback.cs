@@ -515,7 +515,7 @@ namespace Tempt
                 TavernStorageActivationCost = 30,
                 TavernStorageUpgradeBaseCost = 45,
                 TavernStorageUpgradeCostStep = 25,
-                FirstNonPlayerActionDelaySec = 2f,
+                FirstNonPlayerActionDelaySec = 0.9f,
                 AttackActionTimeSec = 0.3f,
                 SkillActionFallbackSec = 0.5f,
                 DefendActionTimeSec = 0.1f,

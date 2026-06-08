@@ -17,6 +17,12 @@ namespace Tempt
         /// <summary>클리어 완료된 런 여부(true면 Continue 불가).</summary>
         public bool IsCompleted;
 
+        /// <summary>
+        /// 클리어 기록에서 불러온 런(침식 영구 정지). IsCompleted 와 독립.
+        /// 기록 플레이 중 자동 저장돼도 유지된다. 구버전 save 는 false.
+        /// </summary>
+        public bool ErosionFrozen;
+
         /// <summary>현재 게임 내 일자.</summary>
         public int CurrentDay;
 
@@ -79,6 +85,7 @@ namespace Tempt
             {
                 SavedAtIso = System.DateTime.Now.ToString("o"),
                 IsCompleted = false,
+                ErosionFrozen = run.IsClearedRun,
                 CurrentDay = run.CurrentDay,
                 Location = new SaveLocation { SceneId = sceneId, SubLocationKey = string.Empty },
                 FloorMap = FromFloorMap(run.FloorMap),
@@ -110,6 +117,7 @@ namespace Tempt
             var run = new GameRunState
             {
                 CurrentDay = CurrentDay,
+                IsClearedRun = ErosionFrozen,
                 FloorMap = ToFloorMap(FloorMap),
                 Player = ToPlayer(Player, data),
                 Roster = ToRoster(Roster),

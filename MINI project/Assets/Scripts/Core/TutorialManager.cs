@@ -10,8 +10,8 @@ namespace Tempt
     /// </summary>
     public sealed class TutorialManager
     {
-        /// <summary>튜토리얼 기능 전체 스위치. 임시 비활성화 상태(2026-06-08). 재활성화 시 true.</summary>
-        private static readonly bool FeatureEnabled = false;
+        /// <summary>튜토리얼 기능 전체 스위치. false면 이벤트 미구독으로 전체 비활성.</summary>
+        private static readonly bool FeatureEnabled = true;
 
         /// <summary>
         /// 튜토리얼 이미지 테이블.
@@ -23,12 +23,9 @@ namespace Tempt
             string[]
         >
         {
-            { "Safe0", new[] { "temp", "temp" } },
-            { "FloorMap", new[] { "temp", "temp" } },
-            { "Floor1", new[] { "temp" } },
-            { "Floor2", new[] { "temp" } },
-            { "Floor3", new[] { "temp" } },
-            { "Safe1", new[] { "temp", "temp" } },
+            { "Safe0", new[] { "tutorial/safe0tutorial" } },
+            { "FloorMap", new[] { "tutorial/floormaptutorial" } },
+            { "Floor1", new[] { "tutorial/Combattutorial" } },
         };
 
         private readonly Queue<string> pendingKeys = new Queue<string>();

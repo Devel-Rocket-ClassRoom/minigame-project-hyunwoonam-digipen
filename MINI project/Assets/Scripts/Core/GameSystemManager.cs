@@ -372,13 +372,34 @@ namespace Tempt
                 return;
             }
 
-            CurrentRun = Save.Continue.ToGameRunStatet(Data);
+            LoadRunFromSnapshot(Save.Continue);
+        }
+
+        /// <summary>
+        /// Record(비석) 화면에서 저장된 최종 승리 스냅샷을 불러와 플레이.
+        /// safe0, 전 시스템 해금, 침식 정지 상태로 복원된다. 원본 기록은 records.json 에 그대로 남는다.
+        /// </summary>
+        public void PlayRecord(SaveSnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                GameLog.LogError("[GameSystemManager] 플레이할 승리 기록 스냅샷이 없습니다.");
+                return;
+            }
+
+            LoadRunFromSnapshot(snapshot);
+        }
+
+        /// <summary>스냅샷을 런타임 런 상태로 복원하고 저장된 위치 씬으로 이동.</summary>
+        private void LoadRunFromSnapshot(SaveSnapshot snapshot)
+        {
+            CurrentRun = snapshot.ToGameRunStatet(Data);
 
             AttachErosionToCurrentRun();
 
             CombatContext = null;
             SceneId sceneId =
-                Save.Continue.Location != null ? Save.Continue.Location.SceneId : SceneId.Safe0;
+                snapshot.Location != null ? snapshot.Location.SceneId : SceneId.Safe0;
             Scenes.RequestScene(sceneId);
         }
 
@@ -736,16 +757,17 @@ namespace Tempt
         public void CompleteRun()
         {
             // 동작 요약:
-            // - 비석에 캐릭터 이름 + 일시 영구 기록(Save.AppendClearRecord(CurrentRun.Player.Name, System.DateTime.Now)).
-            // - 필요하면 현재 SaveSnapshott를 IsCompleted=true로 저장하거나 Continue를 삭제하는 정책을 SaveLoadert에서 처리.
-            // - CurrentRun 정리.
-            // - CombatContext 정리.
+            // - 비석에 캐릭터 이름 + 일시 + 승리 직후 플레이 가능한 스냅샷을 영구 기록.
+            //   (스냅샷: safe0 위치, 전 안전지대/시스템 해금, 침식 정지, IsCompleted=true)
+            // - 진행 중 Continue(save.json) 삭제 → Continue/Record 분리.
+            // - CurrentRun / CombatContext 정리.
             // - Scenes.LoadMainMenu().
             if (CurrentRun != null)
             {
                 Save?.AppendClearRecord(
                     CurrentRun.Player != null ? CurrentRun.Player.Name : "Player",
-                    System.DateTime.Now
+                    System.DateTime.Now,
+                    BuildVictorySnapshot()
                 );
             }
 
@@ -753,6 +775,71 @@ namespace Tempt
             CurrentRun = null;
             CombatContext = null;
             Scenes.LoadMainMenu();
+        }
+
+        /// <summary>
+        /// 최종 승리 직후의 플레이 가능한 스냅샷을 만든다.
+        /// 위치 = Safe0, 모든 안전지대 해금, 침식 정지(비활성+0%), IsCompleted=true.
+        /// </summary>
+        private SaveSnapshot BuildVictorySnapshot()
+        {
+            if (CurrentRun == null)
+            {
+                return null;
+            }
+
+            SaveSnapshot snapshot = SaveSnapshot.FromGameRunStatet(CurrentRun, SceneId.Safe0);
+            if (snapshot == null)
+            {
+                return null;
+            }
+
+            snapshot.IsCompleted = true;
+            snapshot.ErosionFrozen = true; // 기록 플레이 시 침식 영구 정지
+
+            if (snapshot.Location != null)
+            {
+                snapshot.Location.SceneId = SceneId.Safe0;
+                snapshot.Location.SubLocationKey = string.Empty;
+            }
+
+            // 전 안전지대/시스템 해금.
+            int safeCount = GetSafeZoneCount();
+            if (snapshot.SafeUnlocks == null)
+            {
+                snapshot.SafeUnlocks = new System.Collections.Generic.List<bool>();
+            }
+            while (snapshot.SafeUnlocks.Count < safeCount)
+            {
+                snapshot.SafeUnlocks.Add(false);
+            }
+            for (int i = 0; i < snapshot.SafeUnlocks.Count; i++)
+            {
+                snapshot.SafeUnlocks[i] = true;
+            }
+
+            // 침식 정지: 비활성 + 전 단계 0%.
+            if (snapshot.Erosion != null)
+            {
+                snapshot.Erosion.ErosionStarted = false;
+                snapshot.Erosion.CurrentEroddingStage = 1;
+                if (snapshot.Erosion.StageRates != null)
+                {
+                    for (int i = 0; i < snapshot.Erosion.StageRates.Count; i++)
+                    {
+                        snapshot.Erosion.StageRates[i] = 0f;
+                    }
+                }
+                if (snapshot.Erosion.StageSafeLocked != null)
+                {
+                    for (int i = 0; i < snapshot.Erosion.StageSafeLocked.Count; i++)
+                    {
+                        snapshot.Erosion.StageSafeLocked[i] = false;
+                    }
+                }
+            }
+
+            return snapshot;
         }
 
         /// <summary>
@@ -788,7 +875,8 @@ namespace Tempt
 
             if (decision.CompleteRun)
             {
-                CompleteRun();
+                // 보상 수령 후 → Clear.mp4 풀스크린 연출 → 종료 시 승리 기록 저장 + 메인 메뉴.
+                ClearCutscenePlayer.Play(CompleteRun);
                 return;
             }
 
@@ -816,7 +904,7 @@ namespace Tempt
                 {
                     AdvanceRunDay();
                 }
-                if (shouldActivateErosionAfterSafeEntry)
+                if (shouldActivateErosionAfterSafeEntry && !CurrentRun.IsClearedRun)
                 {
                     Erosion?.Activate();
                 }
@@ -855,6 +943,12 @@ namespace Tempt
     {
         /// <summary>현재 일자(노드 진입마다 +1).</summary>
         public int CurrentDay;
+
+        /// <summary>
+        /// 클리어(최종 승리) 기록에서 불러온 런 여부.
+        /// true면 침식이 영구 정지(안전지대2 진입에도 재활성 안 함).
+        /// </summary>
+        public bool IsClearedRun;
 
         /// <summary>현재 위치한 층(0 = Safe0).</summary>
         public int CurrentFloor;

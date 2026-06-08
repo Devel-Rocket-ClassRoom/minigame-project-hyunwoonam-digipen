@@ -19,7 +19,10 @@ namespace Tempt
         protected override void SetupZoneFeatures()
         {
             SafeIndex = 2;
-            GameSystemManager.Instance.Erosion?.Activate();
+            if (GameSystemManager.Instance.CurrentRun?.IsClearedRun != true)
+            {
+                GameSystemManager.Instance.Erosion?.Activate();
+            }
             sanctuaryUI?.Refresh();
         }
 

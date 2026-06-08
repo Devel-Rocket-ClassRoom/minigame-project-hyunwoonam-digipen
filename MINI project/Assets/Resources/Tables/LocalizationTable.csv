@@ -13,6 +13,7 @@ opt_close,닫기,CLOSE
 menu_new_game,새 게임,NEW GAME
 menu_continue,이어하기,CONTINUE
 menu_options,옵션,OPTIONS
+menu_record,기록,RECORD
 menu_exit,종료,EXIT
 ui_empty,비어있음,EMPTY
 ui_equipped,장착됨,Equipped

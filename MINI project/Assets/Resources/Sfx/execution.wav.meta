@@ -1,17 +1,13 @@
 fileFormatVersion: 2
-guid: 169aea81d97006a4fb4f806d446567ce
+guid: 2963f61989af6f74281102d231fc05bc
 labels:
 - usfx
 - imphenzia
-- mono
-- sword
-- impact
-- hit
-- medieval
-- metal
-- clang
-- cling
+- stereo
 - whoosh
+- swoosh
+- steam
+- wobble
 AudioImporter:
   serializedVersion: 6
   defaultSettings:
