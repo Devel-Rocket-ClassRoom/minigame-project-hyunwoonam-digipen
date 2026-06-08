@@ -8,6 +8,9 @@ namespace Tempt
 {
     public sealed partial class SafeZone1FacilityMockupUI
     {
+        /// <summary>SLOT 버튼을 안쪽(왼쪽)으로 추가 이동하는 비율(버튼 너비 기준). 0이면 이동 없음.</summary>
+        private const float SlotButtonInwardFactor = 0.55f;
+
         private static void CacheShopRows(Transform rowsRoot, List<ShopRowView> rows)
         {
             if (rowsRoot == null)
@@ -171,7 +174,14 @@ namespace Tempt
                     primaryRect.sizeDelta.y
                 );
                 slot2Rect.sizeDelta = primaryRect.sizeDelta;
-                primaryRect.anchoredPosition += new Vector2(-primaryRect.sizeDelta.x * 0.53f, 0f);
+
+                // 빌드(에디터와 다른 화면 비율)에서 SLOT 버튼이 우측 모서리에 잘려 보이는 문제 방지.
+                // 두 버튼을 버튼 너비 기준 안쪽(왼쪽)으로 추가 이동한다.
+                float inwardInset = primaryRect.sizeDelta.x * SlotButtonInwardFactor;
+                primaryRect.anchoredPosition += new Vector2(
+                    -primaryRect.sizeDelta.x * 0.53f - inwardInset,
+                    0f
+                );
                 slot2Rect.anchoredPosition =
                     primaryRect.anchoredPosition + new Vector2(primaryRect.sizeDelta.x * 1.12f, 0f);
             }
