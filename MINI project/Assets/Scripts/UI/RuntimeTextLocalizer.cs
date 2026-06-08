@@ -11,7 +11,7 @@ namespace Tempt
     /// </summary>
     public sealed class RuntimeTextLocalizer : MonoBehaviour
     {
-        private const string FontResourcePath = "Imported/Fonts/Pretendard-Bold SDF";
+        private const string FontResourcePath = "Fonts/Pretendard-Bold SDF";
         private const float RefreshIntervalSec = 0.25f;
 
         private static readonly Dictionary<string, string> LiteralKeys = new Dictionary<string, string>

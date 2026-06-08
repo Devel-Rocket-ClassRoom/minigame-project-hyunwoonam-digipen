@@ -1,9 +1,9 @@
 Id,NameKey,DescKey,RequiredFloor,RecruitPrice,ClassId,BaseStats_HP,BaseStats_MP,BaseStats_ATK,BaseStats_DEF,BaseStats_SPD,StatGrowth_HP,StatGrowth_MP,StatGrowth_ATK,StatGrowth_DEF,StatGrowth_SPD,RuneNodePool,RuneTreeLength,PrefabKey,ActionRuleKey
-1,companion.kael,companion.kael.desc,4,25,Dealer,70,10,12,3,11,6,1,1,0,1,,8,Dealer/CPN_Dealer_T01_Kael,Dealer
-2,companion.lyra,companion.lyra.desc,4,25,Supporter,80,15,6,3,9,5,2,0,1,0,,8,Tanker/CPN_Supporter_T01_Lyra,Supporter
-3,companion.merrick,companion.merrick.desc,4,25,MagicDealer,65,20,8,2,10,4,2,1,0,1,,8,Supporter/CPN_MagicDealer_T01_Merrick,MagicDealer
-4,companion.sister_elyn,companion.sister_elyn.desc,4,25,Tanker,100,10,8,6,8,8,1,0,1,1,,8,MagicDealer/CPN_Tanker_T01_SisterElyn,Tanker
-17,companion.iren,companion.iren.desc,40,150,Dealer,160,26,34,10,20,6,1,2,0,1,,8,Dealer/CPN_Dealer_T05_Iren,Dealer
-18,companion.ordric,companion.ordric.desc,40,150,Tanker,230,26,23,18,12,8,1,1,1,1,,8,MagicDealer/CPN_Tanker_T05_Ordric,Tanker
-19,companion.morvain,companion.morvain.desc,40,150,MagicDealer,160,44,32,10,16,4,2,2,0,1,,8,Supporter/CPN_MagicDealer_T05_Morvain,MagicDealer
-20,companion.aurelia,companion.aurelia.desc,40,150,Supporter,190,44,23,14,15,5,2,0,1,0,,8,Tanker/CPN_Supporter_T05_Aurelia,Supporter
+1,companion.kael,companion.kael.desc,4,60,Dealer,70,10,12,3,11,6,1,1,0,1,,8,Dealer/CPN_Dealer_T01_Kael,Dealer
+2,companion.lyra,companion.lyra.desc,4,60,Supporter,80,15,6,3,9,5,2,0,1,0,,8,Tanker/CPN_Supporter_T01_Lyra,Supporter
+3,companion.merrick,companion.merrick.desc,4,60,MagicDealer,65,20,8,2,10,4,2,1,0,1,,8,Supporter/CPN_MagicDealer_T01_Merrick,MagicDealer
+4,companion.sister_elyn,companion.sister_elyn.desc,4,60,Tanker,100,10,8,6,8,8,1,0,1,1,,8,MagicDealer/CPN_Tanker_T01_SisterElyn,Tanker
+17,companion.iren,companion.iren.desc,40,240,Dealer,160,26,34,10,20,6,1,2,0,1,,8,Dealer/CPN_Dealer_T05_Iren,Dealer
+18,companion.ordric,companion.ordric.desc,40,240,Tanker,230,26,23,18,12,8,1,1,1,1,,8,MagicDealer/CPN_Tanker_T05_Ordric,Tanker
+19,companion.morvain,companion.morvain.desc,40,240,MagicDealer,160,44,32,10,16,4,2,2,0,1,,8,Supporter/CPN_MagicDealer_T05_Morvain,MagicDealer
+20,companion.aurelia,companion.aurelia.desc,40,240,Supporter,190,44,23,14,15,5,2,0,1,0,,8,Tanker/CPN_Supporter_T05_Aurelia,Supporter

@@ -8,7 +8,7 @@ namespace Tempt
     /// <summary>
     /// Safe2 성소 UI. 단계 카드, 상세 패널, 정화 버튼을 표시한다.
     /// </summary>
-    public sealed class SanctuaryUI : MonoBehaviour
+    public sealed class SanctuaryUI : UIEventPageBase
     {
         private sealed class StageCard
         {
@@ -63,18 +63,7 @@ namespace Tempt
             WireButtons();
         }
 
-        private void OnEnable()
-        {
-            SubscribeEvents();
-            Refresh();
-        }
-
-        private void OnDisable()
-        {
-            UnsubscribeEvents();
-        }
-
-        public void Refresh()
+        public override void Refresh()
         {
             if (!initialized)
             {
@@ -115,7 +104,7 @@ namespace Tempt
         {
             if (controller == null)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[SanctuaryUI] SanctuaryController 참조가 Inspector 에 연결되어 있지 않습니다."
                 );
                 return false;
@@ -127,7 +116,7 @@ namespace Tempt
             Transform rightColumn = contentArea != null ? contentArea.Find("RightColumn") : null;
             if (stageGrid == null || rightColumn == null)
             {
-                Debug.LogError("[SanctuaryUI] StageGrid 또는 RightColumn 경로를 찾지 못했습니다.");
+                GameLog.LogError("[SanctuaryUI] StageGrid 또는 RightColumn 경로를 찾지 못했습니다.");
                 return false;
             }
 
@@ -137,7 +126,7 @@ namespace Tempt
                 Transform cardRoot = stageGrid.Find("STAGE " + i + "_Card");
                 if (cardRoot == null)
                 {
-                    Debug.LogError("[SanctuaryUI] STAGE " + i + "_Card 를 찾지 못했습니다.");
+                    GameLog.LogError("[SanctuaryUI] STAGE " + i + "_Card 를 찾지 못했습니다.");
                     return false;
                 }
 
@@ -165,7 +154,7 @@ namespace Tempt
             CacheSummaryValues(rightColumn.Find("SummaryValues"));
             if (purifyButton == null)
             {
-                Debug.LogError("[SanctuaryUI] PurifyButton 을 찾지 못했습니다.");
+                GameLog.LogError("[SanctuaryUI] PurifyButton 을 찾지 못했습니다.");
                 return false;
             }
 
@@ -178,7 +167,7 @@ namespace Tempt
             Button button = root.GetComponent<Button>();
             if (button == null)
             {
-                Debug.LogError("[SanctuaryUI] " + root.name + " Button 참조가 없습니다.");
+                GameLog.LogError("[SanctuaryUI] " + root.name + " Button 참조가 없습니다.");
                 return null;
             }
 
@@ -337,7 +326,7 @@ namespace Tempt
             SetText(purifyButtonLabel, canPurify ? "PURIFY" : "LOCKED");
         }
 
-        private void SubscribeEvents()
+        protected override void SubscribeEvents()
         {
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Events != null)
             {
@@ -354,7 +343,7 @@ namespace Tempt
             }
         }
 
-        private void UnsubscribeEvents()
+        protected override void UnsubscribeEvents()
         {
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Events != null)
             {

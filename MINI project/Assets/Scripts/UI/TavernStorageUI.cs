@@ -8,7 +8,7 @@ namespace Tempt
     /// <summary>
     /// Safe1 Content_STORAGE 표시/입력 계층. 모든 UI 참조와 Button OnClick은 Inspector에서 연결한다.
     /// </summary>
-    public sealed class TavernStorageUI : MonoBehaviour
+    public sealed class TavernStorageUI : UIEventPageBase
     {
         private enum SelectionSource
         {
@@ -107,18 +107,7 @@ namespace Tempt
             }
         }
 
-        private void OnEnable()
-        {
-            SubscribeEvents();
-            Refresh();
-        }
-
-        private void OnDisable()
-        {
-            UnsubscribeEvents();
-        }
-
-        public void Refresh()
+        public override void Refresh()
         {
             if (!enabled || !TryGetData(out GameRunState run, out DataManager data))
             {
@@ -426,7 +415,7 @@ namespace Tempt
                 return;
             }
 
-            detailName.text = itemData.NameKey;
+            detailName.text = Loc.Get(itemData.NameKey);
             detailMeta.text =
                 (selectionSource == SelectionSource.Inventory ? "INVENTORY" : "STORAGE")
                 + " / "
@@ -512,7 +501,7 @@ namespace Tempt
                 && ValidateSlots(storageSlots);
             if (!valid)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[TavernStorageUI] 필수 UI 참조가 Inspector에 직접 할당되어 있지 않습니다."
                 );
             }
@@ -538,7 +527,7 @@ namespace Tempt
             return true;
         }
 
-        private void SubscribeEvents()
+        protected override void SubscribeEvents()
         {
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Events != null)
             {
@@ -549,7 +538,7 @@ namespace Tempt
             }
         }
 
-        private void UnsubscribeEvents()
+        protected override void UnsubscribeEvents()
         {
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Events != null)
             {

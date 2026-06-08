@@ -1,0 +1,10 @@
+root = true
+
+# 사장코드(dead code) 상시 게이트.
+# Microsoft.Unity.Analyzers 가 [SerializeField]/Unity 매직메서드 오탐을 억제하므로
+# 아래 진단은 "실제로 미사용/미판독" 멤버만 경고로 띄운다. 빌드/CI 에서 누적을 차단.
+[*.cs]
+dotnet_diagnostic.IDE0051.severity = warning   # 미사용 private 멤버
+dotnet_diagnostic.IDE0052.severity = warning   # 할당됐으나 판독되지 않는 private 멤버
+dotnet_diagnostic.CS0169.severity = warning     # 미사용 필드
+dotnet_diagnostic.CS0414.severity = warning     # 할당됐으나 미사용 필드

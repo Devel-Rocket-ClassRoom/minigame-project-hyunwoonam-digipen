@@ -234,7 +234,7 @@ namespace Tempt
             // 동작 요약:
             // - actor가 Playert면 Input.RequestPlayerAction(actor) 호출 → State = AwaitInput.
             // - actor가 TeamBaset이면 CompanionAi.Pick() → ResolveAction.
-            // - actor가 MonsterBaset이면 MonsterAi.Pick() → ResolveAction.
+            // - actor가 Monstert이면 MonsterAi.Pick() → ResolveAction.
             // Wave0refactor 2026-05-27 (F.5): ConsumeAndRoundCheck 헬퍼 사용.
             if (actor == null || actor.IsDead)
             {
@@ -260,7 +260,7 @@ namespace Tempt
                 return;
             }
 
-            if (actor is MonsterBase monster)
+            if (actor is Monster monster)
             {
                 if (MonsterAi == null)
                 {
@@ -376,12 +376,16 @@ namespace Tempt
             {
                 case CombatActionType.Attack:
                     ApplyAttack(action);
+                    action.Actor.PlayAttackAnimation(action.Actor is Monster atkMon ? atkMon.AttackAnimIndex : 0);
                     CombatEffectPresenter.Play(action);
+                    CombatSfxPresenter.Play(action);
                     action.Actor.WorldUI?.ShowAttackIcon();
                     break;
                 case CombatActionType.Skill:
                     ApplySkill(action);
+                    action.Actor.PlayAttackAnimation(0);
                     CombatEffectPresenter.Play(action);
+                    CombatSfxPresenter.Play(action);
                     action.Actor.WorldUI?.ShowAttackIcon();
                     break;
                 case CombatActionType.Defend:
@@ -508,7 +512,7 @@ namespace Tempt
         // 과거 코드는 if 셋이 독립이라 데이터가 셋 다 가지면 중첩 적용되는 잠재 버그가 있었다.
         private static void ApplySkill(CombatAction action)
         {
-            SkillData data = action.Skill?.Data;
+            SkillData data = action.ResolvedSkillData;
             if (data == null) return;
 
             if (data.DamageScale > 0f)
@@ -524,7 +528,7 @@ namespace Tempt
                 SkillEffect.ApplyShield(action.Actor, action.Targets, data);
             }
 
-            action.Skill.ConsumeForUse(action.Actor);
+            action.Skill.ConsumeForUse(action.Actor, data);
         }
     }
 

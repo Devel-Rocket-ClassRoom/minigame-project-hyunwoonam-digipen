@@ -5,7 +5,7 @@ using UnityEngine.UI;
 namespace Tempt
 {
     /// <summary>Safe1 Content_LODGING 표시/입력 계층. 참조와 REST OnClick은 Inspector에서 연결한다.</summary>
-    public sealed class TavernLodgingUI : MonoBehaviour
+    public sealed class TavernLodgingUI : UIEventPageBase
     {
         [SerializeField]
         private TMP_Text costText;
@@ -17,25 +17,14 @@ namespace Tempt
         {
             if (costText == null || restButton == null)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[TavernLodgingUI] costText / restButton Inspector 참조가 누락되었습니다."
                 );
                 enabled = false;
             }
         }
 
-        private void OnEnable()
-        {
-            SubscribeEvents();
-            Refresh();
-        }
-
-        private void OnDisable()
-        {
-            UnsubscribeEvents();
-        }
-
-        public void Refresh()
+        public override void Refresh()
         {
             if (!enabled || !TryGetRun(out GameRunState run))
             {
@@ -67,7 +56,7 @@ namespace Tempt
             }
         }
 
-        private void SubscribeEvents()
+        protected override void SubscribeEvents()
         {
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Events != null)
             {
@@ -80,7 +69,7 @@ namespace Tempt
             }
         }
 
-        private void UnsubscribeEvents()
+        protected override void UnsubscribeEvents()
         {
             if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Events != null)
             {

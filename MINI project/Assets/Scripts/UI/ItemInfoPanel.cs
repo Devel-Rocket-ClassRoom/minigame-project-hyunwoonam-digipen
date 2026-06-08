@@ -74,7 +74,7 @@ namespace Tempt
                 || !data.Items.TryGetValue(itemId, out ItemData itemData)
             )
             {
-                Debug.LogError("[ItemInfoPanel.Show] 아이템 ID 없음: " + itemId);
+                GameLog.LogError("[ItemInfoPanel.Show] 아이템 ID 없음: " + itemId);
                 Hide();
                 return;
             }
@@ -102,7 +102,7 @@ namespace Tempt
         {
             if (item?.Data == null || !TryGetRunData(out GameRunState run, out DataManager data))
             {
-                Debug.LogError("[ItemInfoPanel.ShowEquip] item/Data 또는 런 상태 참조가 없습니다.");
+                GameLog.LogError("[ItemInfoPanel.ShowEquip] item/Data 또는 런 상태 참조가 없습니다.");
                 Hide();
                 return;
             }
@@ -259,7 +259,7 @@ namespace Tempt
                 && secondaryButtonLabel != null;
             if (!valid)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[ItemInfoPanel] 필수 UI 참조가 Inspector 에 직접 할당되어 있지 않습니다."
                 );
             }
@@ -277,7 +277,7 @@ namespace Tempt
                 || gsm.Data == null
             )
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[ItemInfoPanel] GameSystemManager / CurrentRun / Data 참조가 없습니다."
                 );
                 return false;

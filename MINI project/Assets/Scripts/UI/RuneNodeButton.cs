@@ -45,7 +45,6 @@ namespace Tempt
         private Color selectedColor = new Color(0.95f, 0.25f, 0.28f, 1f);
 
         private RuneTreeView owner;
-        private RuneData data;
 
         public int NodeId { get; private set; }
 
@@ -66,7 +65,6 @@ namespace Tempt
         {
             EnsureButton();
             owner = view;
-            data = runeData;
             NodeId = runeData != null ? runeData.Id : 0;
 
             if (button != null)

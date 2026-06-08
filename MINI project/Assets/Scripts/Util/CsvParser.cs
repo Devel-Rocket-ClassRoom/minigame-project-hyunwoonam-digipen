@@ -12,7 +12,7 @@ namespace Tempt
             var result = new List<T>();
             if (rowFactory == null)
             {
-                Debug.LogError("[CsvParser] rowFactory is null: " + resourcePath);
+                GameLog.LogError("[CsvParser] rowFactory is null: " + resourcePath);
                 return result;
             }
 
@@ -20,7 +20,7 @@ namespace Tempt
             TextAsset asset = Resources.Load<TextAsset>(normalizedPath);
             if (asset == null)
             {
-                Debug.LogError("[CsvParser] CSV file missing: Resources/" + normalizedPath + ".csv");
+                GameLog.LogError("[CsvParser] CSV file missing: Resources/" + normalizedPath + ".csv");
                 return result;
             }
 
@@ -92,7 +92,7 @@ namespace Tempt
                 return parsed;
             }
 
-            Debug.LogError("[CsvParser] enum parse failed: " + typeof(T).Name + "." + value + " (" + key + ")");
+            GameLog.LogError("[CsvParser] enum parse failed: " + typeof(T).Name + "." + value + " (" + key + ")");
             return defaultValue;
         }
 
@@ -146,7 +146,7 @@ namespace Tempt
             {
                 if (row == null || !row.ContainsKey(columns[i]))
                 {
-                    Debug.LogError("[Data] " + typeName + " 필수 컬럼 누락: " + columns[i]);
+                    GameLog.LogError("[Data] " + typeName + " 필수 컬럼 누락: " + columns[i]);
                     ok = false;
                 }
             }

@@ -86,18 +86,23 @@ namespace Tempt
                 || !data.Skills.TryGetValue(skillId, out SkillData skill)
             )
             {
-                Debug.LogError("[SkillInfoPanel.Show] 스킬 ID 없음: " + skillId);
+                GameLog.LogError("[SkillInfoPanel.Show] 스킬 ID 없음: " + skillId);
                 Hide();
                 return;
             }
 
             root.SetActive(true);
-            nameLabel.text = skill.NameKey;
-            descLabel.text = string.IsNullOrEmpty(skill.DescKey) ? skill.NameKey : skill.DescKey;
+            SkillData displaySkill = SkillRuntimeResolver.Resolve(
+                skill,
+                SkillRuntimeResolver.ResolveRuneClass(run.Player),
+                data
+            );
+            nameLabel.text = Loc.Get(skill.NameKey);
+            descLabel.text = BuildDescription(displaySkill);
             typeLabel.text = skill.SkillType.ToString();
-            mpCostLabel.text = Loc.Format("skill_mp_fmt", skill.MpCost);
-            effectLabel.text = FormatEffect(skill);
-            cooldownLabel.text = Loc.Format("skill_cooldown_fmt", skill.CooldownRounds);
+            mpCostLabel.text = Loc.Format("skill_mp_fmt", displaySkill.MpCost);
+            effectLabel.text = FormatEffect(displaySkill);
+            cooldownLabel.text = Loc.Format("skill_cooldown_fmt", displaySkill.CooldownRounds);
 
             bool owned =
                 run.Player?.OwnedSkillIds != null && run.Player.OwnedSkillIds.Contains(skillId);
@@ -149,7 +154,7 @@ namespace Tempt
                 && secondaryButtonLabel != null;
             if (!valid)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[SkillInfoPanel] 필수 UI 참조가 Inspector 에 직접 할당되어 있지 않습니다."
                 );
             }
@@ -167,7 +172,7 @@ namespace Tempt
                 || gsm.Data?.Skills == null
             )
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[SkillInfoPanel] GameSystemManager / CurrentRun.Player / Data.Skills 참조가 없습니다."
                 );
                 return false;
@@ -306,7 +311,30 @@ namespace Tempt
                 return "Heal x" + skill.HealScale;
             if (skill.ShieldScale > 0f)
                 return "Shield x" + skill.ShieldScale;
+            if (skill.SkillType == SkillType.Passive && skill.PassiveStatType != PassiveStatType.None)
+                return skill.PassiveStatType
+                    + " +"
+                    + skill.PassiveFlatValue
+                    + " / +"
+                    + UnityEngine.Mathf.RoundToInt(skill.PassivePercentValue * 100f)
+                    + "%";
             return string.Empty;
+        }
+
+        private static string BuildDescription(SkillData skill)
+        {
+            if (skill == null)
+            {
+                return string.Empty;
+            }
+
+            string text = string.IsNullOrEmpty(skill.DescKey) ? Loc.Get(skill.NameKey) : Loc.Get(skill.DescKey);
+            if (!string.IsNullOrEmpty(skill.RuntimeDescAppendKey))
+            {
+                text += "\n" + Loc.Get(skill.RuntimeDescAppendKey);
+            }
+
+            return text;
         }
 
         private static void ConfigureButton(

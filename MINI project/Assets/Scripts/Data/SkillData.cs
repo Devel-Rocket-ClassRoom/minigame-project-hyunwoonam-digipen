@@ -35,6 +35,9 @@ namespace Tempt
         /// <summary>이펙트 키.</summary>
         public string EffectKey;
 
+        /// <summary>효과음 키(Resources/Sfx/{key}). 빈값이면 무음.</summary>
+        public string SfxKey;
+
         /// <summary>실행 시간(초). 0 입력 시 ActionTimingt가 기본 0.1초 + 애니/이펙트 합산으로 보정.</summary>
         public float ActionDuration;
 
@@ -43,6 +46,18 @@ namespace Tempt
 
         /// <summary>보호막 지속 라운드. ShieldScale 이 0이면 무시.</summary>
         public int ShieldDurationRounds;
+
+        /// <summary>명시형 패시브 스탯 타입. None이면 기존 Scale 기반 패시브 해석을 사용한다.</summary>
+        public PassiveStatType PassiveStatType;
+
+        /// <summary>명시형 패시브 고정 보너스.</summary>
+        public int PassiveFlatValue;
+
+        /// <summary>명시형 패시브 비율 보너스. 0.1 = 기준 스탯 10%.</summary>
+        public float PassivePercentValue;
+
+        /// <summary>룬 보정으로 UI 설명에 덧붙일 런타임 전용 로컬라이즈 키.</summary>
+        public string RuntimeDescAppendKey;
 
         /// <inheritdoc/>
         public override void Parse(string[] cells)
@@ -78,9 +93,13 @@ namespace Tempt
                 TargetType = CsvParser.GetEnum(row, "TargetType", SkillTargetType.EnemySingle),
                 AnimationKey = CsvParser.GetString(row, "AnimationKey"),
                 EffectKey = CsvParser.GetString(row, "EffectKey"),
+                SfxKey = CsvParser.GetString(row, "SfxKey"),
                 ActionDuration = CsvParser.GetFloat(row, "ActionDuration"),
                 CooldownRounds = CsvParser.GetInt(row, "CooldownRounds"),
                 ShieldDurationRounds = CsvParser.GetInt(row, "ShieldDurationRounds", 1),
+                PassiveStatType = CsvParser.GetEnum(row, "PassiveStatType", PassiveStatType.None),
+                PassiveFlatValue = CsvParser.GetInt(row, "PassiveFlatValue"),
+                PassivePercentValue = CsvParser.GetFloat(row, "PassivePercentValue"),
             };
         }
     }
@@ -112,6 +131,28 @@ namespace Tempt
 
         /// <summary>몬스터 전용 — 플레이어/동료는 취득 불가.</summary>
         MonsterOnly,
+    }
+
+    /// <summary>패시브 스킬이 보정하는 스탯.</summary>
+    public enum PassiveStatType
+    {
+        /// <summary>명시형 패시브 보정 없음. 기존 Scale 기반 패시브 해석을 사용한다.</summary>
+        None,
+
+        /// <summary>최대 HP.</summary>
+        HP,
+
+        /// <summary>최대 MP.</summary>
+        MP,
+
+        /// <summary>공격력.</summary>
+        ATK,
+
+        /// <summary>방어력.</summary>
+        DEF,
+
+        /// <summary>속도.</summary>
+        SPD,
     }
 }
 

@@ -76,7 +76,7 @@ namespace Tempt
             GameObject prefab = Resources.Load<GameObject>(resourcePath);
             if (prefab == null)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[CompanionPrefabResolver] Companion prefab missing: Resources/" + resourcePath
                 );
             }

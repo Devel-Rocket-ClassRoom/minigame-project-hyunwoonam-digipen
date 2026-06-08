@@ -190,7 +190,7 @@ namespace Tempt
 
             if (!valid)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[GuildCompanionsController] 필수 UI 참조가 Inspector 에 직접 할당되어 있지 않습니다."
                 );
             }

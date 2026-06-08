@@ -38,7 +38,6 @@ namespace Tempt
         [SerializeField] private float nodeSpacingX = 170f;
         [SerializeField] private float edgePadding = 220f;
         [SerializeField] private Vector2 nodeHitSize = new Vector2(172f, 96f);
-        [SerializeField] private float connectionThickness = 4f;
 
         private readonly List<FloorNodeUI> spawnedNodes = new List<FloorNodeUI>();
         private readonly List<GameObject> spawnedConnections = new List<GameObject>();
@@ -57,7 +56,7 @@ namespace Tempt
             FloorMapSourceSafeIndex = sourceSafeIndex;
             if (Map == null)
             {
-                Debug.LogError("[FloorMapController] CurrentRun.FloorMap 이 없습니다.");
+                GameLog.LogError("[FloorMapController] CurrentRun.FloorMap 이 없습니다.");
                 return;
             }
 
@@ -149,7 +148,7 @@ namespace Tempt
                 return true;
             }
 
-            Debug.LogError("[FloorMapController] nodeContainer / connectionContainer / nodeTemplate / scrollRect 참조가 씬에 직접 할당되어 있지 않습니다.");
+            GameLog.LogError("[FloorMapController] nodeContainer / connectionContainer / nodeTemplate / scrollRect 참조가 씬에 직접 할당되어 있지 않습니다.");
             return false;
         }
 
@@ -311,24 +310,6 @@ namespace Tempt
                 && !IsStageFullyEroded(node.StageIndex)
                 && node.Floor > 0
                 && node.Floor <= RechallengeMaxFloor;
-        }
-
-        private void SpawnConnection(Vector2 from, Vector2 to)
-        {
-            var line = new GameObject("ConnectionLine", typeof(RectTransform), typeof(Image));
-            line.transform.SetParent(connectionContainer, false);
-            RectTransform rect = line.GetComponent<RectTransform>();
-            Image image = line.GetComponent<Image>();
-            Vector2 delta = to - from;
-            rect.anchorMin = new Vector2(0.5f, 1f);
-            rect.anchorMax = new Vector2(0.5f, 1f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = from + delta * 0.5f;
-            rect.sizeDelta = new Vector2(delta.magnitude, connectionThickness);
-            rect.localEulerAngles = new Vector3(0f, 0f, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg);
-            image.color = new Color(0.55f, 0.55f, 0.60f, 0.45f);
-            line.transform.SetAsFirstSibling();
-            spawnedConnections.Add(line);
         }
 
         private void ClearRenderedMap()

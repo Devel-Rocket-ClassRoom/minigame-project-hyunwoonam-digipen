@@ -35,7 +35,7 @@ namespace Tempt
 
             if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm))
             {
-                UnityEngine.Debug.LogError("[ConsumableSlots.TrySetSlot] GameSystemManager 참조가 없습니다.");
+                GameLog.LogError("[ConsumableSlots.TrySetSlot] GameSystemManager 참조가 없습니다.");
                 return false;
             }
 
@@ -58,7 +58,7 @@ namespace Tempt
 
             if (gsm.Data?.Items == null || !gsm.Data.Items.TryGetValue(itemId, out ItemData data))
             {
-                UnityEngine.Debug.LogError("[ConsumableSlots.TrySetSlot] 아이템 ID 없음: " + itemId);
+                GameLog.LogError("[ConsumableSlots.TrySetSlot] 아이템 ID 없음: " + itemId);
                 return false;
             }
 

@@ -5,7 +5,7 @@ namespace Tempt
     /// <summary>
     /// Boot 씬에 직접 배치된 전역 Overlay UI를 씬 전환 후에도 유지하고 글로벌 단축키와 연결한다.
     /// </summary>
-    public sealed class GlobalOverlayController : MonoBehaviour
+    public sealed partial class GlobalOverlayController : MonoBehaviour
     {
         private static GlobalOverlayController current;
 
@@ -106,7 +106,7 @@ namespace Tempt
         {
             if (!TryResolveGameOverPanel())
             {
-                Debug.LogError("[GlobalOverlayController] Boot GameOver 패널을 찾을 수 없습니다.");
+                GameLog.LogError("[GlobalOverlayController] Boot GameOver 패널을 찾을 수 없습니다.");
                 return;
             }
 
@@ -117,7 +117,7 @@ namespace Tempt
         {
             if (!TryResolveErosionGameOverPanel())
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[GlobalOverlayController] Boot ErosionGameOverRoot 패널을 찾을 수 없습니다."
                 );
                 return;
@@ -148,7 +148,7 @@ namespace Tempt
 
             if (!TryResolveQuitConfirmPopup())
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[GlobalOverlayController] ExitGamePanel / QuitConfirmPopup 을 찾을 수 없습니다."
                 );
                 return;
@@ -218,7 +218,7 @@ namespace Tempt
         {
             if (!TryResolveRunePage())
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[GlobalOverlayController] RuneTreePanel / RuneTreeView 참조가 Boot 씬에서 직접 할당되어 있지 않습니다."
                 );
                 return;
@@ -243,7 +243,7 @@ namespace Tempt
         {
             if (!TryResolveSkillPage())
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[GlobalOverlayController] SkillsPanel / MainSkillsPanel 을 찾을 수 없습니다."
                 );
                 return;
@@ -274,7 +274,7 @@ namespace Tempt
         {
             if (!TryResolveStatRunePage())
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[GlobalOverlayController] StatusPanel / StatRunePanel 을 찾을 수 없습니다."
                 );
                 return;
@@ -305,7 +305,7 @@ namespace Tempt
         {
             if (persistentRoot == null || inventoryPage == null)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[GlobalOverlayController] persistentRoot / inventoryPage 참조가 Boot 씬에서 직접 할당되어야 합니다."
                 );
                 return false;
@@ -503,255 +503,5 @@ namespace Tempt
             return statRunePageRoot != null;
         }
 
-        private static ShortcutInfoPanelController EnsureShortcutPanelController(
-            GameObject root,
-            ShortcutInfoPanelController.PageKind kind,
-            ref ShortcutInfoPanelController cached
-        )
-        {
-            if (root == null)
-            {
-                cached = null;
-                return null;
-            }
-
-            if (cached == null || cached.gameObject != root)
-            {
-                cached = root.GetComponent<ShortcutInfoPanelController>();
-                if (cached == null)
-                {
-                    cached = root.AddComponent<ShortcutInfoPanelController>();
-                }
-            }
-
-            cached.Kind = kind;
-            return cached;
-        }
-
-        private static Transform FindChildRecursiveWithDescendant(
-            Transform root,
-            string childName,
-            string descendantPath
-        )
-        {
-            if (root == null)
-            {
-                return null;
-            }
-
-            if (root.name == childName && root.Find(descendantPath) != null)
-            {
-                return root;
-            }
-
-            for (int i = 0; i < root.childCount; i++)
-            {
-                Transform found = FindChildRecursiveWithDescendant(
-                    root.GetChild(i),
-                    childName,
-                    descendantPath
-                );
-                if (found != null)
-                {
-                    return found;
-                }
-            }
-
-            return null;
-        }
-
-        private static void EnsureShortcutPanelSizing(GameObject root)
-        {
-            if (root == null)
-            {
-                return;
-            }
-
-            ResponsiveOverlayPanelSizer sizer = root.GetComponent<ResponsiveOverlayPanelSizer>();
-            if (sizer == null)
-            {
-                sizer = root.AddComponent<ResponsiveOverlayPanelSizer>();
-            }
-
-            sizer.ReferenceSize = new Vector2(980f, 610f);
-            sizer.ViewportRatio = new Vector2(0.88f, 0.88f);
-            sizer.MinSize = new Vector2(680f, 420f);
-            sizer.MaxSize = new Vector2(1180f, 740f);
-            sizer.PreserveAspect = true;
-            sizer.ApplySize();
-        }
-
-        private static Transform FindChildRecursive(Transform root, string childName)
-        {
-            if (root == null)
-            {
-                return null;
-            }
-
-            if (root.name == childName)
-            {
-                return root;
-            }
-
-            for (int i = 0; i < root.childCount; i++)
-            {
-                Transform found = FindChildRecursive(root.GetChild(i), childName);
-                if (found != null)
-                {
-                    return found;
-                }
-            }
-
-            return null;
-        }
-
-        public void HandleTogglePage(HotkeyPageId pageId)
-        {
-            if (IsSafe0RuneSelectionBlocking())
-            {
-                return;
-            }
-
-            if (pageId == HotkeyPageId.Inventory)
-            {
-                ToggleInventoryPage();
-                return;
-            }
-
-            if (pageId == HotkeyPageId.Skill)
-            {
-                ToggleSkillPage();
-                return;
-            }
-
-            if (pageId == HotkeyPageId.StatRune)
-            {
-                ToggleStatRunePage();
-                return;
-            }
-
-            if (pageId == HotkeyPageId.Rune)
-            {
-                ToggleRunePage();
-            }
-        }
-
-        private void ToggleInventoryPage()
-        {
-            if (inventoryPage.IsOpen)
-            {
-                inventoryPage.OnClose();
-            }
-            else
-            {
-                HideRunePage();
-                HideSkillPage();
-                HideStatRunePage();
-                inventoryPage.OnOpen();
-            }
-        }
-
-        private void ToggleRunePage()
-        {
-            if (IsRuneOpen)
-            {
-                HideRunePage();
-            }
-            else
-            {
-                ShowRunePage();
-            }
-        }
-
-        private void ToggleSkillPage()
-        {
-            if (IsSkillOpen)
-            {
-                HideSkillPage();
-            }
-            else
-            {
-                ShowSkillPage();
-            }
-        }
-
-        private void ToggleStatRunePage()
-        {
-            if (IsStatRuneOpen)
-            {
-                HideStatRunePage();
-            }
-            else
-            {
-                ShowStatRunePage();
-            }
-        }
-
-        private void BindRuneTree()
-        {
-            if (!TryResolveRunePage())
-            {
-                return;
-            }
-
-            if (
-                !GameSystemManager.TryGetInstance(out GameSystemManager gsm)
-                || gsm.CurrentRun?.Player?.Rune == null
-            )
-            {
-                runeTreeView.Bind(null, RuneTreeView.Mode.ViewUnlock, true);
-                return;
-            }
-
-            runeTreeView.Bind(
-                gsm.CurrentRun.Player.Rune,
-                RuneTreeView.Mode.ViewUnlock,
-                IsCombatScene()
-            );
-        }
-
-        private static bool TryCloseSafe1Panel()
-        {
-            SafeZone1FacilityMockupUI safe1Ui = FindFirstObjectByType<SafeZone1FacilityMockupUI>(
-                FindObjectsInactive.Include
-            );
-            return safe1Ui != null && safe1Ui.TryCloseTopPanel();
-        }
-
-        private static bool TryCloseSafe0Panel()
-        {
-            SafeZone0SanctuaryMockupUI safe0Ui = FindFirstObjectByType<SafeZone0SanctuaryMockupUI>(
-                FindObjectsInactive.Include
-            );
-            return safe0Ui != null && safe0Ui.TryCloseTopPanel();
-        }
-
-        private static bool IsSafe0RuneSelectionBlocking()
-        {
-            if (
-                !GameSystemManager.TryGetInstance(out GameSystemManager gsm)
-                || gsm.Scenes == null
-                || gsm.Scenes.CurrentSceneId != SceneId.Safe0
-            )
-            {
-                return false;
-            }
-
-            SafeZone0SanctuaryMockupUI safe0Ui = FindFirstObjectByType<SafeZone0SanctuaryMockupUI>(
-                FindObjectsInactive.Exclude
-            );
-            return safe0Ui != null
-                && safe0Ui.isActiveAndEnabled
-                && safe0Ui.IsRuneSelectionBlocking();
-        }
-
-        private static bool IsCombatScene()
-        {
-            return GameSystemManager.TryGetInstance(out GameSystemManager gsm)
-                && (
-                    gsm.CombatContext != null
-                    || (gsm.Scenes != null && gsm.Scenes.CurrentSceneId == SceneId.Combat)
-                );
-        }
     }
 }

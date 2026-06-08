@@ -1,0 +1,9 @@
+F:\git\MINI\.codex-build\obj\Tempt.csproj.AssemblyReference.cache
+F:\git\MINI\.codex-build\obj\Tempt.GeneratedMSBuildEditorConfig.editorconfig
+F:\git\MINI\.codex-build\obj\Tempt.csproj.CoreCompileInputs.cache
+F:\git\MINI\.codex-build\obj\Tempt.sourcelink.json
+F:\git\MINI\.codex-build\bin\Tempt.deps.json
+F:\git\MINI\.codex-build\bin\Tempt.dll
+F:\git\MINI\.codex-build\bin\Tempt.pdb
+F:\git\MINI\.codex-build\obj\Tempt.dll
+F:\git\MINI\.codex-build\obj\Tempt.pdb

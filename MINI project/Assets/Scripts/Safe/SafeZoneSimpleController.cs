@@ -7,7 +7,7 @@ namespace Tempt
     {
         protected override void SetupZoneFeatures()
         {
-            if (SafeIndex == 2)
+            if (SafeIndex == 2 && GameSystemManager.Instance.CurrentRun?.IsClearedRun != true)
             {
                 GameSystemManager.Instance.Erosion?.Activate();
             }

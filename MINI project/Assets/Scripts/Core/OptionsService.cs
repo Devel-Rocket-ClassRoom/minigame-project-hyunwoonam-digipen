@@ -10,6 +10,7 @@ namespace Tempt
     public sealed class OptionsService
     {
         private const string FileName = "options.json";
+        public const float DefaultMasterVolume = 0.7f;
 
         /// <summary>현재 적용된 옵션 스냅샷.</summary>
         public OptionSnapshot Current { get; private set; }
@@ -78,9 +79,17 @@ namespace Tempt
                 gsm.Events?.RaiseLanguageChanged(snapshot.LanguageCode);
             }
 
-            Debug.Log(
+            GameLog.Log(
                 $"[OptionsService] Applied — fullscreen={snapshot.Fullscreen} volume={snapshot.MasterVolume:F2} lang={snapshot.LanguageCode}"
             );
+        }
+
+        /// <summary>
+        /// 옵션 패널 조작 중 저장 없이 마스터 볼륨만 미리 적용한다.
+        /// </summary>
+        public void PreviewMasterVolume(float volume)
+        {
+            AudioListener.volume = Mathf.Clamp01(volume);
         }
 
         private static OptionSnapshot CreateDefault()
@@ -88,7 +97,7 @@ namespace Tempt
             return new OptionSnapshot
             {
                 LanguageCode = "ko",
-                MasterVolume = 1f,
+                MasterVolume = DefaultMasterVolume,
                 Fullscreen = true,
                 ResolutionWidth = 1920,
                 ResolutionHeight = 1080,

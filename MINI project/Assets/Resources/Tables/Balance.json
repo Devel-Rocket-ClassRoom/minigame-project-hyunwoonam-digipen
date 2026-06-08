@@ -1,16 +1,22 @@
 {
   "ExpToNextLevel": [
     0,
-    10,
-    25,
-    45,
-    70,
-    100,
-    140,
-    190,
-    250,
-    320,
-    400
+    18,
+    40,
+    65,
+    95,
+    130,
+    170,
+    220,
+    280,
+    350,
+    430,
+    520,
+    620,
+    740,
+    880,
+    1050,
+    1250
   ],
   "RunePointPerLevel": 1,
   "ErosionCurve": {
@@ -44,12 +50,45 @@
   "TavernStorageActivationCost": 30,
   "TavernStorageUpgradeBaseCost": 45,
   "TavernStorageUpgradeCostStep": 25,
-  "FirstNonPlayerActionDelaySec": 2.0,
+  "FirstNonPlayerActionDelaySec": 0.9,
   "AttackActionTimeSec": 0.3,
   "SkillActionFallbackSec": 0.5,
   "DefendActionTimeSec": 0.1,
   "CombatGeneratedSpriteSize": 64,
   "CombatGeneratedSpritePixelsPerUnit": 48.0,
   "UseErosionMonsterMultiplierCurve": false,
-  "ErosionMonsterMultiplierCurvePower": 1.0
+  "ErosionMonsterMultiplierCurvePower": 1.0,
+  "StartingLoadout": {
+    "Gold": 120,
+    "BaseMaxHP": 90,
+    "BaseMaxMP": 20,
+    "BaseATK": 10,
+    "BaseDEF": 2,
+    "BaseSPD": 10,
+    "EquipmentItemIds": [
+      101,
+      102,
+      103,
+      104
+    ],
+    "InventoryStacks": [
+      {
+        "ItemId": 1,
+        "Count": 3
+      },
+      {
+        "ItemId": 2,
+        "Count": 1
+      },
+      {
+        "ItemId": 3,
+        "Count": 1
+      }
+    ],
+    "ConsumableSlotItemIds": [
+      1,
+      2,
+      3
+    ]
+  }
 }

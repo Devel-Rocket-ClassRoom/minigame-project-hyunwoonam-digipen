@@ -61,8 +61,9 @@ namespace Tempt
                         RecoverySec = DefaultAttackRecoverySec,
                     };
                 case CombatActionType.Skill:
-                    float active = action.Skill?.Data != null && action.Skill.Data.ActionDuration > 0f
-                        ? action.Skill.Data.ActionDuration
+                    SkillData skill = action.ResolvedSkillData;
+                    float active = skill != null && skill.ActionDuration > 0f
+                        ? skill.ActionDuration
                         : GetBalanceValue(balance => balance.SkillActionFallbackSec, DefaultSkillFallbackSec);
                     return new ActionPhaseTiming
                     {

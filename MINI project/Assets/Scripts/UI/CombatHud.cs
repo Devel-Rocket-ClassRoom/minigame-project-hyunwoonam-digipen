@@ -188,7 +188,7 @@ namespace Tempt
 
             if (!valid)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[CombatHud] PlayerUI의 actionPanel/buttons/ItemUI/StatsPanel 직접 연결이 누락되었습니다."
                 );
                 return false;
@@ -198,7 +198,7 @@ namespace Tempt
             {
                 if (consumableButtons[i] == null || consumableLabels[i] == null)
                 {
-                    Debug.LogError("[CombatHud] ItemUI 슬롯 버튼/라벨 참조가 누락되었습니다: " + i);
+                    GameLog.LogError("[CombatHud] ItemUI 슬롯 버튼/라벨 참조가 누락되었습니다: " + i);
                     return false;
                 }
             }

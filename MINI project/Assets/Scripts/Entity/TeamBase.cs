@@ -84,7 +84,7 @@ namespace Tempt
             Rune.SyncTreeStateFromProgress();
             foreach (RuneNode node in Rune.Tree.AllNodes.Values)
             {
-                if (node?.Data != null && node.HasInvestment)
+                if (node?.Data != null && node.Unlocked)
                 {
                     result.Add(node.Data.Id);
                 }

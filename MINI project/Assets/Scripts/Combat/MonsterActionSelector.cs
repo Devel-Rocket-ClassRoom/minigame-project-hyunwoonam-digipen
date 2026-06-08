@@ -25,7 +25,7 @@ namespace Tempt
         /// <summary>
         /// 행동 결정. CombatFlow 가 호출.
         /// </summary>
-        public CombatAction Pick(MonsterBase monster, List<EntityBase> allies, List<EntityBase> enemies)
+        public CombatAction Pick(Monster monster, List<EntityBase> allies, List<EntityBase> enemies)
         {
             // 동작 요약:
             // - aliveAlliesBuffer / aliveEnemiesBuffer 를 비우고 살아있는 항목으로 채운다(클래스 필드 재사용).
@@ -39,7 +39,7 @@ namespace Tempt
                 return null;
             }
 
-            ActionWeightTable w = monster.ActionWeights ?? new ActionWeightTable { Attack = 80, Skill = 0, Defend = 20 };
+            ActionWeightTable w = monster.ActionWeights ?? ActionWeightTable.Default;
             candidates.Clear();
             weights.Clear();
 
@@ -71,7 +71,7 @@ namespace Tempt
             return BuildAction(monster, candidates[picked]);
         }
 
-        private CombatAction BuildAction(MonsterBase monster, Candidate c)
+        private CombatAction BuildAction(Monster monster, Candidate c)
         {
             // 동작 요약:
             // - Attack/Skill/Defend 별로 CombatAction 인스턴스 1번 alloc.
@@ -81,6 +81,7 @@ namespace Tempt
                 Actor = monster,
                 Type = c.Type,
                 Skill = c.Skill,
+                EffectiveSkillData = c.Skill?.Data,
                 Targets = new List<EntityBase>(),
                 ConsumesTurn = true,
             };
@@ -94,7 +95,7 @@ namespace Tempt
                 case CombatActionType.Skill:
                     CombatTargeting.FillByTargetType(
                         action.Targets,
-                        c.Skill.Data.TargetType,
+                        action.ResolvedSkillData.TargetType,
                         monster,
                         aliveAlliesBuffer,
                         aliveEnemiesBuffer,

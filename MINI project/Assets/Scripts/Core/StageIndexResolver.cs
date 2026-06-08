@@ -13,7 +13,7 @@ namespace Tempt
         {
             if (world?.Stages == null)
             {
-                Debug.LogError("[StageIndexResolver] WorldData.Stages 참조가 없습니다.");
+                GameLog.LogError("[StageIndexResolver] WorldData.Stages 참조가 없습니다.");
                 return 1;
             }
 
@@ -49,7 +49,7 @@ namespace Tempt
                 }
             }
 
-            Debug.LogError("[StageIndexResolver] floor 가 어떤 Stage 에도 속하지 않습니다: " + floor);
+            GameLog.LogError("[StageIndexResolver] floor 가 어떤 Stage 에도 속하지 않습니다: " + floor);
             return 1;
         }
 
@@ -58,7 +58,7 @@ namespace Tempt
         {
             if (node == null)
             {
-                Debug.LogError("[StageIndexResolver] FloorNode 참조가 없습니다.");
+                GameLog.LogError("[StageIndexResolver] FloorNode 참조가 없습니다.");
                 return 1;
             }
 
@@ -73,7 +73,7 @@ namespace Tempt
 
             if (world?.Stages == null)
             {
-                Debug.LogError("[StageIndexResolver] WorldData.Stages 참조가 없습니다.");
+                GameLog.LogError("[StageIndexResolver] WorldData.Stages 참조가 없습니다.");
                 return false;
             }
 
@@ -89,7 +89,7 @@ namespace Tempt
                 }
             }
 
-            Debug.LogError("[StageIndexResolver] stage 범위를 찾지 못했습니다: " + stage);
+            GameLog.LogError("[StageIndexResolver] stage 범위를 찾지 못했습니다: " + stage);
             return false;
         }
 

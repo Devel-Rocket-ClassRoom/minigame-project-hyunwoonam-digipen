@@ -57,6 +57,15 @@ namespace Tempt
         /// <summary>침식 변이 셰이더 키.</summary>
         public string ErosionShaderKey;
 
+        /// <summary>기본 공격 이펙트 키(Resources/Effects/{key}). 빈값이면 공용 "basicattack".</summary>
+        public string AttackEffectKey;
+
+        /// <summary>기본 공격 SPUM ATTACK 클립 인덱스. 빈값이면 0.</summary>
+        public int AttackAnimIndex;
+
+        /// <summary>기본 공격 효과음 키(Resources/Sfx/{key}). 빈값이면 무음.</summary>
+        public string AttackSfxKey;
+
         /// <inheritdoc/>
         public override void Parse(string[] cells)
         {
@@ -103,6 +112,9 @@ namespace Tempt
                 },
                 PrefabKey = CsvParser.GetString(row, "PrefabKey"),
                 ErosionShaderKey = CsvParser.GetString(row, "ErosionShaderKey"),
+                AttackEffectKey = CsvParser.GetString(row, "AttackEffectKey"),
+                AttackAnimIndex = CsvParser.GetInt(row, "AttackAnimIndex"),
+                AttackSfxKey = CsvParser.GetString(row, "AttackSfxKey"),
             };
         }
     }
@@ -118,6 +130,10 @@ namespace Tempt
 
         /// <summary>방어 가중치(기본 10).</summary>
         public int Defend;
+
+        /// <summary>데이터 누락 시 사용하는 기본 가중치. 호출마다 새 인스턴스 반환(공유 변이 방지).</summary>
+        public static ActionWeightTable Default =>
+            new ActionWeightTable { Attack = 80, Skill = 0, Defend = 20 };
     }
 }
 

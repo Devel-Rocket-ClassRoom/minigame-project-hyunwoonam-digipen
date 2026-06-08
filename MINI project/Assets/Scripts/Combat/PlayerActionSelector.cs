@@ -63,7 +63,8 @@ namespace Tempt
         )
         {
             Skill skill = player != null ? player.GetActiveSkill(slotIndex) : null;
-            if (skill == null || !skill.CanUse(player))
+            SkillData effectiveData = SkillRuntimeResolver.Resolve(skill, player);
+            if (skill == null || !skill.CanUse(player, effectiveData))
             {
                 return;
             }
@@ -73,11 +74,12 @@ namespace Tempt
                 Actor = player,
                 Type = CombatActionType.Skill,
                 Skill = skill,
+                EffectiveSkillData = effectiveData,
                 Targets = new List<EntityBase>(),
                 ConsumesTurn = true,
             };
 
-            SkillTargetType targetType = skill.Data.TargetType;
+            SkillTargetType targetType = effectiveData.TargetType;
             if (targetType == SkillTargetType.Self)
             {
                 pendingAction.Targets.Add(player);
@@ -170,7 +172,7 @@ namespace Tempt
 
             if (pendingAction.Type == CombatActionType.Skill && pendingAction.Skill?.Data != null)
             {
-                SkillTargetType targetType = pendingAction.Skill.Data.TargetType;
+                SkillTargetType targetType = pendingAction.ResolvedSkillData.TargetType;
                 if (
                     targetType == SkillTargetType.Self
                     || targetType == SkillTargetType.EnemyAll

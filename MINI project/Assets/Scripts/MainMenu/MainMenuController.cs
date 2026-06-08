@@ -15,6 +15,10 @@ namespace Tempt
         [SerializeField]
         private OptionsPage optionsPage;
 
+        /// <summary>Record(비석) 패널 컨트롤러. 최종 승리 기록 목록/플레이.</summary>
+        [SerializeField]
+        private RecordPage recordPage;
+
         [SerializeField]
         private Button newGameButton;
 
@@ -23,6 +27,10 @@ namespace Tempt
 
         [SerializeField]
         private Button optionButton;
+
+        /// <summary>Record(비석) 버튼. 선택 사항(미할당이면 비활성).</summary>
+        [SerializeField]
+        private Button recordButton;
 
         [SerializeField]
         private Button exitButton;
@@ -41,6 +49,11 @@ namespace Tempt
             continueButton.onClick.AddListener(OnClickContinue);
             optionButton.onClick.AddListener(OnClickOption);
             exitButton.onClick.AddListener(OnClickExit);
+
+            if (recordButton != null)
+            {
+                recordButton.onClick.AddListener(OnClickRecord);
+            }
         }
 
         /// <inheritdoc/>
@@ -52,6 +65,8 @@ namespace Tempt
                 continueButton.onClick.RemoveListener(OnClickContinue);
             if (optionButton != null)
                 optionButton.onClick.RemoveListener(OnClickOption);
+            if (recordButton != null)
+                recordButton.onClick.RemoveListener(OnClickRecord);
             if (exitButton != null)
                 exitButton.onClick.RemoveListener(OnClickExit);
         }
@@ -62,7 +77,7 @@ namespace Tempt
             GameSystemManager gsm = GameSystemManager.Instance;
             if (gsm == null)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[MainMenuController] GameSystemManager 인스턴스를 찾을 수 없습니다."
                 );
                 return;
@@ -82,7 +97,7 @@ namespace Tempt
             GameSystemManager gsm = GameSystemManager.Instance;
             if (gsm == null)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[MainMenuController] GameSystemManager 인스턴스를 찾을 수 없습니다."
                 );
                 return;
@@ -95,6 +110,18 @@ namespace Tempt
         public void OnClickOption()
         {
             optionsPage?.Open();
+        }
+
+        /// <summary>Record 클릭. 최종 승리 기록 목록을 연다.</summary>
+        public void OnClickRecord()
+        {
+            if (recordPage == null)
+            {
+                GameLog.LogError("[MainMenuController] RecordPage 참조가 할당되어 있지 않습니다.");
+                return;
+            }
+
+            recordPage.Open();
         }
 
         /// <summary>Exit 클릭.</summary>
@@ -119,7 +146,7 @@ namespace Tempt
                 return true;
             }
 
-            Debug.LogError("[MainMenuController] 버튼 참조가 씬에 직접 할당되어 있지 않습니다.");
+            GameLog.LogError("[MainMenuController] 버튼 참조가 씬에 직접 할당되어 있지 않습니다.");
             return false;
         }
     }

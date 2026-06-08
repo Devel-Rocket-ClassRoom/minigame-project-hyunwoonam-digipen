@@ -33,7 +33,7 @@ namespace Tempt
             {
                 if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm) || gsm.Data?.Balance == null)
                 {
-                    UnityEngine.Debug.LogError("[Item.GetFinalMod] BalanceData.EnhanceMultiplier 참조가 없습니다.");
+                    GameLog.LogError("[Item.GetFinalMod] BalanceData.EnhanceMultiplier 참조가 없습니다.");
                     return new EquipmentStatMod();
                 }
 

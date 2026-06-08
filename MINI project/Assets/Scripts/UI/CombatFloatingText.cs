@@ -17,6 +17,7 @@ namespace Tempt
         private TextMeshPro label;
         private Color baseColor;
         private float elapsed;
+        private Camera cachedCamera;
 
         /// <summary>피해 수치 표시. guarded=true 면 방어 경감 스타일(파랑 + "방어").</summary>
         public static void SpawnDamage(Vector3 worldPos, int amount, bool guarded)
@@ -91,10 +92,14 @@ namespace Tempt
 
         private void FaceCamera()
         {
-            Camera camera = Camera.main;
-            if (camera != null)
+            if (cachedCamera == null)
             {
-                transform.rotation = camera.transform.rotation;
+                cachedCamera = Camera.main;
+            }
+
+            if (cachedCamera != null)
+            {
+                transform.rotation = cachedCamera.transform.rotation;
             }
         }
     }

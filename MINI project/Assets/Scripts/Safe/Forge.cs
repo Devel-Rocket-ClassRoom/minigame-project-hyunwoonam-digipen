@@ -127,7 +127,7 @@ namespace Tempt
             balance = data?.Balance;
             if (item?.Data == null || balance == null)
             {
-                Debug.LogError("[Forge] Item.Data 또는 BalanceData 참조가 없습니다.");
+                GameLog.LogError("[Forge] Item.Data 또는 BalanceData 참조가 없습니다.");
                 return false;
             }
 
@@ -155,23 +155,12 @@ namespace Tempt
         {
             PlayerState player = run?.Player;
             EquipmentSlots equipment = player?.Equipment;
-            if (equipment == null || !IsEquipped(equipment, item))
+            if (equipment == null || !equipment.Contains(item))
             {
                 return;
             }
 
             EquipFlow.RecalculateStats(player);
-        }
-
-        private static bool IsEquipped(EquipmentSlots equipment, Item item)
-        {
-            return item != null
-                && (
-                    equipment.Weapon == item
-                    || equipment.ArmorBody == item
-                    || equipment.ArmorArms == item
-                    || equipment.ArmorLegs == item
-                );
         }
 
         private static EnhanceResult PublishResult(EnhanceResult result)

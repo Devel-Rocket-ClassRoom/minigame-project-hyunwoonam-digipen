@@ -32,7 +32,6 @@ namespace Tempt
         /// <summary>사전 로드된 씬 AsyncOperation. TransitionRoutine이 1회 소비 후 null 초기화.</summary>
         public AsyncOperation PreloadedSceneOp { get; set; }
 
-        private Coroutine loadSceneCoroutine;
         private bool hasPendingRequest;
         private SceneId pendingRequest;
 
@@ -78,7 +77,7 @@ namespace Tempt
             string sceneName = SceneNameOf(id);
             if (!Application.CanStreamedLevelBeLoaded(sceneName))
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[GameSceneManager] 빌드 세팅에 씬이 없습니다(preload): " + sceneName
                 );
                 return null;
@@ -94,7 +93,7 @@ namespace Tempt
         {
             if (safeZoneIndex < 0 || safeZoneIndex > 5)
             {
-                Debug.LogWarning(
+                GameLog.LogWarning(
                     "[GameSceneManager] SafeZone index out of range: " + safeZoneIndex
                 );
                 return;
@@ -157,7 +156,7 @@ namespace Tempt
         {
             SceneId from = CurrentSceneId;
             OnSceneWillChange?.Invoke(from, next);
-            loadSceneCoroutine = StartCoroutine(TransitionRoutine(next, from));
+            StartCoroutine(TransitionRoutine(next, from));
         }
 
         private IEnumerator TransitionRoutine(SceneId next, SceneId from)
@@ -196,7 +195,7 @@ namespace Tempt
             }
             else
             {
-                Debug.LogError("[GameSceneManager] 빌드 세팅에 씬이 없습니다: " + sceneName);
+                GameLog.LogError("[GameSceneManager] 빌드 세팅에 씬이 없습니다: " + sceneName);
                 yield return null;
             }
 
@@ -211,7 +210,7 @@ namespace Tempt
 
             if (ActiveController == null)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[GameSceneManager] SceneControllerBase missing in scene: " + sceneName
                 );
             }
@@ -221,7 +220,6 @@ namespace Tempt
             }
 
             OnSceneChanged?.Invoke(from, next);
-            loadSceneCoroutine = null;
 
             SetState(SceneFsmState.Running);
             PumpPendingTransition();
@@ -231,7 +229,7 @@ namespace Tempt
         {
             if (controller == null)
             {
-                Debug.LogError("[GameSceneManager] 등록할 SceneControllerBase가 null입니다.");
+                GameLog.LogError("[GameSceneManager] 등록할 SceneControllerBase가 null입니다.");
                 return;
             }
 

@@ -62,7 +62,7 @@ namespace Tempt
         {
             if (controller == null)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[SafeZone0SanctuaryMockupUI] Safe0Controller 참조가 씬에 직접 할당되어 있지 않습니다."
                 );
                 return;
@@ -129,7 +129,7 @@ namespace Tempt
         {
             if (controller == null)
             {
-                Debug.LogError(
+                GameLog.LogError(
                     "[SafeZone0SanctuaryMockupUI] Safe0Controller 참조가 씬에 직접 할당되어 있지 않습니다."
                 );
                 return;

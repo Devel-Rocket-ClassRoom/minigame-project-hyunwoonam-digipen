@@ -32,6 +32,7 @@ namespace Tempt
 
         private string pendingLanguage;
         private bool openingPanel;
+        private bool isPopulating;
 
         private static readonly Color ActiveLangColor = new Color(1f, 0.85f, 0.2f);
         private static readonly Color InactiveLangColor = Color.white;
@@ -52,6 +53,16 @@ namespace Tempt
         private void OnEnable()
         {
             WireButtons();
+            WireVolumePreview();
+        }
+
+        private void OnDisable()
+        {
+            RestoreSavedVolumePreview();
+            if (volumeSlider != null)
+            {
+                volumeSlider.onValueChanged.RemoveListener(OnVolumeSliderChanged);
+            }
         }
 
         /// <summary>패널을 열고 현재 옵션 값으로 UI를 초기화한다.</summary>
@@ -71,6 +82,7 @@ namespace Tempt
         /// <summary>패널을 닫는다. 미적용 변경은 버려진다.</summary>
         public void Close()
         {
+            RestoreSavedVolumePreview();
             if (panelRoot != null)
             {
                 panelRoot.SetActive(false);
@@ -93,7 +105,9 @@ namespace Tempt
             {
                 LanguageCode = pendingLanguage ?? current?.LanguageCode ?? "ko",
                 MasterVolume =
-                    volumeSlider != null ? volumeSlider.value : current?.MasterVolume ?? 1f,
+                    volumeSlider != null
+                        ? volumeSlider.value
+                        : current?.MasterVolume ?? OptionsService.DefaultMasterVolume,
                 Fullscreen = isFullscreen,
                 ResolutionWidth = isFullscreen ? (current?.ResolutionWidth ?? 1920) : 1280,
                 ResolutionHeight = isFullscreen ? (current?.ResolutionHeight ?? 1080) : 720,
@@ -122,7 +136,9 @@ namespace Tempt
 
             if (volumeSlider != null)
             {
+                isPopulating = true;
                 volumeSlider.SetValueWithoutNotify(opts.MasterVolume);
+                isPopulating = false;
             }
 
             pendingLanguage = opts.LanguageCode;
@@ -153,6 +169,45 @@ namespace Tempt
             {
                 englishButton.onClick.RemoveListener(SelectEnglish);
                 englishButton.onClick.AddListener(SelectEnglish);
+            }
+        }
+
+        private void WireVolumePreview()
+        {
+            if (volumeSlider == null)
+            {
+                return;
+            }
+
+            volumeSlider.onValueChanged.RemoveListener(OnVolumeSliderChanged);
+            volumeSlider.onValueChanged.AddListener(OnVolumeSliderChanged);
+        }
+
+        private void OnVolumeSliderChanged(float value)
+        {
+            if (isPopulating)
+            {
+                return;
+            }
+
+            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            {
+                gsm.Options?.PreviewMasterVolume(value);
+            }
+            else
+            {
+                AudioListener.volume = Mathf.Clamp01(value);
+            }
+        }
+
+        private void RestoreSavedVolumePreview()
+        {
+            if (
+                GameSystemManager.TryGetInstance(out GameSystemManager gsm)
+                && gsm.Options?.Current != null
+            )
+            {
+                gsm.Options.PreviewMasterVolume(gsm.Options.Current.MasterVolume);
             }
         }
 

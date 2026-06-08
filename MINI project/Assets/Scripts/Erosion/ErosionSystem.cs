@@ -71,7 +71,7 @@ namespace Tempt
 
             if (Balance?.ErosionCurve == null)
             {
-                UnityEngine.Debug.LogError(
+                GameLog.LogError(
                     "[ErosionSystem] BalanceData.ErosionCurve 참조가 없습니다."
                 );
                 return;
@@ -162,7 +162,7 @@ namespace Tempt
 
             if (Balance == null)
             {
-                UnityEngine.Debug.LogError("[ErosionSystem] BalanceData 참조가 없습니다.");
+                GameLog.LogError("[ErosionSystem] BalanceData 참조가 없습니다.");
                 return 1f;
             }
 

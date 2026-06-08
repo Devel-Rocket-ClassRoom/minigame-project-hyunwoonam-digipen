@@ -1,0 +1,10 @@
+F:\git\MINI\.codex-build\bin\Tempt.Tests.EditMode.deps.json
+F:\git\MINI\.codex-build\bin\Tempt.Tests.EditMode.dll
+F:\git\MINI\.codex-build\bin\Tempt.Tests.EditMode.pdb
+F:\git\MINI\.codex-build\obj\Tempt.Tests.EditMode.csproj.AssemblyReference.cache
+F:\git\MINI\.codex-build\obj\Tempt.Tests.EditMode.GeneratedMSBuildEditorConfig.editorconfig
+F:\git\MINI\.codex-build\obj\Tempt.Tests.EditMode.csproj.CoreCompileInputs.cache
+F:\git\MINI\.codex-build\obj\Tempt.Tests.EditMode.sourcelink.json
+F:\git\MINI\.codex-build\obj\Tempt.Te.81602287.Up2Date
+F:\git\MINI\.codex-build\obj\Tempt.Tests.EditMode.dll
+F:\git\MINI\.codex-build\obj\Tempt.Tests.EditMode.pdb

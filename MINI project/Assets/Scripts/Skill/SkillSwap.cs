@@ -25,7 +25,7 @@ namespace Tempt
 
             if (skillId == 0)
             {
-                UnityEngine.Debug.LogError("[SkillSwap.TrySetSlot] skillId == 0. 빈 슬롯은 TryClearSlot 을 사용해야 합니다.");
+                GameLog.LogError("[SkillSwap.TrySetSlot] skillId == 0. 빈 슬롯은 TryClearSlot 을 사용해야 합니다.");
                 return false;
             }
 
@@ -36,7 +36,7 @@ namespace Tempt
 
             if (!data.Skills.TryGetValue(skillId, out SkillData skill) || skill == null)
             {
-                UnityEngine.Debug.LogError("[SkillSwap.TrySetSlot] 스킬 ID 없음: " + skillId);
+                GameLog.LogError("[SkillSwap.TrySetSlot] 스킬 ID 없음: " + skillId);
                 return false;
             }
 
@@ -65,7 +65,7 @@ namespace Tempt
         {
             if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm))
             {
-                UnityEngine.Debug.LogError("[SkillSwap.TrySetSlot] GameSystemManager 참조가 없습니다.");
+                GameLog.LogError("[SkillSwap.TrySetSlot] GameSystemManager 참조가 없습니다.");
                 return false;
             }
 
@@ -107,7 +107,7 @@ namespace Tempt
         {
             if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm))
             {
-                UnityEngine.Debug.LogError("[SkillSwap.TryClearSlot] GameSystemManager 참조가 없습니다.");
+                GameLog.LogError("[SkillSwap.TryClearSlot] GameSystemManager 참조가 없습니다.");
                 return false;
             }
 
@@ -142,26 +142,26 @@ namespace Tempt
             state = null;
             if (slotIndex < 0 || slotIndex >= 2)
             {
-                UnityEngine.Debug.LogError("[SkillSwap] slotIndex 범위 오류: " + slotIndex);
+                GameLog.LogError("[SkillSwap] slotIndex 범위 오류: " + slotIndex);
                 return false;
             }
 
             if (run?.Player == null)
             {
-                UnityEngine.Debug.LogError("[SkillSwap] run / Player 참조가 없습니다.");
+                GameLog.LogError("[SkillSwap] run / Player 참조가 없습니다.");
                 return false;
             }
 
             if (data?.Skills == null)
             {
-                UnityEngine.Debug.LogError("[SkillSwap] DataManager.Skills 참조가 없습니다.");
+                GameLog.LogError("[SkillSwap] DataManager.Skills 참조가 없습니다.");
                 return false;
             }
 
             state = run.Player;
             if (state.ActiveSlotSkillIds == null || state.ActiveSlotSkillIds.Length != 2)
             {
-                UnityEngine.Debug.LogError("[SkillSwap] PlayerState.ActiveSlotSkillIds 가 없거나 길이가 2가 아닙니다.");
+                GameLog.LogError("[SkillSwap] PlayerState.ActiveSlotSkillIds 가 없거나 길이가 2가 아닙니다.");
                 return false;
             }
 

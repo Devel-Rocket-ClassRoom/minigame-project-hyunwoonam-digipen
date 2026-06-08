@@ -397,7 +397,7 @@ namespace Tempt
                 && detailPanel != null;
             if (!valid)
             {
-                Debug.LogError("[RuneTreeView] Required UI references are not assigned.");
+                GameLog.LogError("[RuneTreeView] Required UI references are not assigned.");
             }
 
             return valid;
