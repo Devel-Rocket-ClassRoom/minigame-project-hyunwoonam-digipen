@@ -3,365 +3,362 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Tempt
+/// <summary>
+/// 게임 씬 전환 FSM. Unity 기본 SceneManager 위에서 동작하며,
+/// 씬별 컨트롤러(SceneControllerBase 파생)의 라이프사이클을 관리한다.
+/// </summary>
+public sealed class GameSceneManager : MonoBehaviour
 {
+    /// <summary>현재 활성 씬 ID.</summary>
+    public SceneId CurrentSceneId { get; private set; }
+
+    /// <summary>현재 씬 전환 FSM 상태.</summary>
+    public SceneFsmState State { get; private set; } = SceneFsmState.Idle;
+
+    /// <summary>현재 활성 씬 컨트롤러(없으면 null).</summary>
+    public SceneControllerBase ActiveController { get; private set; }
+
+    /// <summary>전환 직전 발생. (from, to)</summary>
+    public event Action<SceneId, SceneId> OnSceneWillChange;
+
+    /// <summary>전환 완료 후 발생. (from, to)</summary>
+    public event Action<SceneId, SceneId> OnSceneChanged;
+
+    /// <summary>FSM 상태 변경 시 발생. (from, to)</summary>
+    public event Action<SceneFsmState, SceneFsmState> OnSceneFsmStateChanged;
+
+    /// <summary>사전 로드된 씬 AsyncOperation. TransitionRoutine이 1회 소비 후 null 초기화.</summary>
+    public AsyncOperation PreloadedSceneOp { get; set; }
+
+    private bool hasPendingRequest;
+    private SceneId pendingRequest;
+
     /// <summary>
-    /// 게임 씬 전환 FSM. Unity 기본 SceneManager 위에서 동작하며,
-    /// 씬별 컨트롤러(SceneControllerBase 파생)의 라이프사이클을 관리한다.
+    /// 임의 씬으로 전환을 요청한다.
     /// </summary>
-    public sealed class GameSceneManager : MonoBehaviour
+    /// <param name="next">전환할 씬 ID.</param>
+    public void RequestScene(SceneId next)
     {
-        /// <summary>현재 활성 씬 ID.</summary>
-        public SceneId CurrentSceneId { get; private set; }
-
-        /// <summary>현재 씬 전환 FSM 상태.</summary>
-        public SceneFsmState State { get; private set; } = SceneFsmState.Idle;
-
-        /// <summary>현재 활성 씬 컨트롤러(없으면 null).</summary>
-        public SceneControllerBase ActiveController { get; private set; }
-
-        /// <summary>전환 직전 발생. (from, to)</summary>
-        public event Action<SceneId, SceneId> OnSceneWillChange;
-
-        /// <summary>전환 완료 후 발생. (from, to)</summary>
-        public event Action<SceneId, SceneId> OnSceneChanged;
-
-        /// <summary>FSM 상태 변경 시 발생. (from, to)</summary>
-        public event Action<SceneFsmState, SceneFsmState> OnSceneFsmStateChanged;
-
-        /// <summary>사전 로드된 씬 AsyncOperation. TransitionRoutine이 1회 소비 후 null 초기화.</summary>
-        public AsyncOperation PreloadedSceneOp { get; set; }
-
-        private bool hasPendingRequest;
-        private SceneId pendingRequest;
-
-        /// <summary>
-        /// 임의 씬으로 전환을 요청한다.
-        /// </summary>
-        /// <param name="next">전환할 씬 ID.</param>
-        public void RequestScene(SceneId next)
+        if (State != SceneFsmState.Idle && State != SceneFsmState.Running)
         {
-            if (State != SceneFsmState.Idle && State != SceneFsmState.Running)
-            {
-                pendingRequest = next;
-                hasPendingRequest = true;
-                return;
-            }
-
-            if (
-                CurrentSceneId == next
-                && ActiveController != null
-                && State == SceneFsmState.Running
-            )
-            {
-                ActiveController.OnEnter();
-                return;
-            }
-
-            StartTransition(next);
+            pendingRequest = next;
+            hasPendingRequest = true;
+            return;
         }
 
-        /// <summary>메인 메뉴로 이동.</summary>
-        public void LoadMainMenu()
+        if (
+            CurrentSceneId == next
+            && ActiveController != null
+            && State == SceneFsmState.Running
+        )
         {
-            RequestScene(SceneId.MainMenu);
+            ActiveController.OnEnter();
+            return;
         }
 
-        /// <summary>
-        /// 지정한 씬을 allowSceneActivation=false 상태로 미리 로드한다.
-        /// 반환된 AsyncOperation을 PreloadedSceneOp에 설정 후 RequestScene 호출 시 TransitionRoutine이 소비한다.
-        /// 씬이 빌드 세팅에 없으면 null 반환.
-        /// </summary>
-        public AsyncOperation PreloadSceneAsync(SceneId id)
+        StartTransition(next);
+    }
+
+    /// <summary>메인 메뉴로 이동.</summary>
+    public void LoadMainMenu()
+    {
+        RequestScene(SceneId.MainMenu);
+    }
+
+    /// <summary>
+    /// 지정한 씬을 allowSceneActivation=false 상태로 미리 로드한다.
+    /// 반환된 AsyncOperation을 PreloadedSceneOp에 설정 후 RequestScene 호출 시 TransitionRoutine이 소비한다.
+    /// 씬이 빌드 세팅에 없으면 null 반환.
+    /// </summary>
+    public AsyncOperation PreloadSceneAsync(SceneId id)
+    {
+        string sceneName = SceneNameOf(id);
+        if (!Application.CanStreamedLevelBeLoaded(sceneName))
         {
-            string sceneName = SceneNameOf(id);
-            if (!Application.CanStreamedLevelBeLoaded(sceneName))
-            {
-                GameLog.LogError(
-                    "[GameSceneManager] 빌드 세팅에 씬이 없습니다(preload): " + sceneName
-                );
-                return null;
-            }
+            GameLog.LogError(
+                "[GameSceneManager] 빌드 세팅에 씬이 없습니다(preload): " + sceneName
+            );
+            return null;
+        }
+        AsyncOperation op = SceneManager.LoadSceneAsync(sceneName);
+        op.allowSceneActivation = false;
+        return op;
+    }
+
+    /// <summary>지정한 안전지대로 이동.</summary>
+    /// <param name="safeZoneIndex">0~5.</param>
+    public void LoadSafeZone(int safeZoneIndex)
+    {
+        if (safeZoneIndex < 0 || safeZoneIndex > 5)
+        {
+            GameLog.LogWarning(
+                "[GameSceneManager] SafeZone index out of range: " + safeZoneIndex
+            );
+            return;
+        }
+
+        RequestScene((SceneId)((int)SceneId.Safe0 + safeZoneIndex));
+    }
+
+    /// <summary>플로어 맵으로 이동.</summary>
+    public void LoadFloorMap()
+    {
+        RequestScene(SceneId.FloorMap);
+    }
+
+    /// <summary>전투 씬으로 이동.</summary>
+    public void LoadCombat()
+    {
+        RequestScene(SceneId.Combat);
+    }
+
+    /// <summary>
+    /// 씬 ID에서 Unity 씬 이름을 얻는다.
+    /// </summary>
+    private string SceneNameOf(SceneId id)
+    {
+        switch (id)
+        {
+            case SceneId.Boot:
+                return "Boot";
+            case SceneId.MainMenu:
+                return "MainMenu";
+            case SceneId.Safe0:
+                return "Safe0";
+            case SceneId.Safe1:
+                return "Safe1";
+            case SceneId.Safe2:
+                return "Safe2";
+            case SceneId.Safe3:
+                return MineSceneOr("Safe3");
+            case SceneId.Safe4:
+                return MineSceneOr("Safe4");
+            case SceneId.Safe5:
+                return MineSceneOr("Safe5");
+            case SceneId.FloorMap:
+                return "FloorMap";
+            case SceneId.Combat:
+                return "Combat";
+            default:
+                throw new ArgumentOutOfRangeException(nameof(id), id, "Unknown scene id");
+        }
+    }
+
+    private static string MineSceneOr(string fallback)
+    {
+        return Application.CanStreamedLevelBeLoaded("Mine") ? "Mine" : fallback;
+    }
+
+    // Guid5 §6 2026-05-29 — 씬 전환은 명시 FSM과 1슬롯 pending 요청으로만 처리한다.
+    private void StartTransition(SceneId next)
+    {
+        SceneId from = CurrentSceneId;
+        OnSceneWillChange?.Invoke(from, next);
+        StartCoroutine(TransitionRoutine(next, from));
+    }
+
+    private IEnumerator TransitionRoutine(SceneId next, SceneId from)
+    {
+        SetState(SceneFsmState.Exiting);
+
+        ActiveController?.OnExit();
+        ActiveController = null;
+
+        SetState(SceneFsmState.Unloading);
+
+        yield return null;
+
+        SetState(SceneFsmState.Loading);
+        CurrentSceneId = next;
+
+        string sceneName = SceneNameOf(next);
+
+        AsyncOperation preloaded = PreloadedSceneOp;
+        PreloadedSceneOp = null;
+
+        if (preloaded != null)
+        {
+            preloaded.allowSceneActivation = true;
+            while (!preloaded.isDone)
+                yield return null;
+        }
+        else if (Application.CanStreamedLevelBeLoaded(sceneName))
+        {
             AsyncOperation op = SceneManager.LoadSceneAsync(sceneName);
-            op.allowSceneActivation = false;
-            return op;
-        }
 
-        /// <summary>지정한 안전지대로 이동.</summary>
-        /// <param name="safeZoneIndex">0~5.</param>
-        public void LoadSafeZone(int safeZoneIndex)
-        {
-            if (safeZoneIndex < 0 || safeZoneIndex > 5)
+            while (op != null && !op.isDone)
             {
-                GameLog.LogWarning(
-                    "[GameSceneManager] SafeZone index out of range: " + safeZoneIndex
-                );
-                return;
-            }
-
-            RequestScene((SceneId)((int)SceneId.Safe0 + safeZoneIndex));
-        }
-
-        /// <summary>플로어 맵으로 이동.</summary>
-        public void LoadFloorMap()
-        {
-            RequestScene(SceneId.FloorMap);
-        }
-
-        /// <summary>전투 씬으로 이동.</summary>
-        public void LoadCombat()
-        {
-            RequestScene(SceneId.Combat);
-        }
-
-        /// <summary>
-        /// 씬 ID에서 Unity 씬 이름을 얻는다.
-        /// </summary>
-        private string SceneNameOf(SceneId id)
-        {
-            switch (id)
-            {
-                case SceneId.Boot:
-                    return "Boot";
-                case SceneId.MainMenu:
-                    return "MainMenu";
-                case SceneId.Safe0:
-                    return "Safe0";
-                case SceneId.Safe1:
-                    return "Safe1";
-                case SceneId.Safe2:
-                    return "Safe2";
-                case SceneId.Safe3:
-                    return MineSceneOr("Safe3");
-                case SceneId.Safe4:
-                    return MineSceneOr("Safe4");
-                case SceneId.Safe5:
-                    return MineSceneOr("Safe5");
-                case SceneId.FloorMap:
-                    return "FloorMap";
-                case SceneId.Combat:
-                    return "Combat";
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(id), id, "Unknown scene id");
-            }
-        }
-
-        private static string MineSceneOr(string fallback)
-        {
-            return Application.CanStreamedLevelBeLoaded("Mine") ? "Mine" : fallback;
-        }
-
-        // Guid5 §6 2026-05-29 — 씬 전환은 명시 FSM과 1슬롯 pending 요청으로만 처리한다.
-        private void StartTransition(SceneId next)
-        {
-            SceneId from = CurrentSceneId;
-            OnSceneWillChange?.Invoke(from, next);
-            StartCoroutine(TransitionRoutine(next, from));
-        }
-
-        private IEnumerator TransitionRoutine(SceneId next, SceneId from)
-        {
-            SetState(SceneFsmState.Exiting);
-
-            ActiveController?.OnExit();
-            ActiveController = null;
-
-            SetState(SceneFsmState.Unloading);
-
-            yield return null;
-
-            SetState(SceneFsmState.Loading);
-            CurrentSceneId = next;
-
-            string sceneName = SceneNameOf(next);
-
-            AsyncOperation preloaded = PreloadedSceneOp;
-            PreloadedSceneOp = null;
-
-            if (preloaded != null)
-            {
-                preloaded.allowSceneActivation = true;
-                while (!preloaded.isDone)
-                    yield return null;
-            }
-            else if (Application.CanStreamedLevelBeLoaded(sceneName))
-            {
-                AsyncOperation op = SceneManager.LoadSceneAsync(sceneName);
-
-                while (op != null && !op.isDone)
-                {
-                    yield return null;
-                }
-            }
-            else
-            {
-                GameLog.LogError("[GameSceneManager] 빌드 세팅에 씬이 없습니다: " + sceneName);
                 yield return null;
             }
-
-            Scene loadedScene = SceneManager.GetSceneByName(sceneName);
-
-            if (ActiveController == null || ActiveController.gameObject.scene != loadedScene)
-            {
-                ActiveController = ResolveControllerInScene(loadedScene);
-            }
-
-            SetState(SceneFsmState.Entering);
-
-            if (ActiveController == null)
-            {
-                GameLog.LogError(
-                    "[GameSceneManager] SceneControllerBase missing in scene: " + sceneName
-                );
-            }
-            else
-            {
-                ActiveController.OnEnter();
-            }
-
-            OnSceneChanged?.Invoke(from, next);
-
-            SetState(SceneFsmState.Running);
-            PumpPendingTransition();
+        }
+        else
+        {
+            GameLog.LogError("[GameSceneManager] 빌드 세팅에 씬이 없습니다: " + sceneName);
+            yield return null;
         }
 
-        public void RegisterActiveController(SceneControllerBase controller)
-        {
-            if (controller == null)
-            {
-                GameLog.LogError("[GameSceneManager] 등록할 SceneControllerBase가 null입니다.");
-                return;
-            }
+        Scene loadedScene = SceneManager.GetSceneByName(sceneName);
 
-            ActiveController = controller;
+        if (ActiveController == null || ActiveController.gameObject.scene != loadedScene)
+        {
+            ActiveController = ResolveControllerInScene(loadedScene);
         }
 
-        private static SceneControllerBase ResolveControllerInScene(Scene scene)
+        SetState(SceneFsmState.Entering);
+
+        if (ActiveController == null)
         {
-            if (!scene.IsValid() || !scene.isLoaded)
-            {
-                return null;
-            }
+            GameLog.LogError(
+                "[GameSceneManager] SceneControllerBase missing in scene: " + sceneName
+            );
+        }
+        else
+        {
+            ActiveController.OnEnter();
+        }
 
-            GameObject[] roots = scene.GetRootGameObjects();
-            for (int i = 0; i < roots.Length; i++)
-            {
-                SceneControllerBase controller = roots[i]
-                    .GetComponentInChildren<SceneControllerBase>(true);
+        OnSceneChanged?.Invoke(from, next);
 
-                if (controller != null)
-                {
-                    return controller;
-                }
-            }
+        SetState(SceneFsmState.Running);
+        PumpPendingTransition();
+    }
 
+    public void RegisterActiveController(SceneControllerBase controller)
+    {
+        if (controller == null)
+        {
+            GameLog.LogError("[GameSceneManager] 등록할 SceneControllerBase가 null입니다.");
+            return;
+        }
+
+        ActiveController = controller;
+    }
+
+    private static SceneControllerBase ResolveControllerInScene(Scene scene)
+    {
+        if (!scene.IsValid() || !scene.isLoaded)
+        {
             return null;
         }
 
-        private void PumpPendingTransition()
+        GameObject[] roots = scene.GetRootGameObjects();
+        for (int i = 0; i < roots.Length; i++)
         {
-            if (!hasPendingRequest)
+            SceneControllerBase controller = roots[i]
+                .GetComponentInChildren<SceneControllerBase>(true);
+
+            if (controller != null)
             {
-                return;
+                return controller;
             }
-
-            SceneId next = pendingRequest;
-            hasPendingRequest = false;
-
-            StartTransition(next);
         }
 
-        private void SetState(SceneFsmState next)
-        {
-            if (State == next)
-            {
-                return;
-            }
+        return null;
+    }
 
-            SceneFsmState previous = State;
-            State = next;
-            OnSceneFsmStateChanged?.Invoke(previous, next);
+    private void PumpPendingTransition()
+    {
+        if (!hasPendingRequest)
+        {
+            return;
         }
 
-        private void Update()
-        {
-            ActiveController?.OnSceneUpdate();
+        SceneId next = pendingRequest;
+        hasPendingRequest = false;
 
-            if (State == SceneFsmState.Idle || State == SceneFsmState.Running)
-            {
-                PumpPendingTransition();
-            }
+        StartTransition(next);
+    }
+
+    private void SetState(SceneFsmState next)
+    {
+        if (State == next)
+        {
+            return;
+        }
+
+        SceneFsmState previous = State;
+        State = next;
+        OnSceneFsmStateChanged?.Invoke(previous, next);
+    }
+
+    private void Update()
+    {
+        ActiveController?.OnSceneUpdate();
+
+        if (State == SceneFsmState.Idle || State == SceneFsmState.Running)
+        {
+            PumpPendingTransition();
+        }
+    }
+}
+
+/// <summary>씬 전환 FSM 상태.</summary>
+public enum SceneFsmState
+{
+    Idle,
+    Loading,
+    Entering,
+    Running,
+    Exiting,
+    Unloading,
+}
+
+/// <summary>씬 ID 열거.</summary>
+public enum SceneId
+{
+    /// <summary>부팅 씬(선택, 비어 있을 수 있음).</summary>
+    Boot,
+
+    /// <summary>메인 메뉴.</summary>
+    MainMenu,
+
+    /// <summary>안전지대 0 (시작/비석/묘비/최초 룬 선택).</summary>
+    Safe0,
+
+    /// <summary>안전지대 1 (주점/상점/길드/대장간/신전).</summary>
+    Safe1,
+
+    /// <summary>안전지대 2 (성소 - 침식 관리).</summary>
+    Safe2,
+
+    /// <summary>안전지대 3 (광산1).</summary>
+    Safe3,
+
+    /// <summary>안전지대 4 (광산2).</summary>
+    Safe4,
+
+    /// <summary>안전지대 5 (광산3).</summary>
+    Safe5,
+
+    /// <summary>플로어 맵 (노드 스크롤).</summary>
+    FloorMap,
+
+    /// <summary>전투 씬.</summary>
+    Combat,
+}
+
+/// <summary>
+/// 모든 씬 컨트롤러의 베이스. GameSceneManagert가 라이프사이클을 호출한다.
+/// </summary>
+public abstract class SceneControllerBase : MonoBehaviour
+{
+    protected virtual void Awake()
+    {
+        if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Scenes != null)
+        {
+            gsm.Scenes.RegisterActiveController(this);
         }
     }
 
-    /// <summary>씬 전환 FSM 상태.</summary>
-    public enum SceneFsmState
+    /// <summary>씬 진입 직후 호출.</summary>
+    public abstract void OnEnter();
+
+    /// <summary>씬 이탈 직전 호출.</summary>
+    public abstract void OnExit();
+
+    /// <summary>매 프레임 호출(필요한 컨트롤러만 override).</summary>
+    public virtual void OnSceneUpdate()
     {
-        Idle,
-        Loading,
-        Entering,
-        Running,
-        Exiting,
-        Unloading,
-    }
-
-    /// <summary>씬 ID 열거.</summary>
-    public enum SceneId
-    {
-        /// <summary>부팅 씬(선택, 비어 있을 수 있음).</summary>
-        Boot,
-
-        /// <summary>메인 메뉴.</summary>
-        MainMenu,
-
-        /// <summary>안전지대 0 (시작/비석/묘비/최초 룬 선택).</summary>
-        Safe0,
-
-        /// <summary>안전지대 1 (주점/상점/길드/대장간/신전).</summary>
-        Safe1,
-
-        /// <summary>안전지대 2 (성소 - 침식 관리).</summary>
-        Safe2,
-
-        /// <summary>안전지대 3 (광산1).</summary>
-        Safe3,
-
-        /// <summary>안전지대 4 (광산2).</summary>
-        Safe4,
-
-        /// <summary>안전지대 5 (광산3).</summary>
-        Safe5,
-
-        /// <summary>플로어 맵 (노드 스크롤).</summary>
-        FloorMap,
-
-        /// <summary>전투 씬.</summary>
-        Combat,
-    }
-
-    /// <summary>
-    /// 모든 씬 컨트롤러의 베이스. GameSceneManagert가 라이프사이클을 호출한다.
-    /// </summary>
-    public abstract class SceneControllerBase : MonoBehaviour
-    {
-        protected virtual void Awake()
-        {
-            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm) && gsm.Scenes != null)
-            {
-                gsm.Scenes.RegisterActiveController(this);
-            }
-        }
-
-        /// <summary>씬 진입 직후 호출.</summary>
-        public abstract void OnEnter();
-
-        /// <summary>씬 이탈 직전 호출.</summary>
-        public abstract void OnExit();
-
-        /// <summary>매 프레임 호출(필요한 컨트롤러만 override).</summary>
-        public virtual void OnSceneUpdate()
-        {
-            // 동작 요약: 기본 구현 없음.
-        }
+        // 동작 요약: 기본 구현 없음.
     }
 }

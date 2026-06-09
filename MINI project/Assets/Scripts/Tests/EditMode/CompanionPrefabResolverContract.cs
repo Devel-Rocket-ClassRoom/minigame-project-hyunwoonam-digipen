@@ -1,17 +1,14 @@
-namespace Tempt
+internal static class CompanionPrefabResolverContract
 {
-    internal static class CompanionPrefabResolverContract
+    public static string DealerResourcePath()
     {
-        public static string DealerResourcePath()
-        {
-            return CompanionPrefabResolver.ToResourcePath("Dealer/CPN_Dealer_T01_Kael");
-        }
+        return CompanionPrefabResolver.ToResourcePath("Dealer/CPN_Dealer_T01_Kael");
+    }
 
-        public static string AlreadyRootedResourcePath()
-        {
-            return CompanionPrefabResolver.ToResourcePath(
-                "Companions/Dealer/CPN_Dealer_T01_Kael.prefab"
-            );
-        }
+    public static string AlreadyRootedResourcePath()
+    {
+        return CompanionPrefabResolver.ToResourcePath(
+            "Companions/Dealer/CPN_Dealer_T01_Kael.prefab"
+        );
     }
 }

@@ -1,194 +1,191 @@
-namespace Tempt
+/// <summary>
+/// 보관함. 주점에서 구매 후 활성. 인벤토리와 별도 저장.
+/// </summary>
+public sealed class LockerState : StackableContainer
 {
-    /// <summary>
-    /// 보관함. 주점에서 구매 후 활성. 인벤토리와 별도 저장.
-    /// </summary>
-    public sealed class LockerState : StackableContainer
+    public const int InitialCapacity = 16;
+    public const int CapacityStep = 4;
+    public const int MaxCapacity = 24;
+
+    /// <summary>활성화 여부(주점에서 구매 시 true).</summary>
+    public bool Unlocked;
+
+    /// <summary>현재 보관함 슬롯 수. 비활성 상태는 0.</summary>
+    public int Capacity;
+
+    public int UsedSlots => StackableItems.Count + EquipItems.Count;
+
+    public bool IsMaxCapacity => Unlocked && Capacity >= MaxCapacity;
+
+    /// <summary>주점에서 보관함 구매 시 활성화.</summary>
+    public void Unlock()
     {
-        public const int InitialCapacity = 16;
-        public const int CapacityStep = 4;
-        public const int MaxCapacity = 24;
-
-        /// <summary>활성화 여부(주점에서 구매 시 true).</summary>
-        public bool Unlocked;
-
-        /// <summary>현재 보관함 슬롯 수. 비활성 상태는 0.</summary>
-        public int Capacity;
-
-        public int UsedSlots => StackableItems.Count + EquipItems.Count;
-
-        public bool IsMaxCapacity => Unlocked && Capacity >= MaxCapacity;
-
-        /// <summary>주점에서 보관함 구매 시 활성화.</summary>
-        public void Unlock()
+        if (!Unlocked)
         {
-            if (!Unlocked)
-            {
-                Unlocked = true;
-                Capacity = InitialCapacity;
-            }
+            Unlocked = true;
+            Capacity = InitialCapacity;
+        }
+    }
+
+    public bool Upgrade()
+    {
+        NormalizeCapacity();
+        if (!Unlocked || IsMaxCapacity)
+        {
+            return false;
         }
 
-        public bool Upgrade()
-        {
-            NormalizeCapacity();
-            if (!Unlocked || IsMaxCapacity)
-            {
-                return false;
-            }
+        Capacity = System.Math.Min(MaxCapacity, Capacity + CapacityStep);
+        return true;
+    }
 
-            Capacity = System.Math.Min(MaxCapacity, Capacity + CapacityStep);
-            return true;
+    public void NormalizeCapacity()
+    {
+        if (!Unlocked)
+        {
+            Capacity = 0;
+            return;
         }
 
-        public void NormalizeCapacity()
+        if (Capacity < InitialCapacity)
         {
-            if (!Unlocked)
-            {
-                Capacity = 0;
-                return;
-            }
-
-            if (Capacity < InitialCapacity)
-            {
-                Capacity = InitialCapacity;
-            }
-
-            Capacity = System.Math.Min(MaxCapacity, Capacity);
+            Capacity = InitialCapacity;
         }
 
-        public bool CanAddStack(int itemId)
+        Capacity = System.Math.Min(MaxCapacity, Capacity);
+    }
+
+    public bool CanAddStack(int itemId)
+    {
+        NormalizeCapacity();
+        return Unlocked && (StackableItems.ContainsKey(itemId) || UsedSlots < Capacity);
+    }
+
+    public bool CanAddEquip()
+    {
+        NormalizeCapacity();
+        return Unlocked && UsedSlots < Capacity;
+    }
+
+    /// <summary>소모/재료 아이템 추가(InventoryState.MoveToLocker가 호출).</summary>
+    public bool Add(int itemId, int count)
+    {
+        if (count <= 0 || !CanAddStack(itemId))
         {
-            NormalizeCapacity();
-            return Unlocked && (StackableItems.ContainsKey(itemId) || UsedSlots < Capacity);
+            return false;
         }
 
-        public bool CanAddEquip()
+        bool added = AddStackCore(itemId, count);
+        if (added)
         {
-            NormalizeCapacity();
-            return Unlocked && UsedSlots < Capacity;
+            RaiseInventoryChanged();
         }
 
-        /// <summary>소모/재료 아이템 추가(InventoryState.MoveToLocker가 호출).</summary>
-        public bool Add(int itemId, int count)
+        return added;
+    }
+
+    /// <summary>장비 아이템 추가.</summary>
+    public bool AddEquip(Item item)
+    {
+        if (!CanAddEquip())
         {
-            if (count <= 0 || !CanAddStack(itemId))
-            {
-                return false;
-            }
-
-            bool added = AddStackCore(itemId, count);
-            if (added)
-            {
-                RaiseInventoryChanged();
-            }
-
-            return added;
+            return false;
         }
 
-        /// <summary>장비 아이템 추가.</summary>
-        public bool AddEquip(Item item)
+        bool added = AddEquipCore(item);
+        if (added)
         {
-            if (!CanAddEquip())
-            {
-                return false;
-            }
-
-            bool added = AddEquipCore(item);
-            if (added)
-            {
-                RaiseInventoryChanged();
-            }
-
-            return added;
+            RaiseInventoryChanged();
         }
 
-        /// <summary>소모/재료 아이템 꺼냄(수량 지정).</summary>
-        public bool Remove(int itemId, int count)
+        return added;
+    }
+
+    /// <summary>소모/재료 아이템 꺼냄(수량 지정).</summary>
+    public bool Remove(int itemId, int count)
+    {
+        // 동작 요약: 보유량 검사 후 StackableItems 차감. 0이하면 키 제거.
+        if (count <= 0 || !StackableItems.TryGetValue(itemId, out int current) || current < count)
         {
-            // 동작 요약: 보유량 검사 후 StackableItems 차감. 0이하면 키 제거.
-            if (count <= 0 || !StackableItems.TryGetValue(itemId, out int current) || current < count)
-            {
-                return false;
-            }
-
-            bool removed = RemoveStackCore(itemId, count);
-            if (removed)
-            {
-                RaiseInventoryChanged();
-            }
-
-            return removed;
+            return false;
         }
 
-        /// <summary>장비 아이템 꺼냄.</summary>
-        public bool RemoveEquip(Item item)
+        bool removed = RemoveStackCore(itemId, count);
+        if (removed)
         {
-            // 동작 요약: EquipItems.Remove(item).
-            bool removed = RemoveEquipCore(item);
-            if (removed)
-            {
-                RaiseInventoryChanged();
-            }
-
-            return removed;
+            RaiseInventoryChanged();
         }
 
-        /// <summary>보유량 조회(소모/재료).</summary>
-        public int CountOf(int itemId)
+        return removed;
+    }
+
+    /// <summary>장비 아이템 꺼냄.</summary>
+    public bool RemoveEquip(Item item)
+    {
+        // 동작 요약: EquipItems.Remove(item).
+        bool removed = RemoveEquipCore(item);
+        if (removed)
         {
-            return CountStackCore(itemId);
+            RaiseInventoryChanged();
         }
 
-        /// <summary>
-        /// 보관함 → 인벤토리로 소모/재료 이동(수량 지정). InventoryState.MoveFromLocker와 동일 흐름.
-        /// 직접 호출하지 말고 InventoryState.MoveFromLocker()를 통해 사용.
-        /// </summary>
-        public bool MoveToInventory(InventoryState inventory, int itemId, int count)
-        {
-            // 동작 요약:
-            // - Unlocked 검사.
-            // - this.Remove(itemId, count) → inventory.Add(itemId, count).
-            if (!Unlocked || inventory == null || !Remove(itemId, count))
-            {
-                return false;
-            }
+        return removed;
+    }
 
-            if (!inventory.Add(itemId, count))
-            {
-                Add(itemId, count);
-                return false;
-            }
-            return true;
+    /// <summary>보유량 조회(소모/재료).</summary>
+    public int CountOf(int itemId)
+    {
+        return CountStackCore(itemId);
+    }
+
+    /// <summary>
+    /// 보관함 → 인벤토리로 소모/재료 이동(수량 지정). InventoryState.MoveFromLocker와 동일 흐름.
+    /// 직접 호출하지 말고 InventoryState.MoveFromLocker()를 통해 사용.
+    /// </summary>
+    public bool MoveToInventory(InventoryState inventory, int itemId, int count)
+    {
+        // 동작 요약:
+        // - Unlocked 검사.
+        // - this.Remove(itemId, count) → inventory.Add(itemId, count).
+        if (!Unlocked || inventory == null || !Remove(itemId, count))
+        {
+            return false;
         }
 
-        /// <summary>
-        /// 보관함 → 인벤토리로 장비 이동.
-        /// 직접 호출하지 말고 InventoryState.MoveEquipFromLocker()를 통해 사용.
-        /// </summary>
-        public bool MoveEquipToInventory(InventoryState inventory, Item item)
+        if (!inventory.Add(itemId, count))
         {
-            // 동작 요약:
-            // - this.RemoveEquip(item) → inventory.AddEquip(item).
-            if (!Unlocked || inventory == null || !RemoveEquip(item))
-            {
-                return false;
-            }
+            Add(itemId, count);
+            return false;
+        }
+        return true;
+    }
 
-            if (!inventory.AddEquip(item))
-            {
-                AddEquip(item);
-                return false;
-            }
-            return true;
+    /// <summary>
+    /// 보관함 → 인벤토리로 장비 이동.
+    /// 직접 호출하지 말고 InventoryState.MoveEquipFromLocker()를 통해 사용.
+    /// </summary>
+    public bool MoveEquipToInventory(InventoryState inventory, Item item)
+    {
+        // 동작 요약:
+        // - this.RemoveEquip(item) → inventory.AddEquip(item).
+        if (!Unlocked || inventory == null || !RemoveEquip(item))
+        {
+            return false;
         }
 
-        private static void RaiseInventoryChanged()
+        if (!inventory.AddEquip(item))
         {
-            if (GameSystemManager.TryGetInstance(out GameSystemManager gsm))
-            {
-                gsm.Events?.RaiseInventoryChanged();
-            }
+            AddEquip(item);
+            return false;
+        }
+        return true;
+    }
+
+    private static void RaiseInventoryChanged()
+    {
+        if (GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+        {
+            gsm.Events?.RaiseInventoryChanged();
         }
     }
 }

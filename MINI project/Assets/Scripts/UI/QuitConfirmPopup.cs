@@ -2,143 +2,140 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Tempt
+public sealed class QuitConfirmPopup : MonoBehaviour
 {
-    public sealed class QuitConfirmPopup : MonoBehaviour
+    [SerializeField]
+    private GameObject root;
+
+    [SerializeField]
+    private Button confirmButton;
+
+    [SerializeField]
+    private Button cancelButton;
+
+    private Action confirmAction;
+    private Action cancelAction;
+
+    public bool IsOpen => root != null && root.activeSelf;
+
+    private void Awake()
     {
-        [SerializeField]
-        private GameObject root;
+        ResolveReferences();
+        Hide();
+    }
 
-        [SerializeField]
-        private Button confirmButton;
+    public void Show(Action onConfirm, Action onCancel)
+    {
+        ResolveReferences();
 
-        [SerializeField]
-        private Button cancelButton;
+        confirmAction = onConfirm;
+        cancelAction = onCancel;
 
-        private Action confirmAction;
-        private Action cancelAction;
+        WireButtons();
 
-        public bool IsOpen => root != null && root.activeSelf;
-
-        private void Awake()
+        if (root != null)
         {
-            ResolveReferences();
-            Hide();
+            root.transform.SetAsLastSibling();
+            root.SetActive(true);
+        }
+    }
+
+    public void Hide()
+    {
+        if (root == null)
+        {
+            root = gameObject;
         }
 
-        public void Show(Action onConfirm, Action onCancel)
+        root.SetActive(false);
+    }
+
+    public void Confirm()
+    {
+        Action action = confirmAction;
+
+        Hide();
+
+        action?.Invoke();
+    }
+
+    public void Cancel()
+    {
+        Action action = cancelAction;
+
+        Hide();
+
+        action?.Invoke();
+    }
+
+    private void ResolveReferences()
+    {
+        if (root == null)
         {
-            ResolveReferences();
+            root = gameObject;
+        }
 
-            confirmAction = onConfirm;
-            cancelAction = onCancel;
+        if (confirmButton == null)
+        {
+            Transform found = transform.Find("ConfirmButton");
 
-            WireButtons();
-
-            if (root != null)
+            if (found != null)
             {
-                root.transform.SetAsLastSibling();
-                root.SetActive(true);
+                confirmButton = found.GetComponent<Button>();
             }
         }
 
-        public void Hide()
+        if (cancelButton == null)
         {
-            if (root == null)
+            Transform found = transform.Find("CancelButton");
+
+            if (found != null)
             {
-                root = gameObject;
+                cancelButton = found.GetComponent<Button>();
             }
-
-            root.SetActive(false);
         }
 
-        public void Confirm()
+        if (confirmButton == null)
         {
-            Action action = confirmAction;
-
-            Hide();
-
-            action?.Invoke();
+            confirmButton = FindButtonByName("YES", "ConfirmButton", "ExitButton");
         }
 
-        public void Cancel()
+        if (cancelButton == null)
         {
-            Action action = cancelAction;
-
-            Hide();
-
-            action?.Invoke();
+            cancelButton = FindButtonByName("NO", "CancelButton");
         }
+    }
 
-        private void ResolveReferences()
+    private Button FindButtonByName(params string[] names)
+    {
+        Button[] buttons = GetComponentsInChildren<Button>(true);
+        for (int i = 0; i < buttons.Length; i++)
         {
-            if (root == null)
+            string buttonName = buttons[i].name;
+            for (int j = 0; j < names.Length; j++)
             {
-                root = gameObject;
-            }
-
-            if (confirmButton == null)
-            {
-                Transform found = transform.Find("ConfirmButton");
-
-                if (found != null)
+                if (string.Equals(buttonName, names[j], StringComparison.OrdinalIgnoreCase))
                 {
-                    confirmButton = found.GetComponent<Button>();
+                    return buttons[i];
                 }
             }
-
-            if (cancelButton == null)
-            {
-                Transform found = transform.Find("CancelButton");
-
-                if (found != null)
-                {
-                    cancelButton = found.GetComponent<Button>();
-                }
-            }
-
-            if (confirmButton == null)
-            {
-                confirmButton = FindButtonByName("YES", "ConfirmButton", "ExitButton");
-            }
-
-            if (cancelButton == null)
-            {
-                cancelButton = FindButtonByName("NO", "CancelButton");
-            }
         }
 
-        private Button FindButtonByName(params string[] names)
-        {
-            Button[] buttons = GetComponentsInChildren<Button>(true);
-            for (int i = 0; i < buttons.Length; i++)
-            {
-                string buttonName = buttons[i].name;
-                for (int j = 0; j < names.Length; j++)
-                {
-                    if (string.Equals(buttonName, names[j], StringComparison.OrdinalIgnoreCase))
-                    {
-                        return buttons[i];
-                    }
-                }
-            }
+        return null;
+    }
 
-            return null;
+    private void WireButtons()
+    {
+        if (confirmButton != null)
+        {
+            confirmButton.onClick.RemoveListener(Confirm);
+            confirmButton.onClick.AddListener(Confirm);
         }
 
-        private void WireButtons()
+        if (cancelButton != null)
         {
-            if (confirmButton != null)
-            {
-                confirmButton.onClick.RemoveListener(Confirm);
-                confirmButton.onClick.AddListener(Confirm);
-            }
-
-            if (cancelButton != null)
-            {
-                cancelButton.onClick.RemoveListener(Cancel);
-                cancelButton.onClick.AddListener(Cancel);
-            }
+            cancelButton.onClick.RemoveListener(Cancel);
+            cancelButton.onClick.AddListener(Cancel);
         }
     }
 }

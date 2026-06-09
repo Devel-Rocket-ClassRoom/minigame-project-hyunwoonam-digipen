@@ -1,53 +1,50 @@
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Tempt
+public sealed class OptionsVolumeTests
 {
-    public sealed class OptionsVolumeTests
+    [Test]
+    public void OptionsService_DefaultMasterVolume_IsReducedFromFullVolume()
     {
-        [Test]
-        public void OptionsService_DefaultMasterVolume_IsReducedFromFullVolume()
+        Assert.AreEqual(0.7f, OptionsService.DefaultMasterVolume);
+    }
+
+    [Test]
+    public void OptionsService_PreviewMasterVolume_ChangesAudioListenerWithoutSavingCurrent()
+    {
+        float previousVolume = AudioListener.volume;
+        try
         {
-            Assert.AreEqual(0.7f, OptionsService.DefaultMasterVolume);
+            var service = new OptionsService();
+            service.PreviewMasterVolume(0.35f);
+
+            Assert.AreEqual(0.35f, AudioListener.volume);
+            Assert.IsNull(service.Current);
         }
-
-        [Test]
-        public void OptionsService_PreviewMasterVolume_ChangesAudioListenerWithoutSavingCurrent()
+        finally
         {
-            float previousVolume = AudioListener.volume;
-            try
-            {
-                var service = new OptionsService();
-                service.PreviewMasterVolume(0.35f);
-
-                Assert.AreEqual(0.35f, AudioListener.volume);
-                Assert.IsNull(service.Current);
-            }
-            finally
-            {
-                AudioListener.volume = previousVolume;
-            }
+            AudioListener.volume = previousVolume;
         }
+    }
 
-        [Test]
-        public void OptionsService_PreviewMasterVolume_ClampsToValidRange()
+    [Test]
+    public void OptionsService_PreviewMasterVolume_ClampsToValidRange()
+    {
+        float previousVolume = AudioListener.volume;
+        try
         {
-            float previousVolume = AudioListener.volume;
-            try
-            {
-                var service = new OptionsService();
-                service.PreviewMasterVolume(1.25f);
+            var service = new OptionsService();
+            service.PreviewMasterVolume(1.25f);
 
-                Assert.AreEqual(1f, AudioListener.volume);
+            Assert.AreEqual(1f, AudioListener.volume);
 
-                service.PreviewMasterVolume(-0.5f);
+            service.PreviewMasterVolume(-0.5f);
 
-                Assert.AreEqual(0f, AudioListener.volume);
-            }
-            finally
-            {
-                AudioListener.volume = previousVolume;
-            }
+            Assert.AreEqual(0f, AudioListener.volume);
+        }
+        finally
+        {
+            AudioListener.volume = previousVolume;
         }
     }
 }

@@ -1,79 +1,76 @@
-namespace Tempt
+/// <summary>
+/// 안전지대 0: 시작 안식처. 호수/모래밭, 비석/묘비, 최초 룬 선택.
+/// </summary>
+public sealed class Safe0Controller : SafeZoneControllerBase
 {
+    [UnityEngine.SerializeField]
+    private SafeZone0SanctuaryMockupUI mockupUI;
+
     /// <summary>
-    /// 안전지대 0: 시작 안식처. 호수/모래밭, 비석/묘비, 최초 룬 선택.
+    /// 최초 시작 룬 선택 UI 준비.
     /// </summary>
-    public sealed class Safe0Controller : SafeZoneControllerBase
+    protected override void SetupZoneFeatures()
     {
-        [UnityEngine.SerializeField]
-        private SafeZone0SanctuaryMockupUI mockupUI;
-
-        /// <summary>
-        /// 최초 시작 룬 선택 UI 준비.
-        /// </summary>
-        protected override void SetupZoneFeatures()
+        if (mockupUI != null)
         {
-            if (mockupUI != null)
-            {
-                mockupUI.InitializeMockup();
-                return;
-            }
-
-            GameLog.LogError(
-                "[Safe0Controller] SafeZone0SanctuaryMockupUI 참조가 씬에 직접 할당되어 있지 않습니다."
-            );
+            mockupUI.InitializeMockup();
+            return;
         }
 
-        /// <summary>
-        /// 시작 룬 선택 결과를 현재 런의 PlayerState 에 적용한다.
-        /// </summary>
-        public void ApplyStartingRuneClass(RuneClass runeClass)
-        {
-            GameRunState run = GameSystemManager.Instance.CurrentRun;
-            if (run?.Player == null)
-            {
-                return;
-            }
+        GameLog.LogError(
+            "[Safe0Controller] SafeZone0SanctuaryMockupUI 참조가 씬에 직접 할당되어 있지 않습니다."
+        );
+    }
 
-            if (run.Player.StartingClass == RuneClass.None)
-            {
-                run.Player.StartingClass = runeClass;
-                run.Player.Rune = new PlayerRuneState
-                {
-                    ClassId = runeClass,
-                    RunePoints = 0,
-                    UnlockedIds = new System.Collections.Generic.HashSet<int>(),
-                    Tree = RuneTree.BuildFromData(
-                        runeClass,
-                        GameSystemManager.Instance.Data.Runes.Values
-                    ),
-                };
-                run.Player.Rune.UnlockStarter();
-            }
+    /// <summary>
+    /// 시작 룬 선택 결과를 현재 런의 PlayerState 에 적용한다.
+    /// </summary>
+    public void ApplyStartingRuneClass(RuneClass runeClass)
+    {
+        GameRunState run = GameSystemManager.Instance.CurrentRun;
+        if (run?.Player == null)
+        {
+            return;
         }
 
-        public bool HasConfirmedStartingRune()
+        if (run.Player.StartingClass == RuneClass.None)
         {
-            if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+            run.Player.StartingClass = runeClass;
+            run.Player.Rune = new PlayerRuneState
             {
-                return false;
-            }
+                ClassId = runeClass,
+                RunePoints = 0,
+                UnlockedIds = new System.Collections.Generic.HashSet<int>(),
+                Tree = RuneTree.BuildFromData(
+                    runeClass,
+                    GameSystemManager.Instance.Data.Runes.Values
+                ),
+            };
+            run.Player.Rune.UnlockStarter();
+        }
+    }
 
-            PlayerState player = gsm.CurrentRun?.Player;
-            return player != null
-                && player.StartingClass != RuneClass.None
-                && player.Rune != null
-                && player.Rune.ClassId != RuneClass.None;
+    public bool HasConfirmedStartingRune()
+    {
+        if (!GameSystemManager.TryGetInstance(out GameSystemManager gsm))
+        {
+            return false;
         }
 
-        public override void DepartToFloorMap()
-        {
-            if (!HasConfirmedStartingRune())
-            {
-                return;
-            }
+        PlayerState player = gsm.CurrentRun?.Player;
+        return player != null
+            && player.StartingClass != RuneClass.None
+            && player.Rune != null
+            && player.Rune.ClassId != RuneClass.None;
+    }
 
-            base.DepartToFloorMap();
+    public override void DepartToFloorMap()
+    {
+        if (!HasConfirmedStartingRune())
+        {
+            return;
         }
+
+        base.DepartToFloorMap();
     }
 }
