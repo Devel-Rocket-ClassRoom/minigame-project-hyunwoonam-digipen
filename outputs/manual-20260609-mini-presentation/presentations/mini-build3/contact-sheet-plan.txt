@@ -1,0 +1,9 @@
+01 cover: full-bleed combat art + icon + large claim
+02 game intro: loop diagram left, key pillars right
+03 progression: floor map tutorial image + side claim rail
+04 schedule: horizontal week timeline with compact outcomes
+05 scope: 3x3 implementation matrix with Safe1 image strip
+06 architecture: data/runtime/UI architecture map
+07 evidence: metric cards with verification strip
+08 lessons: four reflection statements with small decision trail
+09 Q&A: full-bleed combat art + minimal text

@@ -1,0 +1,1167 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/aw2bm7",
+    "id": "aw2bm7",
+    "slide": 8,
+    "layoutId": "aa32f946-00aa-4edc-88fd-7055ced64a66",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "6e52240d-7aad-4425-a4b1-85eae914fe8d",
+    "masterLayoutName": "Master",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Malgun Gothic"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "aa32f946-00aa-4edc-88fd-7055ced64a66",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "6e52240d-7aad-4425-a4b1-85eae914fe8d",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "6e52240d-7aad-4425-a4b1-85eae914fe8d",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ytsvu9kn",
+      "id": "1",
+      "bbox": [
+        0,
+        0,
+        1280,
+        720
+      ],
+      "geometry": "rect",
+      "fillColor": "#0B0D10",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/5kb6xkf6",
+      "id": "2",
+      "name": "kicker-8-marker",
+      "bbox": [
+        54,
+        40,
+        8,
+        24
+      ],
+      "geometry": "rect",
+      "fillColor": "#D5A74D",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/czed8v6p",
+      "id": "3",
+      "name": "kicker-8-label",
+      "bbox": [
+        76,
+        33,
+        560,
+        38
+      ],
+      "geometry": "rect",
+      "text": "LESSONS LEARNED",
+      "textPreview": "LESSONS LEARNED",
+      "resolvedFontSize": 18,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 18,
+        "typeface": "Malgun Gothic",
+        "color": "#D5A74D",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "LESSONS LEARNED"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "LESSONS LEARNED",
+          "resolvedTextStyle": {
+            "fontSize": 18,
+            "typeface": "Malgun Gothic",
+            "color": "#D5A74D",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "LESSONS LEARNED",
+              "fontSize": 18,
+              "typeface": "Malgun Gothic",
+              "color": "#D5A74D",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/nqxs72x4",
+      "id": "4",
+      "bbox": [
+        54,
+        84,
+        940,
+        86
+      ],
+      "geometry": "rect",
+      "text": "느낀점: 완성도는 큰 아이디어보다 닫힌 루프에서 나왔습니다",
+      "textPreview": "느낀점: 완성도는 큰 아이디어보다 닫힌 루프에서 나왔습니다",
+      "resolvedFontSize": 36,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 36,
+        "typeface": "Malgun Gothic",
+        "color": "#F4F1E8",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "느낀점: 완성도는 큰 아이디어보다 닫힌 루프에서"
+          },
+          {
+            "index": 2,
+            "text": "나왔습니다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "느낀점: 완성도는 큰 아이디어보다 닫힌 루프에서 나왔습니다",
+          "resolvedTextStyle": {
+            "fontSize": 36,
+            "typeface": "Malgun Gothic",
+            "color": "#F4F1E8",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "느낀점: 완성도는 큰 아이디어보다 닫힌 루프에서 나왔습니다",
+              "fontSize": 36,
+              "typeface": "Malgun Gothic",
+              "color": "#F4F1E8",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/u54zidon",
+      "id": "5",
+      "bbox": [
+        78,
+        218,
+        510,
+        122
+      ],
+      "geometry": "rect",
+      "fillColor": "#151922",
+      "lineColor": "#303846",
+      "lineWidth": 1
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/5sneloj2",
+      "id": "6",
+      "bbox": [
+        78,
+        218,
+        5,
+        122
+      ],
+      "geometry": "rect",
+      "fillColor": "#D5A74D",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/cbulwval",
+      "id": "7",
+      "bbox": [
+        98,
+        233,
+        470,
+        50
+      ],
+      "geometry": "rect",
+      "text": "1. 스코프를 줄이는 것이 기능을 버리는 일은 아니었습니다",
+      "textPreview": "1. 스코프를 줄이는 것이 기능을 버리는 일은 아니었습니다",
+      "resolvedFontSize": 18.51,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 18.51,
+        "typeface": "Malgun Gothic",
+        "color": "#F4F1E8",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "1. 스코프를 줄이는 것이 기능을 버리는 일은"
+          },
+          {
+            "index": 2,
+            "text": "아니었습니다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "1. 스코프를 줄이는 것이 기능을 버리는 일은 아니었습니다",
+          "resolvedTextStyle": {
+            "fontSize": 18.51,
+            "typeface": "Malgun Gothic",
+            "color": "#F4F1E8",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "1. 스코프를 줄이는 것이 기능을 버리는 일은 아니었습니다",
+              "fontSize": 18.51,
+              "typeface": "Malgun Gothic",
+              "color": "#F4F1E8",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/nuxc3ylc",
+      "id": "8",
+      "bbox": [
+        98,
+        290,
+        470,
+        40
+      ],
+      "geometry": "rect",
+      "text": "100층 대규모 구상보다 49층/6단계와 Safe0~5로 압축하니 발표 가능한 루프가 생겼습니다.",
+      "textPreview": "100층 대규모 구상보다 49층/6단계와 Safe0~5로 압축하니 발표 가능한 루프가 생겼습니다.",
+      "resolvedFontSize": 14.51,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14.51,
+        "typeface": "Malgun Gothic",
+        "color": "#A7B0BE",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "100층 대규모 구상보다 49층/6단계와 Safe0~5로 압축하니 발표 가능한"
+          },
+          {
+            "index": 2,
+            "text": "루프가 생겼습니다."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "100층 대규모 구상보다 49층/6단계와 Safe0~5로 압축하니 발표 가능한 루프가 생겼습니다.",
+          "resolvedTextStyle": {
+            "fontSize": 14.51,
+            "typeface": "Malgun Gothic",
+            "color": "#A7B0BE",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "100층 대규모 구상보다 49층/6단계와 Safe0~5로 압축하니 발표 가능한 루프가 생겼습니다.",
+              "fontSize": 14.51,
+              "typeface": "Malgun Gothic",
+              "color": "#A7B0BE"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/y90je9cv",
+      "id": "9",
+      "bbox": [
+        692,
+        218,
+        510,
+        122
+      ],
+      "geometry": "rect",
+      "fillColor": "#151922",
+      "lineColor": "#303846",
+      "lineWidth": 1
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/oza1gvy9",
+      "id": "10",
+      "bbox": [
+        692,
+        218,
+        5,
+        122
+      ],
+      "geometry": "rect",
+      "fillColor": "#67E8F9",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/hk3q5o7q",
+      "id": "11",
+      "bbox": [
+        712,
+        233,
+        470,
+        50
+      ],
+      "geometry": "rect",
+      "text": "2. 데이터 권위가 생기니 수정 속도가 빨라졌습니다",
+      "textPreview": "2. 데이터 권위가 생기니 수정 속도가 빨라졌습니다",
+      "resolvedFontSize": 18.51,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 18.51,
+        "typeface": "Malgun Gothic",
+        "color": "#F4F1E8",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "2. 데이터 권위가 생기니 수정 속도가 빨라졌습니다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "2. 데이터 권위가 생기니 수정 속도가 빨라졌습니다",
+          "resolvedTextStyle": {
+            "fontSize": 18.51,
+            "typeface": "Malgun Gothic",
+            "color": "#F4F1E8",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "2. 데이터 권위가 생기니 수정 속도가 빨라졌습니다",
+              "fontSize": 18.51,
+              "typeface": "Malgun Gothic",
+              "color": "#F4F1E8",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/6xkf6dcb",
+      "id": "12",
+      "bbox": [
+        712,
+        290,
+        470,
+        40
+      ],
+      "geometry": "rect",
+      "text": "CSV/JSON과 DataValidator가 기준이 되면서 밸런스, 리소스 키, 몬스터/동료 구성이 코드 밖에서 보이기 시작했습니다.",
+      "textPreview": "CSV/JSON과 DataValidator가 기준이 되면서 밸런스, 리소스 키, 몬스터/동료 구성이 코드 밖에서 보이기 시작했습니다.",
+      "resolvedFontSize": 14.51,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14.51,
+        "typeface": "Malgun Gothic",
+        "color": "#A7B0BE",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "CSV/JSON과 DataValidator가 기준이 되면서 밸런스, 리소스 키,"
+          },
+          {
+            "index": 2,
+            "text": "몬스터/동료 구성이 코드 밖에서 보이기 시작했습니다."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "CSV/JSON과 DataValidator가 기준이 되면서 밸런스, 리소스 키, 몬스터/동료 구성이 코드 밖에서 보이기 시작했습니다.",
+          "resolvedTextStyle": {
+            "fontSize": 14.51,
+            "typeface": "Malgun Gothic",
+            "color": "#A7B0BE",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "CSV/JSON과 DataValidator가 기준이 되면서 밸런스, 리소스 키, 몬스터/동료 구성이 코드 밖에서 보이기 시작했습니다.",
+              "fontSize": 14.51,
+              "typeface": "Malgun Gothic",
+              "color": "#A7B0BE"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/zed8v6ps",
+      "id": "13",
+      "bbox": [
+        78,
+        388,
+        510,
+        122
+      ],
+      "geometry": "rect",
+      "fillColor": "#151922",
+      "lineColor": "#303846",
+      "lineWidth": 1
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/obm58z25",
+      "id": "14",
+      "bbox": [
+        78,
+        388,
+        5,
+        122
+      ],
+      "geometry": "rect",
+      "fillColor": "#8BC34A",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/hwfyxobm",
+      "id": "15",
+      "bbox": [
+        98,
+        403,
+        470,
+        50
+      ],
+      "geometry": "rect",
+      "text": "3. Unity 검증은 마지막에 몰아서 할 수 없었습니다",
+      "textPreview": "3. Unity 검증은 마지막에 몰아서 할 수 없었습니다",
+      "resolvedFontSize": 18.51,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 18.51,
+        "typeface": "Malgun Gothic",
+        "color": "#F4F1E8",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "3. Unity 검증은 마지막에 몰아서 할 수 없었습니다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "3. Unity 검증은 마지막에 몰아서 할 수 없었습니다",
+          "resolvedTextStyle": {
+            "fontSize": 18.51,
+            "typeface": "Malgun Gothic",
+            "color": "#F4F1E8",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "3. Unity 검증은 마지막에 몰아서 할 수 없었습니다",
+              "fontSize": 18.51,
+              "typeface": "Malgun Gothic",
+              "color": "#F4F1E8",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/65wjudg7",
+      "id": "16",
+      "bbox": [
+        98,
+        460,
+        470,
+        40
+      ],
+      "geometry": "rect",
+      "text": "컴파일, EditMode, RunCommand, 리소스 로드 스모크를 반복해야 넓은 변경 범위를 감당할 수 있었습니다.",
+      "textPreview": "컴파일, EditMode, RunCommand, 리소스 로드 스모크를 반복해야 넓은 변경 범위를 감당할 수 있었습니다.",
+      "resolvedFontSize": 14.51,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14.51,
+        "typeface": "Malgun Gothic",
+        "color": "#A7B0BE",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "컴파일, EditMode, RunCommand, 리소스 로드 스모크를 반복해야 넓은"
+          },
+          {
+            "index": 2,
+            "text": "변경 범위를 감당할 수 있었습니다."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "컴파일, EditMode, RunCommand, 리소스 로드 스모크를 반복해야 넓은 변경 범위를 감당할 수 있었습니다.",
+          "resolvedTextStyle": {
+            "fontSize": 14.51,
+            "typeface": "Malgun Gothic",
+            "color": "#A7B0BE",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "컴파일, EditMode, RunCommand, 리소스 로드 스모크를 반복해야 넓은 변경 범위를 감당할 수 있었습니다.",
+              "fontSize": 14.51,
+              "typeface": "Malgun Gothic",
+              "color": "#A7B0BE"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/zqtcj6to",
+      "id": "17",
+      "bbox": [
+        692,
+        388,
+        510,
+        122
+      ],
+      "geometry": "rect",
+      "fillColor": "#151922",
+      "lineColor": "#303846",
+      "lineWidth": 1
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/sfil0rqd",
+      "id": "18",
+      "bbox": [
+        692,
+        388,
+        5,
+        122
+      ],
+      "geometry": "rect",
+      "fillColor": "#D84A42",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 19,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/h0fepkzu",
+      "id": "19",
+      "bbox": [
+        712,
+        403,
+        470,
+        50
+      ],
+      "geometry": "rect",
+      "text": "4. 폰트, 오디오, raw key 같은 작은 문제도 경험을 크게 바꿉니다",
+      "textPreview": "4. 폰트, 오디오, raw key 같은 작은 문제도 경험을 크게 바꿉니다",
+      "resolvedFontSize": 18.51,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 18.51,
+        "typeface": "Malgun Gothic",
+        "color": "#F4F1E8",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "4. 폰트, 오디오, raw key 같은 작은 문제도 경험을 크게"
+          },
+          {
+            "index": 2,
+            "text": "바꿉니다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "4. 폰트, 오디오, raw key 같은 작은 문제도 경험을 크게 바꿉니다",
+          "resolvedTextStyle": {
+            "fontSize": 18.51,
+            "typeface": "Malgun Gothic",
+            "color": "#F4F1E8",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "4. 폰트, 오디오, raw key 같은 작은 문제도 경험을 크게 바꿉니다",
+              "fontSize": 18.51,
+              "typeface": "Malgun Gothic",
+              "color": "#F4F1E8",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 20,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/54zidony",
+      "id": "20",
+      "bbox": [
+        712,
+        460,
+        470,
+        40
+      ],
+      "geometry": "rect",
+      "text": "전투 시스템만큼이나 한글 표시, SFX 볼륨, BGM 라우팅, Safe 배경이 최종 인상을 결정했습니다.",
+      "textPreview": "전투 시스템만큼이나 한글 표시, SFX 볼륨, BGM 라우팅, Safe 배경이 최종 인상을 결정했습니다.",
+      "resolvedFontSize": 14.51,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14.51,
+        "typeface": "Malgun Gothic",
+        "color": "#A7B0BE",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "전투 시스템만큼이나 한글 표시, SFX 볼륨, BGM 라우팅, Safe 배경이"
+          },
+          {
+            "index": 2,
+            "text": "최종 인상을 결정했습니다."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "전투 시스템만큼이나 한글 표시, SFX 볼륨, BGM 라우팅, Safe 배경이 최종 인상을 결정했습니다.",
+          "resolvedTextStyle": {
+            "fontSize": 14.51,
+            "typeface": "Malgun Gothic",
+            "color": "#A7B0BE",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "전투 시스템만큼이나 한글 표시, SFX 볼륨, BGM 라우팅, Safe 배경이 최종 인상을 결정했습니다.",
+              "fontSize": 14.51,
+              "typeface": "Malgun Gothic",
+              "color": "#A7B0BE"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 21,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/cj6tovah",
+      "id": "21",
+      "bbox": [
+        210,
+        552,
+        860,
+        46
+      ],
+      "geometry": "rect",
+      "fillColor": "#1C2330",
+      "lineColor": "#303846",
+      "lineWidth": 1
+    },
+    {
+      "order": 22,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/nyd0z610",
+      "id": "22",
+      "bbox": [
+        230,
+        564,
+        820,
+        24
+      ],
+      "geometry": "rect",
+      "text": "다음에 한다면: 초반부터 데이터 검증과 발표용 리소스 연결을 개발 일정 안에 넣겠습니다.",
+      "textPreview": "다음에 한다면: 초반부터 데이터 검증과 발표용 리소스 연결을 개발 일정 안에 넣겠습니다.",
+      "resolvedFontSize": 17,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 17,
+        "typeface": "Malgun Gothic",
+        "color": "#F4F1E8",
+        "bold": true,
+        "alignment": "center",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "다음에 한다면: 초반부터 데이터 검증과 발표용 리소스 연결을 개발 일정 안에 넣겠습니다."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "다음에 한다면: 초반부터 데이터 검증과 발표용 리소스 연결을 개발 일정 안에 넣겠습니다.",
+          "resolvedTextStyle": {
+            "fontSize": 17,
+            "typeface": "Malgun Gothic",
+            "color": "#F4F1E8",
+            "bold": true,
+            "alignment": "center"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "다음에 한다면: 초반부터 데이터 검증과 발표용 리소스 연결을 개발 일정 안에 넣겠습니다.",
+              "fontSize": 17,
+              "typeface": "Malgun Gothic",
+              "color": "#F4F1E8",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 23,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/udg7adsj",
+      "id": "23",
+      "bbox": [
+        54,
+        660,
+        1172,
+        1.2
+      ],
+      "geometry": "rect",
+      "fillColor": "#303846",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 24,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/5gbq1ory",
+      "id": "24",
+      "bbox": [
+        54,
+        672,
+        780,
+        24
+      ],
+      "geometry": "rect",
+      "text": "Source: Build 3 report issues/lessons, HANDOFF19 residual risks",
+      "textPreview": "Source: Build 3 report issues/lessons, HANDOFF19 residual risks",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Malgun Gothic",
+        "color": "#A7B0BE",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Source: Build 3 report issues/lessons, HANDOFF19 residual risks"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Source: Build 3 report issues/lessons, HANDOFF19 residual risks",
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Malgun Gothic",
+            "color": "#A7B0BE",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Source: Build 3 report issues/lessons, HANDOFF19 residual risks",
+              "fontSize": 12,
+              "typeface": "Malgun Gothic",
+              "color": "#A7B0BE"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 25,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/cvixczed",
+      "id": "25",
+      "bbox": [
+        1180,
+        672,
+        46,
+        24
+      ],
+      "geometry": "rect",
+      "text": "08",
+      "textPreview": "08",
+      "resolvedFontSize": 13,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 13,
+        "typeface": "Malgun Gothic",
+        "color": "#D5A74D",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "08"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "08",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "typeface": "Malgun Gothic",
+            "color": "#D5A74D",
+            "bold": true,
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "08",
+              "fontSize": 13,
+              "typeface": "Malgun Gothic",
+              "color": "#D5A74D",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

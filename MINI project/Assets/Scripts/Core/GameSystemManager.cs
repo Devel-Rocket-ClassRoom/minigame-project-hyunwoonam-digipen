@@ -400,6 +400,14 @@ namespace Tempt
             CombatContext = null;
             SceneId sceneId =
                 snapshot.Location != null ? snapshot.Location.SceneId : SceneId.Safe0;
+
+            // 전투는 복원 가능한 위치가 아니다. 구버전 save 가 Combat 을 기록했어도
+            // CombatContext 가 없어 전투 씬이 비정상 진입하므로 FloorMap 으로 우회한다.
+            if (sceneId == SceneId.Combat)
+            {
+                sceneId = SceneId.FloorMap;
+            }
+
             Scenes.RequestScene(sceneId);
         }
 

@@ -57,6 +57,15 @@ namespace Tempt
             }
 
             SceneId sceneId = gsm.Scenes != null ? gsm.Scenes.CurrentSceneId : SceneId.MainMenu;
+
+            // 전투는 중간 상태를 저장하지 않는 일시 씬이므로 이어하기 위치로 기록하지 않는다.
+            // (전투 종료/전투 중 종료 저장은 CurrentSceneId 가 아직 Combat 인 시점에 호출됨)
+            // 전투의 자연 복귀 지점인 FloorMap 으로 정규화한다.
+            if (sceneId == SceneId.Combat)
+            {
+                sceneId = SceneId.FloorMap;
+            }
+
             global::Tempt.SaveSnapshot snapshot = global::Tempt.SaveSnapshot.FromGameRunStatet(gsm.CurrentRun, sceneId);
 
             if (snapshot == null)
