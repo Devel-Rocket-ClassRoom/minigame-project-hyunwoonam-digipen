@@ -64,7 +64,7 @@ public sealed class SaveLoader
             sceneId = SceneId.FloorMap;
         }
 
-        SaveSnapshot snapshot = SaveSnapshot.FromGameRunStatet(gsm.CurrentRun, sceneId);
+        global::SaveSnapshot snapshot = global::SaveSnapshot.FromGameRunStatet(gsm.CurrentRun, sceneId);
 
         if (snapshot == null)
         {
